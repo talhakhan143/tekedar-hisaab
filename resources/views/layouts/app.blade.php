@@ -59,6 +59,14 @@
                             <span>{{ $label }} <span class="text-xs opacity-70">({{ $urdu }})</span></span>
                         </a>
                     @endforeach
+
+                    <a href="{{ route('vendors.create') }}"
+                       class="mt-2 flex items-center gap-3 rounded-lg border border-dashed border-gray-700 px-3 py-2.5 text-sm font-medium text-gray-300 hover:bg-gray-800 hover:text-white">
+                        <svg class="h-5 w-5 shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4"/>
+                        </svg>
+                        <span>Add Vendor <span class="text-xs opacity-70">(نیا سپلائر)</span></span>
+                    </a>
                 </nav>
 
                 <div class="border-t border-gray-800 p-3">
