@@ -17,6 +17,15 @@ use Illuminate\Validation\ValidationException;
  */
 class WorkLedgerController extends Controller
 {
+    /** One attendance per worker per day (prevents double-counting wages). */
+    private function attendanceExists(int $workerId, string $date, ?int $ignoreId = null): bool
+    {
+        return WorkEntry::where('worker_id', $workerId)
+            ->whereDate('date', $date)
+            ->when($ignoreId, fn ($q) => $q->where('id', '!=', $ignoreId))
+            ->exists();
+    }
+
     /** Compute a worker's wage for a work entry (daily/monthly vs piece). */
     private function wageFor(Worker $worker, ?float $days, ?float $units): int
     {
@@ -37,6 +46,11 @@ class WorkLedgerController extends Controller
         ]);
 
         $worker = Worker::findOrFail($v['worker_id']);
+
+        if ($this->attendanceExists($worker->id, $v['date'])) {
+            return back()->with('error', $worker->name . ' ki ' . \Carbon\Carbon::parse($v['date'])->format('d-m-Y') . ' ki haazri pehle lag chuki hai. Dobara nahi lag sakti (edit worker page se).');
+        }
+
         WorkEntry::create([
             'worker_id'           => $worker->id,
             'project_id'          => $project->id,
@@ -89,11 +103,8 @@ class WorkLedgerController extends Controller
             'notes'        => ['nullable', 'string'],
         ]);
 
-        // Wage = days × default (daily/monthly) OR units × default (piece).
-        if ($worker->wage_type === 'contract_piece') {
-            $wage = (int) round((float) ($v['units_done'] ?? 0) * $worker->default_wage_paisa);
-        } else {
-            $wage = (int) round((float) ($v['days_present'] ?? 0) * $worker->default_wage_paisa);
+        if ($this->attendanceExists($worker->id, $v['date'])) {
+            return back()->with('error', $worker->name . ' ki ' . \Carbon\Carbon::parse($v['date'])->format('d-m-Y') . ' ki haazri pehle lag chuki hai. Dobara nahi lag sakti.');
         }
 
         WorkEntry::create([
@@ -102,7 +113,7 @@ class WorkLedgerController extends Controller
             'date'                => $v['date'],
             'days_present'        => $v['days_present'] ?? null,
             'units_done'          => $v['units_done'] ?? null,
-            'computed_wage_paisa' => $wage,
+            'computed_wage_paisa' => $this->wageFor($worker, $v['days_present'] ?? null, $v['units_done'] ?? null),
             'notes'               => $v['notes'] ?? null,
         ]);
 

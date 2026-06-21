@@ -99,6 +99,11 @@
                         {{ session('status') }}
                     </div>
                 @endif
+                @if (session('error'))
+                    <div class="mx-4 mt-4 rounded-lg bg-red-50 px-4 py-3 text-sm font-medium text-red-700 sm:mx-6">
+                        {{ session('error') }}
+                    </div>
+                @endif
 
                 <main class="flex-1 p-4 sm:p-6">
                     {{ $slot }}
