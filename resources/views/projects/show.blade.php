@@ -255,6 +255,17 @@
 
             <div class="grid grid-cols-1 gap-6 lg:grid-cols-3">
                 <div class="space-y-6">
+                    <x-card title="Naya Mazdoor (نیا مزدور)">
+                        <form method="POST" action="{{ route('attendance.quick-worker') }}" class="space-y-3">
+                            @csrf
+                            <input type="text" name="name" placeholder="Naam" required class="block w-full rounded-md border-gray-300 text-sm shadow-sm focus:border-emerald-500 focus:ring-emerald-500">
+                            <select name="role" class="block w-full rounded-md border-gray-300 text-sm shadow-sm focus:border-emerald-500 focus:ring-emerald-500">
+                                @foreach(['mistri','mazdoor','electrician','plumber','painter','foreman','other'] as $r)<option value="{{ $r }}">{{ ucfirst($r) }}</option>@endforeach
+                            </select>
+                            <x-money-input name="default_wage" label="Dihaadi (روزانہ)" required />
+                            <button class="w-full rounded-md bg-gray-800 px-3 py-2 text-sm font-semibold text-white hover:bg-gray-700">Add Worker (شامل)</button>
+                        </form>
+                    </x-card>
                     <x-card title="Mazdoori do (ادائیگی)">
                         <form method="POST" action="{{ route('projects.wage-payments.store', $project) }}" class="space-y-3">
                             @csrf
