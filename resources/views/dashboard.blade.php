@@ -2,61 +2,119 @@
     <x-slot name="title">Dashboard</x-slot>
     <x-slot name="header">Dashboard</x-slot>
 
-    {{-- Headline cards (wired to real aggregates in Step 9) --}}
+    @push('head')
+        <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+    @endpush
+
+    {{-- Headline cards --}}
     <div class="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
-        @php
-            $cards = [
-                ['Active Projects',         $activeProjects ?? 0,        'count', 'text-emerald-600'],
-                ['Total Contract Value',    $contractValue ?? 0,         'money', 'text-sky-600'],
-                ['This Month — Net Profit', $monthNetProfit ?? 0,        'money', 'text-indigo-600'],
-                ['Retention Outstanding',   $retentionOutstanding ?? 0,  'money', 'text-amber-600'],
-            ];
-        @endphp
-        @foreach ($cards as [$label, $value, $type, $colorClass])
-            <div class="rounded-xl bg-white p-5 shadow-sm ring-1 ring-gray-200">
-                <div class="text-sm font-medium text-gray-500">{{ $label }}</div>
-                <div class="mt-2 text-2xl font-bold {{ $colorClass }}">
-                    {{ $type === 'money' ? \App\Support\Money::format($value, true, false) : number_format($value) }}
-                </div>
-            </div>
-        @endforeach
+        <x-stat label="Active Projects" :value="number_format($activeProjects)" color="text-emerald-600" />
+        <x-stat label="Total Contract Value" :value="\App\Support\Money::short($contractValue)" color="text-sky-600" />
+        <x-stat label="This Month — Net Profit" :value="\App\Support\Money::short($monthNetProfit)"
+                :color="$monthNetProfit < 0 ? 'text-red-600' : 'text-indigo-600'"
+                :sub="'In '.\App\Support\Money::short($monthReceived).' · Out '.\App\Support\Money::short($monthSpent)" />
+        <x-stat label="Retention Outstanding" :value="\App\Support\Money::short($retentionOutstanding)" color="text-amber-600"
+                :sub="$retentionAging ? 'Aging: '.$retentionAging.' days' : null" />
     </div>
 
-    {{-- Charts (wired in Step 9) --}}
+    {{-- Charts --}}
     <div class="mt-6 grid grid-cols-1 gap-4 lg:grid-cols-3">
-        <div class="rounded-xl bg-white p-5 shadow-sm ring-1 ring-gray-200 lg:col-span-2">
-            <h2 class="font-semibold text-gray-900">Profit Trend (last 12 months)</h2>
-            <div class="mt-4 flex h-64 items-center justify-center rounded-lg bg-gray-50 text-sm text-gray-400">
-                Chart.js line chart — wired in Step 9
-            </div>
-        </div>
-        <div class="rounded-xl bg-white p-5 shadow-sm ring-1 ring-gray-200">
-            <h2 class="font-semibold text-gray-900">Cost Breakdown</h2>
-            <div class="mt-4 flex h-64 items-center justify-center rounded-lg bg-gray-50 text-sm text-gray-400">
-                Pie: material / labour / other
-            </div>
-        </div>
+        <x-card title="Profit Trend (last 12 months)" class="lg:col-span-2">
+            <div class="h-64"><canvas id="trendChart"></canvas></div>
+        </x-card>
+        <x-card title="Cost Breakdown">
+            <div class="h-64"><canvas id="costChart"></canvas></div>
+        </x-card>
     </div>
 
-    {{-- Accrued vs Cash + flags --}}
+    {{-- Overall profit + outstanding --}}
     <div class="mt-6 grid grid-cols-1 gap-4 lg:grid-cols-2">
-        <div class="rounded-xl bg-white p-5 shadow-sm ring-1 ring-gray-200">
-            <h2 class="font-semibold text-gray-900">Overall Profit</h2>
-            <dl class="mt-4 space-y-3 text-sm">
-                <div class="flex justify-between"><dt class="text-gray-500">Total Billed (incl. retention)</dt><dd class="font-semibold">{{ \App\Support\Money::format($totalBilled ?? 0) }}</dd></div>
-                <div class="flex justify-between"><dt class="text-gray-500">Total Cost</dt><dd class="font-semibold">{{ \App\Support\Money::format($totalCost ?? 0) }}</dd></div>
-                <div class="flex justify-between border-t pt-3"><dt class="font-medium text-gray-700">Accrued Profit</dt><dd class="font-bold text-emerald-600">{{ \App\Support\Money::format($accruedProfit ?? 0) }}</dd></div>
-                <div class="flex justify-between"><dt class="font-medium text-gray-700">Cash-in-hand Profit</dt><dd class="font-bold text-indigo-600">{{ \App\Support\Money::format($cashProfit ?? 0) }}</dd></div>
+        <x-card title="Overall Profit (all-time)">
+            <dl class="space-y-3 text-sm">
+                <div class="flex justify-between"><dt class="text-gray-500">Total Billed (incl. retention)</dt><dd class="font-semibold">@money($totalBilled)</dd></div>
+                <div class="flex justify-between"><dt class="text-gray-500">Total Cost (incl. overheads)</dt><dd class="font-semibold">@money($totalCost)</dd></div>
+                <div class="flex justify-between border-t pt-3"><dt class="font-medium text-gray-700">Accrued Profit</dt><dd class="font-bold {{ $accruedProfit < 0 ? 'text-red-600' : 'text-emerald-600' }}">@money($accruedProfit)</dd></div>
+                <div class="flex justify-between"><dt class="font-medium text-gray-700">Cash-in-hand Profit</dt><dd class="font-bold {{ $cashProfit < 0 ? 'text-red-600' : 'text-indigo-600' }}">@money($cashProfit)</dd></div>
+                <p class="text-xs text-gray-400">Cash profit excludes unreleased retention (₨{{ number_format($retentionOutstanding/100) }} still held by clients).</p>
             </dl>
-        </div>
-        <div class="rounded-xl bg-white p-5 shadow-sm ring-1 ring-gray-200">
-            <h2 class="font-semibold text-gray-900">Outstanding</h2>
-            <dl class="mt-4 space-y-3 text-sm">
-                <div class="flex justify-between"><dt class="text-gray-500">Vendor Payables (udhaar)</dt><dd class="font-semibold text-amber-600">{{ \App\Support\Money::format($vendorPayables ?? 0) }}</dd></div>
-                <div class="flex justify-between"><dt class="text-gray-500">Worker Advances Outstanding</dt><dd class="font-semibold text-amber-600">{{ \App\Support\Money::format($workerAdvances ?? 0) }}</dd></div>
-                <div class="flex justify-between"><dt class="text-gray-500">Retention Held by Client</dt><dd class="font-semibold text-amber-600">{{ \App\Support\Money::format($retentionOutstanding ?? 0) }}</dd></div>
+        </x-card>
+        <x-card title="Outstanding">
+            <dl class="space-y-3 text-sm">
+                <div class="flex justify-between"><dt class="text-gray-500">Vendor Payables (udhaar)</dt><dd class="font-semibold text-red-600">@money($vendorPayables)</dd></div>
+                <div class="flex justify-between"><dt class="text-gray-500">Worker Advances Outstanding</dt><dd class="font-semibold text-amber-600">@money($workerAdvances)</dd></div>
+                <div class="flex justify-between"><dt class="text-gray-500">Retention Held by Client</dt><dd class="font-semibold text-amber-600">@money($retentionOutstanding)</dd></div>
             </dl>
-            <p class="mt-4 text-xs text-gray-400">Loss-making project flags appear here in Step 9.</p>
-        </div>
+        </x-card>
     </div>
+
+    {{-- Top projects + loss flags --}}
+    <div class="mt-6 grid grid-cols-1 gap-4 lg:grid-cols-2">
+        <x-card title="Top Projects by Projected Profit" class="!p-0">
+            <table class="min-w-full divide-y divide-gray-200 text-sm">
+                <tbody class="divide-y divide-gray-100">
+                    @forelse($topProjects as $row)
+                        <tr class="hover:bg-gray-50">
+                            <td class="px-4 py-2.5"><a href="{{ route('projects.show', $row['project']) }}" class="font-medium text-emerald-700 hover:underline">{{ $row['project']->name }}</a></td>
+                            <td class="px-4 py-2.5 text-right font-semibold {{ $row['projected'] < 0 ? 'text-red-600' : 'text-emerald-600' }}">@money($row['projected'])</td>
+                        </tr>
+                    @empty
+                        <tr><td class="px-4 py-6 text-center text-gray-400">Koi project nahi.</td></tr>
+                    @endforelse
+                </tbody>
+            </table>
+        </x-card>
+        <x-card title="⚠️ Loss-making Projects (red flag)" class="!p-0">
+            <table class="min-w-full divide-y divide-gray-200 text-sm">
+                <tbody class="divide-y divide-gray-100">
+                    @forelse($lossProjects as $row)
+                        <tr class="bg-red-50">
+                            <td class="px-4 py-2.5"><a href="{{ route('projects.show', $row['project']) }}" class="font-medium text-red-700 hover:underline">{{ $row['project']->name }}</a></td>
+                            <td class="px-4 py-2.5 text-right font-semibold text-red-600">@money($row['projected'])</td>
+                        </tr>
+                    @empty
+                        <tr><td class="px-4 py-8 text-center text-emerald-600">✓ Koi loss-making project nahi. Sab profit me hain.</td></tr>
+                    @endforelse
+                </tbody>
+            </table>
+        </x-card>
+    </div>
+
+    @push('head')
+        <script>
+            document.addEventListener('DOMContentLoaded', () => {
+                const pkr = (v) => '₨ ' + Number(v).toLocaleString('en-PK');
+                const trend = @json($profitTrend);
+                const cost  = @json($costPie);
+
+                new Chart(document.getElementById('trendChart'), {
+                    type: 'line',
+                    data: {
+                        labels: trend.labels,
+                        datasets: [{
+                            label: 'Net Profit', data: trend.data,
+                            borderColor: '#059669', backgroundColor: 'rgba(5,150,105,0.1)',
+                            fill: true, tension: 0.3, pointRadius: 3,
+                        }]
+                    },
+                    options: {
+                        responsive: true, maintainAspectRatio: false,
+                        plugins: { legend: { display: false }, tooltip: { callbacks: { label: c => pkr(c.parsed.y) } } },
+                        scales: { y: { ticks: { callback: v => '₨' + (v/1000).toFixed(0) + 'k' } } }
+                    }
+                });
+
+                new Chart(document.getElementById('costChart'), {
+                    type: 'doughnut',
+                    data: {
+                        labels: cost.labels,
+                        datasets: [{ data: cost.data, backgroundColor: ['#f59e0b', '#6366f1', '#0ea5e9'] }]
+                    },
+                    options: {
+                        responsive: true, maintainAspectRatio: false,
+                        plugins: { legend: { position: 'bottom' }, tooltip: { callbacks: { label: c => c.label + ': ' + pkr(c.parsed) } } }
+                    }
+                });
+            });
+        </script>
+    @endpush
 </x-app-layout>
