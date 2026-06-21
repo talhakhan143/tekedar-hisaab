@@ -52,6 +52,8 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
     // Daily attendance (bulk single-day or range/month)
     Route::get('/attendance', [\App\Http\Controllers\AttendanceController::class, 'index'])->name('attendance');
+    Route::get('/attendance/register', [\App\Http\Controllers\AttendanceController::class, 'register'])->name('attendance.register');
+    Route::post('/attendance/register', [\App\Http\Controllers\AttendanceController::class, 'saveRegister'])->name('attendance.register.save');
     Route::post('/attendance', [\App\Http\Controllers\AttendanceController::class, 'store'])->name('attendance.store');
     Route::post('/attendance/quick-worker', [\App\Http\Controllers\AttendanceController::class, 'quickWorker'])->name('attendance.quick-worker');
 

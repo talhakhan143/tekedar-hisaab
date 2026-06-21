@@ -65,6 +65,7 @@
                     <button type="button" @click="setAll('0.5')" class="rounded-md bg-amber-50 px-3 py-1.5 text-sm font-medium text-amber-700 hover:bg-amber-100">All Half (سب آدھا)</button>
                     <button type="button" @click="setAll('0')" class="rounded-md bg-gray-100 px-3 py-1.5 text-sm font-medium text-gray-600 hover:bg-gray-200">All Absent (سب غیرحاضر)</button>
                     <span class="flex-1"></span>
+                    <a href="{{ route('attendance.register') }}" class="rounded-md bg-indigo-50 px-3 py-1.5 text-sm font-medium text-indigo-700 hover:bg-indigo-100">📅 Month Register (مہینہ رجسٹر)</a>
                     <button type="button" @click="showNew=!showNew" class="rounded-md bg-white px-3 py-1.5 text-sm font-medium text-gray-700 ring-1 ring-gray-300 hover:bg-gray-50">+ New Worker (نیا مزدور)</button>
                 </div>
             </x-card>
