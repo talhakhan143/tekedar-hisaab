@@ -9,6 +9,7 @@ use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\ProjectController;
 use App\Http\Controllers\ReportController;
 use App\Http\Controllers\RetentionReleaseController;
+use App\Http\Controllers\SettingController;
 use App\Http\Controllers\VendorController;
 use App\Http\Controllers\WorkerController;
 use App\Http\Controllers\WorkLedgerController;
@@ -68,13 +69,9 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('/reports/outstanding', [ReportController::class, 'outstanding'])->name('reports.outstanding');
     Route::get('/reports/closeout/{project}', [ReportController::class, 'closeout'])->name('reports.closeout');
 
-    // Module shells — replaced with real controllers in later steps.
-    $stubs = [
-        'settings'  => ['Settings', 'Step 11'],
-    ];
-    foreach ($stubs as $slug => [$label, $step]) {
-        Route::get('/'.$slug, fn () => view('stub', ['module' => $label, 'step' => $step]))->name($slug);
-    }
+    // Settings
+    Route::get('/settings', [SettingController::class, 'edit'])->name('settings');
+    Route::put('/settings', [SettingController::class, 'update'])->name('settings.update');
 });
 
 Route::middleware('auth')->group(function () {

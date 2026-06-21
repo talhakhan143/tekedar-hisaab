@@ -145,7 +145,27 @@ class ProjectFinance
 
     public function totalAccruedCostPaisa(): int
     {
-        return array_sum($this->actualByCategory());
+        return array_sum($this->actualByCategory()) + $this->allocatedOverheadPaisa();
+    }
+
+    /**
+     * Pro-rata share of general overheads, only when the settings toggle is ON.
+     * Distributed across ACTIVE projects by contract value. Default OFF -> 0.
+     */
+    public function allocatedOverheadPaisa(): int
+    {
+        if (\App\Models\Setting::get('allocate_overheads') !== '1') {
+            return 0;
+        }
+        if ($this->project->status !== 'active') {
+            return 0;
+        }
+        $totalActive = (int) \App\Models\Project::where('status', 'active')->sum('contract_value_paisa');
+        if ($totalActive <= 0) {
+            return 0;
+        }
+        $overheads = (int) \App\Models\GeneralOverhead::sum('amount_paisa');
+        return (int) round($overheads * (int) $this->project->contract_value_paisa / $totalActive);
     }
 
     /** Simplified pie buckets: material (incl subcontractor) / labour / other. */

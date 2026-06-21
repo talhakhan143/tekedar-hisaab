@@ -5,7 +5,8 @@
         <meta name="viewport" content="width=device-width, initial-scale=1">
         <meta name="csrf-token" content="{{ csrf_token() }}">
 
-        <title>{{ $title ?? 'Dashboard' }} · {{ config('app.name', 'Tekedar Hisaab') }}</title>
+        @php $companyName = \App\Models\Setting::get('company_name'); $companyLogo = \App\Models\Setting::get('company_logo'); @endphp
+        <title>{{ $title ?? 'Dashboard' }} · {{ $companyName }}</title>
 
         <link rel="preconnect" href="https://fonts.bunny.net">
         <link href="https://fonts.bunny.net/css?family=figtree:400,500,600,700&display=swap" rel="stylesheet" />
@@ -27,8 +28,12 @@
                 class="fixed inset-y-0 left-0 z-40 w-64 transform bg-gray-900 text-gray-200 transition-transform duration-200 ease-in-out lg:static lg:translate-x-0 flex flex-col">
 
                 <div class="flex h-16 items-center gap-2 px-5 border-b border-gray-800">
-                    <span class="inline-flex h-9 w-9 items-center justify-center rounded-lg bg-emerald-500 font-bold text-white">₨</span>
-                    <span class="text-lg font-bold text-white leading-tight">{{ config('app.name') }}</span>
+                    @if($companyLogo)
+                        <img src="{{ $companyLogo }}" alt="logo" class="h-9 w-9 rounded-lg object-cover">
+                    @else
+                        <span class="inline-flex h-9 w-9 items-center justify-center rounded-lg bg-emerald-500 font-bold text-white">₨</span>
+                    @endif
+                    <span class="text-lg font-bold text-white leading-tight">{{ $companyName }}</span>
                 </div>
 
                 <nav class="flex-1 overflow-y-auto px-3 py-4 space-y-1 text-sm">
