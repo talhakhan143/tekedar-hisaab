@@ -47,6 +47,11 @@ Route::middleware(['auth', 'verified'])->group(function () {
     // alias used by project show page
     Route::get('/material-purchases/create', [MaterialPurchaseController::class, 'create'])->name('material-purchases.create');
 
+    // Daily attendance (bulk single-day or range/month)
+    Route::get('/attendance', [\App\Http\Controllers\AttendanceController::class, 'index'])->name('attendance');
+    Route::post('/attendance', [\App\Http\Controllers\AttendanceController::class, 'store'])->name('attendance.store');
+    Route::post('/attendance/quick-worker', [\App\Http\Controllers\AttendanceController::class, 'quickWorker'])->name('attendance.quick-worker');
+
     // Project-scoped quick worker entry (from project page)
     Route::post('/projects/{project}/work-entries', [WorkLedgerController::class, 'storeProjectWork'])->name('projects.work-entries.store');
     Route::post('/projects/{project}/wage-payments', [WorkLedgerController::class, 'storeProjectWage'])->name('projects.wage-payments.store');

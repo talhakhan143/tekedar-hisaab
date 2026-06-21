@@ -12,6 +12,7 @@
         <link href="https://fonts.bunny.net/css?family=figtree:400,500,600,700&display=swap" rel="stylesheet" />
 
         @vite(['resources/css/app.css', 'resources/js/app.js'])
+        <style>[x-cloak]{display:none!important;}</style>
         @stack('head')
     </head>
     <body class="font-sans antialiased bg-gray-100 text-gray-800">
@@ -43,6 +44,7 @@
                             ['projects.index',  'projects.*', 'Projects',   'پروجیکٹس',  'M3 7h18M3 12h18M3 17h18'],
                             ['money-in',        'money-in',   'Money In',   'آمدنی',     'M12 4v16m8-8H4'],
                             ['money-out',       'money-out',  'Money Out',  'اخراجات',   'M4 12h16'],
+                            ['attendance',      'attendance', 'Attendance', 'حاضری',     'M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01'],
                             ['workers.index',   'workers.*',  'Workers',    'مزدور',     'M17 20h5v-2a4 4 0 00-3-3.87M9 20H4v-2a4 4 0 013-3.87m6-1.13a4 4 0 10-4-4'],
                             ['vendors.index',   'vendors.*',  'Vendors',    'سپلائرز',   'M3 3h2l.4 2M7 13h10l4-8H5.4'],
                             ['reports',         'reports*',   'Reports',    'رپورٹس',    'M9 17v-6m4 6V7m4 10v-3M3 21h18'],
