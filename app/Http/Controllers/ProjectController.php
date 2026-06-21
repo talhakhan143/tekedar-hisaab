@@ -80,12 +80,18 @@ class ProjectController extends Controller
         $paid = \App\Models\WagePayment::where('project_id', $project->id)
             ->selectRaw('worker_id, SUM(amount_paisa) as paid')
             ->groupBy('worker_id')->pluck('paid', 'worker_id');
-        $workerIds = $earned->keys()->merge($paid->keys())->unique();
+        // Project-scoped adjustments: advance_given (deduction/peshgi) − recovery (bonus).
+        $advGiven = \App\Models\WorkerAdvance::where('project_id', $project->id)->where('type', 'advance_given')
+            ->selectRaw('worker_id, SUM(amount_paisa) as t')->groupBy('worker_id')->pluck('t', 'worker_id');
+        $advRecov = \App\Models\WorkerAdvance::where('project_id', $project->id)->where('type', 'recovery')
+            ->selectRaw('worker_id, SUM(amount_paisa) as t')->groupBy('worker_id')->pluck('t', 'worker_id');
+        $workerIds = $earned->keys()->merge($paid->keys())->merge($advGiven->keys())->merge($advRecov->keys())->unique();
         $projectWorkers = \App\Models\Worker::whereIn('id', $workerIds)->orderBy('name')->get()->map(fn ($w) => [
             'worker' => $w,
             'days'   => (float) ($earned[$w->id]->days ?? 0),
             'earned' => (int) ($earned[$w->id]->earned ?? 0),
             'paid'   => (int) ($paid[$w->id] ?? 0),
+            'advnet' => (int) ($advGiven[$w->id] ?? 0) - (int) ($advRecov[$w->id] ?? 0), // deduction − bonus
         ]);
         $allWorkers = \App\Models\Worker::orderBy('name')->get(['id', 'name', 'wage_type']);
 
@@ -110,9 +116,10 @@ class ProjectController extends Controller
         $startYear = min($startYear, (int) now()->format('Y') - 1);
         $attYears = range((int) now()->format('Y'), $startYear); // current .. earliest
         $attMonthNames = ['01'=>'Jan','02'=>'Feb','03'=>'Mar','04'=>'Apr','05'=>'May','06'=>'Jun','07'=>'Jul','08'=>'Aug','09'=>'Sep','10'=>'Oct','11'=>'Nov','12'=>'Dec'];
-        // Which (worker, date) already have attendance (any project) -> locked.
+        // Which (worker, date) already have attendance ON THIS PROJECT -> locked (green = counted here).
         $attMarked = [];
-        \App\Models\WorkEntry::whereBetween('date', [$gridStart->format('Y-m-d'), $gridEnd->format('Y-m-d')])
+        \App\Models\WorkEntry::where('project_id', $project->id)
+            ->whereBetween('date', [$gridStart->format('Y-m-d'), $gridEnd->format('Y-m-d')])
             ->get(['worker_id', 'date'])->each(function ($e) use (&$attMarked) {
                 $attMarked[$e->worker_id][$e->date->format('Y-m-d')] = true;
             });
@@ -143,7 +150,7 @@ class ProjectController extends Controller
             [$wid, $date] = array_pad(explode('|', $cell), 2, null);
             $worker = $workers[$wid] ?? null;
             if (! $worker || ! $date) { continue; }
-            if (\App\Models\WorkEntry::where('worker_id', $wid)->whereDate('date', $date)->exists()) {
+            if (\App\Models\WorkEntry::where('worker_id', $wid)->where('project_id', $project->id)->whereDate('date', $date)->exists()) {
                 $skipped++; continue;
             }
             \App\Models\WorkEntry::create([
@@ -233,6 +240,30 @@ class ProjectController extends Controller
         ]);
 
         return $this->backToTab($project, 'expenses', 'Expense record ho gaya.');
+    }
+
+    /** Worker adjustment: deduction (katauti) or bonus, project-scoped. */
+    public function storeAdjustment(Request $request, Project $project)
+    {
+        $v = $request->validate([
+            'worker_id' => ['required', 'exists:workers,id'],
+            'date'      => ['required', 'date'],
+            'type'      => ['required', 'in:deduction,bonus'],
+            'amount'    => ['required', 'numeric', 'min:0'],
+            'notes'     => ['nullable', 'string'],
+        ]);
+
+        // deduction -> advance_given (reduces what we owe); bonus -> recovery (increases).
+        \App\Models\WorkerAdvance::create([
+            'worker_id'    => $v['worker_id'],
+            'project_id'   => $project->id,
+            'date'         => $v['date'],
+            'type'         => $v['type'] === 'deduction' ? 'advance_given' : 'recovery',
+            'amount_paisa' => \App\Support\Money::toPaisa($v['amount']),
+            'notes'        => ($v['type'] === 'deduction' ? 'Katauti: ' : 'Bonus: ') . ($v['notes'] ?? ''),
+        ]);
+
+        return $this->backToTab($project, 'attendance', 'Adjustment record ho gaya.');
     }
 
     private function backToTab(Project $project, string $tab, string $msg)

@@ -27,6 +27,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::post('/projects/{project}/materials', [ProjectController::class, 'storeMaterial'])->name('projects.materials.store');
     Route::post('/projects/{project}/expenses', [ProjectController::class, 'storeExpense'])->name('projects.expenses.store');
     Route::post('/projects/{project}/attendance-bulk', [ProjectController::class, 'storeBulkAttendance'])->name('projects.attendance.bulk');
+    Route::post('/projects/{project}/adjustment', [ProjectController::class, 'storeAdjustment'])->name('projects.adjustment.store');
 
     // Estimates (nested under project for index/store; flat for update/destroy)
     Route::get('projects/{project}/estimates', [EstimateController::class, 'index'])->name('estimates.index');

@@ -280,24 +280,46 @@
                             <button class="w-full rounded-md bg-indigo-600 px-3 py-2 text-sm font-semibold text-white hover:bg-indigo-700">Pay (ادائیگی)</button>
                         </form>
                     </x-card>
+                    <x-card title="Adjustment (کٹوتی / بونس)">
+                        <form method="POST" action="{{ route('projects.adjustment.store', $project) }}" class="space-y-3">
+                            @csrf
+                            <select name="worker_id" required class="block w-full rounded-md border-gray-300 text-sm shadow-sm focus:border-emerald-500 focus:ring-emerald-500">
+                                <option value="">— worker chuno —</option>
+                                @foreach($allWorkers as $w)<option value="{{ $w->id }}">{{ $w->name }}</option>@endforeach
+                            </select>
+                            <select name="type" class="block w-full rounded-md border-gray-300 text-sm shadow-sm focus:border-emerald-500 focus:ring-emerald-500">
+                                <option value="deduction">Katauti / Deduction (paisa kaato)</option>
+                                <option value="bonus">Bonus / Extra (paisa barhao)</option>
+                            </select>
+                            <input type="date" name="date" value="{{ now()->format('Y-m-d') }}" required class="block w-full rounded-md border-gray-300 text-sm shadow-sm focus:border-emerald-500 focus:ring-emerald-500">
+                            <x-money-input name="amount" label="Amount (رقم)" required />
+                            <input type="text" name="notes" placeholder="Wajah (nuksan, fine, eid bonus…)" class="block w-full rounded-md border-gray-300 text-sm shadow-sm focus:border-emerald-500 focus:ring-emerald-500">
+                            <button class="w-full rounded-md bg-rose-600 px-3 py-2 text-sm font-semibold text-white hover:bg-rose-700">Save Adjustment (محفوظ)</button>
+                        </form>
+                    </x-card>
                 </div>
                 <div class="lg:col-span-2">
                     <x-card title="Is project ke mazdoor (لیبر)" class="!p-0">
                         <table class="min-w-full divide-y divide-gray-200 text-sm">
-                            <thead class="bg-gray-50 text-left text-xs uppercase text-gray-500"><tr><th class="px-4 py-3">Worker</th><th class="px-4 py-3 text-right">Days</th><th class="px-4 py-3 text-right">Earned</th><th class="px-4 py-3 text-right">Paid</th><th class="px-4 py-3 text-right">Baqi dena (باقی)</th></tr></thead>
+                            <thead class="bg-gray-50 text-left text-xs uppercase text-gray-500"><tr><th class="px-4 py-3">Worker</th><th class="px-4 py-3 text-right">Days</th><th class="px-4 py-3 text-right">Earned</th><th class="px-4 py-3 text-right">Paid</th><th class="px-4 py-3 text-right">Baqi / Advance (باقی / پیشگی)</th></tr></thead>
                             <tbody class="divide-y divide-gray-100">
                                 @forelse($projectWorkers as $row)
-                                    @php $baqi = max(0, $row['earned'] - $row['paid']); @endphp
+                                    @php $net = $row['earned'] - $row['paid'] - ($row['advnet'] ?? 0); @endphp
                                     <tr><td class="px-4 py-2.5"><a href="{{ route('workers.show', $row['worker']) }}" class="font-medium text-emerald-700 hover:underline">{{ $row['worker']->name }}</a></td>
                                     <td class="px-4 py-2.5 text-right">{{ rtrim(rtrim(number_format($row['days'],1),'0'),'.') }}</td>
                                     <td class="px-4 py-2.5 text-right font-medium">@money($row['earned'])</td>
                                     <td class="px-4 py-2.5 text-right text-emerald-600">@money($row['paid'])</td>
-                                    <td class="px-4 py-2.5 text-right font-semibold {{ $baqi > 0 ? 'text-red-600' : 'text-gray-400' }}">@money($baqi)</td></tr>
+                                    <td class="px-4 py-2.5 text-right font-semibold">
+                                        @if($net > 0)<span class="text-red-600">@money($net)</span><span class="ml-1 text-xs font-normal text-gray-400">dena</span>
+                                        @elseif($net < 0)<span class="text-amber-600">@money(-$net)</span><span class="ml-1 text-xs font-normal text-gray-400">advance</span>
+                                        @else<span class="text-gray-400">—</span>@endif
+                                    </td></tr>
                                 @empty<tr><td colspan="5" class="px-4 py-6 text-center text-gray-400">Abhi koi haazri nahi.</td></tr>@endforelse
                             </tbody>
                             @if($projectWorkers->count())
-                                @php $totEarned=$projectWorkers->sum('earned'); $totPaid=$projectWorkers->sum('paid'); $totBaqi=$projectWorkers->sum(fn($r)=>max(0,$r['earned']-$r['paid'])); @endphp
-                                <tfoot class="bg-gray-50 font-semibold"><tr><td class="px-4 py-3">Total</td><td class="px-4 py-3 text-right">{{ rtrim(rtrim(number_format($projectWorkers->sum('days'),1),'0'),'.') }}</td><td class="px-4 py-3 text-right">@money($totEarned)</td><td class="px-4 py-3 text-right text-emerald-600">@money($totPaid)</td><td class="px-4 py-3 text-right text-red-600">@money($totBaqi)</td></tr></tfoot>
+                                @php $totEarned=$projectWorkers->sum('earned'); $totPaid=$projectWorkers->sum('paid'); $totNet=$totEarned-$totPaid-$projectWorkers->sum('advnet'); @endphp
+                                <tfoot class="bg-gray-50 font-semibold"><tr><td class="px-4 py-3">Total</td><td class="px-4 py-3 text-right">{{ rtrim(rtrim(number_format($projectWorkers->sum('days'),1),'0'),'.') }}</td><td class="px-4 py-3 text-right">@money($totEarned)</td><td class="px-4 py-3 text-right text-emerald-600">@money($totPaid)</td>
+                                <td class="px-4 py-3 text-right">@if($totNet>=0)<span class="text-red-600">@money($totNet)</span> <span class="text-xs font-normal text-gray-400">dena</span>@else<span class="text-amber-600">@money(-$totNet)</span> <span class="text-xs font-normal text-gray-400">advance</span>@endif</td></tr></tfoot>
                             @endif
                         </table>
                     </x-card>
