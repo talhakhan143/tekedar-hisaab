@@ -50,6 +50,7 @@
                 </tbody>
             </table>
         </div>
+        @if($payments->hasPages())<div class="border-t border-gray-100 p-3">{{ $payments->links() }}</div>@endif
     </x-card>
 
     {{-- Retention releases --}}
@@ -107,6 +108,7 @@
                         </tbody>
                     </table>
                 </div>
+                @if($releases->hasPages())<div class="border-t border-gray-100 p-3">{{ $releases->links() }}</div>@endif
             </x-card>
         </div>
     </div>

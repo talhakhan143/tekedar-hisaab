@@ -57,6 +57,7 @@
                         </tbody>
                     </table>
                 </div>
+                @if($expenses->hasPages())<div class="border-t border-gray-100 p-3">{{ $expenses->links() }}</div>@endif
             </x-card>
         </div>
     </div>
@@ -92,6 +93,7 @@
                         </tbody>
                     </table>
                 </div>
+                @if($overheads->hasPages())<div class="border-t border-gray-100 p-3">{{ $overheads->links() }}</div>@endif
             </x-card>
         </div>
     </div>

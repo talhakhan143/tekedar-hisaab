@@ -11,9 +11,11 @@ class VendorController extends Controller
     public function index()
     {
         $vendors = Vendor::withSum('purchases as balance_sum', 'balance_due_paisa')
-            ->orderBy('name')->get();
+            ->orderBy('name')->paginate(20);
 
-        $totalPayable = $vendors->sum(fn ($v) => (int) $v->opening_balance_paisa + (int) ($v->balance_sum ?? 0));
+        // Company-wide payable (all vendors).
+        $totalPayable = (int) Vendor::sum('opening_balance_paisa')
+            + (int) \App\Models\MaterialPurchase::sum('balance_due_paisa');
 
         return view('vendors.index', compact('vendors', 'totalPayable'));
     }

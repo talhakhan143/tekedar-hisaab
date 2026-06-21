@@ -12,15 +12,15 @@ class ProjectController extends Controller
 {
     public function index(Request $request)
     {
-        $projects = Project::query()
+        $rows = Project::query()
             ->when($request->status, fn ($q, $s) => $q->where('status', $s))
             ->when($request->q, fn ($q, $term) => $q->where(fn ($w) =>
                 $w->where('name', 'like', "%{$term}%")->orWhere('client_name', 'like', "%{$term}%")))
             ->orderByDesc('id')
-            ->get();
+            ->paginate(15)->withQueryString();
 
-        // Attach lightweight P&L for the list.
-        $rows = $projects->map(function (Project $p) {
+        // Attach lightweight P&L for the current page only.
+        $rows->through(function (Project $p) {
             $f = ProjectFinance::for($p);
             return [
                 'project'   => $p,

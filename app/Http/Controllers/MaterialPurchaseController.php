@@ -13,7 +13,8 @@ class MaterialPurchaseController extends Controller
 {
     public function index()
     {
-        $purchases = MaterialPurchase::with(['project', 'vendor'])->orderByDesc('date')->orderByDesc('id')->limit(150)->get();
+        $purchases = MaterialPurchase::with(['project', 'vendor'])->orderByDesc('date')->orderByDesc('id')
+            ->paginate(25)->withQueryString();
 
         return view('materials.index', [
             'purchases'    => $purchases,

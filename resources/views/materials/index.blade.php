@@ -48,5 +48,6 @@
                 </tbody>
             </table>
         </div>
+        @if($purchases->hasPages())<div class="border-t border-gray-100 p-3">{{ $purchases->links() }}</div>@endif
     </x-card>
 </x-app-layout>

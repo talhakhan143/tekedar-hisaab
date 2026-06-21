@@ -30,8 +30,10 @@ class MoneyOutController extends Controller
             'otherTotal'    => $otherTotal,
             'overheadTotal' => $overheadTotal,
             'grandTotal'    => $materialSpent + $wagesPaid + $advNet + $otherTotal + $overheadTotal,
-            'expenses'      => OtherExpense::with('project')->orderByDesc('date')->orderByDesc('id')->limit(50)->get(),
-            'overheads'     => GeneralOverhead::orderByDesc('month')->orderBy('category')->get(),
+            'expenses'      => OtherExpense::with('project')->orderByDesc('date')->orderByDesc('id')
+                                ->paginate(15, ['*'], 'epage')->withQueryString(),
+            'overheads'     => GeneralOverhead::orderByDesc('month')->orderBy('category')
+                                ->paginate(15, ['*'], 'opage')->withQueryString(),
             'projects'      => Project::orderBy('name')->get(['id', 'name']),
             'categories'    => self::EXPENSE_CATEGORIES,
         ]);

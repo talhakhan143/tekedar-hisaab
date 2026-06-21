@@ -12,8 +12,10 @@ class ClientPaymentController extends Controller
 {
     public function index()
     {
-        $payments = ClientPayment::with('project')->orderByDesc('date')->orderByDesc('id')->limit(100)->get();
-        $releases = RetentionRelease::with('project')->orderByDesc('date')->orderByDesc('id')->limit(50)->get();
+        $payments = ClientPayment::with('project')->orderByDesc('date')->orderByDesc('id')
+            ->paginate(20, ['*'], 'page')->withQueryString();
+        $releases = RetentionRelease::with('project')->orderByDesc('date')->orderByDesc('id')
+            ->paginate(10, ['*'], 'rpage')->withQueryString();
 
         return view('money_in.index', [
             'payments'         => $payments,

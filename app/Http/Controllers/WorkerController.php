@@ -14,14 +14,18 @@ class WorkerController extends Controller
 
     public function index()
     {
-        $workers = Worker::orderBy('name')->get();
-        $rows = $workers->map(fn (Worker $w) => [
+        $rows = Worker::orderBy('name')->paginate(20);
+        $rows->through(fn (Worker $w) => [
             'worker'   => $w,
             'earned'   => $w->earnedPaisa(),
             'advances' => $w->advancesOutstandingPaisa(),
             'payable'  => $w->payablePaisa(),
         ]);
-        $totalAdvances = $workers->sum(fn ($w) => max(0, $w->advancesOutstandingPaisa()));
+
+        // Company-wide advances outstanding (all workers, not just this page).
+        $given = (int) \App\Models\WorkerAdvance::where('type', 'advance_given')->sum('amount_paisa');
+        $recov = (int) \App\Models\WorkerAdvance::where('type', 'recovery')->sum('amount_paisa');
+        $totalAdvances = max(0, $given - $recov);
 
         return view('workers.index', compact('rows', 'totalAdvances'));
     }

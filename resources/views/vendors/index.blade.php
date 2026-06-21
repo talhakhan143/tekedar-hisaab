@@ -35,5 +35,6 @@
                 </tbody>
             </table>
         </div>
+        @if($vendors->hasPages())<div class="border-t border-gray-100 p-3">{{ $vendors->links() }}</div>@endif
     </x-card>
 </x-app-layout>

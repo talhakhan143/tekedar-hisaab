@@ -60,5 +60,6 @@
                 </tbody>
             </table>
         </div>
+        @if($rows->hasPages())<div class="border-t border-gray-100 p-3">{{ $rows->links() }}</div>@endif
     </x-card>
 </x-app-layout>
