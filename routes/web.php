@@ -4,6 +4,7 @@ use App\Http\Controllers\ClientPaymentController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\EstimateController;
 use App\Http\Controllers\MaterialPurchaseController;
+use App\Http\Controllers\MoneyOutController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\ProjectController;
 use App\Http\Controllers\RetentionReleaseController;
@@ -53,9 +54,15 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::post('/workers/{worker}/wage-payments', [WorkLedgerController::class, 'storePayment'])->name('wage-payments.store');
     Route::delete('/wage-payments/{wagePayment}', [WorkLedgerController::class, 'destroyPayment'])->name('wage-payments.destroy');
 
+    // Money Out hub — other expenses + general overheads
+    Route::get('/money-out', [MoneyOutController::class, 'index'])->name('money-out');
+    Route::post('/expenses', [MoneyOutController::class, 'storeExpense'])->name('expenses.store');
+    Route::delete('/expenses/{otherExpense}', [MoneyOutController::class, 'destroyExpense'])->name('expenses.destroy');
+    Route::post('/overheads', [MoneyOutController::class, 'storeOverhead'])->name('overheads.store');
+    Route::delete('/overheads/{generalOverhead}', [MoneyOutController::class, 'destroyOverhead'])->name('overheads.destroy');
+
     // Module shells — replaced with real controllers in later steps.
     $stubs = [
-        'money-out' => ['Money Out', 'Step 6–8'],
         'reports'   => ['Reports', 'Step 10'],
         'settings'  => ['Settings', 'Step 11'],
     ];
