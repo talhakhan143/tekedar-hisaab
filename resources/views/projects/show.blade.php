@@ -220,8 +220,8 @@
                                     <tr class="bg-gray-50 text-[10px] text-gray-500">
                                         <th class="sticky left-0 z-10 bg-gray-50 px-3 py-2 text-left">Worker</th>
                                         @foreach($attDays as $d)
-                                            <th class="w-8 px-0 py-1 text-center {{ $d['fri'] ? 'text-amber-600' : '' }}">
-                                                <div>{{ $d['d'] }}</div><div class="opacity-50">{{ $d['mon'] }}</div>
+                                            <th class="w-9 px-0 py-1 text-center {{ $d['fri'] ? 'text-amber-600 font-semibold' : '' }}">
+                                                <div class="opacity-60">{{ $d['wd'] }}</div><div class="text-xs font-semibold text-gray-700">{{ $d['d'] }}</div>
                                             </th>
                                         @endforeach
                                     </tr>

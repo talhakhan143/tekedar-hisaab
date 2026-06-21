@@ -101,7 +101,7 @@ class ProjectController extends Controller
         $gridEnd = $gridStart->copy()->endOfMonth();
         $attDays = [];
         for ($d = $gridStart->copy(); $d->lte($gridEnd); $d->addDay()) {
-            $attDays[] = ['date' => $d->format('Y-m-d'), 'd' => $d->day, 'mon' => $d->format('M'), 'wd' => $d->format('D')[0], 'fri' => $d->isFriday()];
+            $attDays[] = ['date' => $d->format('Y-m-d'), 'd' => $d->day, 'mon' => $d->format('M'), 'wd' => $d->format('D'), 'fri' => $d->isFriday()];
         }
         // Separate year + month selectors.
         $attYear = (int) $gridStart->format('Y');
