@@ -6,6 +6,26 @@
         <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
     @endpush
 
+    {{-- Quick actions — rozana kaam ek click pe --}}
+    <div class="mb-5 grid grid-cols-2 gap-3 sm:grid-cols-4">
+        <a href="{{ route('attendance') }}" class="flex items-center justify-center gap-2 rounded-xl bg-emerald-600 px-4 py-4 text-sm font-semibold text-white shadow-sm hover:bg-emerald-700">
+            <svg class="h-5 w-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+            Haazri (حاضری)
+        </a>
+        <a href="{{ route('client-payments.create') }}" class="flex items-center justify-center gap-2 rounded-xl bg-sky-600 px-4 py-4 text-sm font-semibold text-white shadow-sm hover:bg-sky-700">
+            <svg class="h-5 w-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4"/></svg>
+            Payment In (آمدنی)
+        </a>
+        <a href="{{ route('materials.create') }}" class="flex items-center justify-center gap-2 rounded-xl bg-amber-600 px-4 py-4 text-sm font-semibold text-white shadow-sm hover:bg-amber-700">
+            <svg class="h-5 w-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"/></svg>
+            Maal (مٹیریل)
+        </a>
+        <a href="{{ route('money-out') }}" class="flex items-center justify-center gap-2 rounded-xl bg-rose-600 px-4 py-4 text-sm font-semibold text-white shadow-sm hover:bg-rose-700">
+            <svg class="h-5 w-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M20 12H4"/></svg>
+            Kharch (خرچ)
+        </a>
+    </div>
+
     {{-- Headline cards --}}
     <div class="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
         <x-stat label="Active Projects (چالو پروجیکٹس)" :value="number_format($activeProjects)" color="text-emerald-600" />
@@ -35,7 +55,10 @@
                 <div class="flex justify-between"><dt class="text-gray-500">Total Cost, incl. overheads (کل لاگت)</dt><dd class="font-semibold">@money($totalCost)</dd></div>
                 <div class="flex justify-between border-t pt-3"><dt class="font-medium text-gray-700">Accrued Profit (کھاتہ منافع)</dt><dd class="font-bold {{ $accruedProfit < 0 ? 'text-red-600' : 'text-emerald-600' }}">@money($accruedProfit)</dd></div>
                 <div class="flex justify-between"><dt class="font-medium text-gray-700">Cash-in-hand Profit (نقد منافع)</dt><dd class="font-bold {{ $cashProfit < 0 ? 'text-red-600' : 'text-indigo-600' }}">@money($cashProfit)</dd></div>
-                <p class="text-xs text-gray-400">Cash profit me abhi tak roki gayi retention shaamil nahi (₨{{ number_format($retentionOutstanding/100) }} client ke paas).</p>
+                <div class="mt-2 space-y-1 rounded-lg bg-gray-50 p-3 text-xs text-gray-500">
+                    <p><span class="font-semibold text-emerald-700">Accrued (کھاتہ)</span> = kaagaz pe munafa (bill − lagat), chahe paisa abhi aaya ho ya nahi.</p>
+                    <p><span class="font-semibold text-indigo-700">Cash (نقد)</span> = jeb wala munafa — jo paisa asal me aaya minus jo asal me diya. Roki gayi retention (₨{{ number_format($retentionOutstanding/100) }}) isme shaamil nahi.</p>
+                </div>
             </dl>
         </x-card>
         <x-card title="Outstanding (واجبات)">
