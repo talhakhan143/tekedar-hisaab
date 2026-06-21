@@ -163,7 +163,16 @@
                                     <td class="px-4 py-2.5 text-gray-500">{{ $pur->vendor->name ?? '—' }}</td>
                                     <td class="px-4 py-2.5 text-right">@money($pur->amount_paisa)</td>
                                     <td class="px-4 py-2.5 text-right {{ $pur->balance_due_paisa>0?'text-red-600':'text-gray-400' }}">@money($pur->balance_due_paisa)</td>
-                                    <td class="px-4 py-2.5 text-right"><form method="POST" action="{{ route('materials.destroy', $pur) }}" onsubmit="return confirm('Delete?')">@csrf @method('DELETE')<button class="text-red-400 hover:text-red-600">✕</button></form></td>
+                                    <td class="px-4 py-2.5 text-right whitespace-nowrap">
+                                        @if($pur->balance_due_paisa > 0)
+                                            <form method="POST" action="{{ route('materials.pay', $pur) }}" class="inline-flex items-center gap-1">
+                                                @csrf
+                                                <input type="number" step="0.01" name="amount" value="{{ \App\Support\Money::toRupees($pur->balance_due_paisa) }}" class="w-24 rounded border-gray-300 px-2 py-1 text-xs" title="udhaar pay">
+                                                <button class="rounded bg-emerald-600 px-2 py-1 text-xs font-semibold text-white hover:bg-emerald-700">Pay</button>
+                                            </form>
+                                        @endif
+                                        <form method="POST" action="{{ route('materials.destroy', $pur) }}" class="ml-1 inline" onsubmit="return confirm('Delete?')">@csrf @method('DELETE')<button class="text-red-400 hover:text-red-600">✕</button></form>
+                                    </td>
                                 </tr>
                             @empty<tr><td colspan="6" class="px-4 py-6 text-center text-gray-400">Koi material nahi.</td></tr>@endforelse
                         </tbody>
@@ -174,24 +183,69 @@
 
         {{-- ================= ATTENDANCE / LABOUR ================= --}}
         <div x-show="tab==='attendance'" x-cloak>
-            <div class="mb-4 flex flex-wrap gap-2">
-                <a href="{{ route('attendance') }}" class="rounded-md bg-emerald-600 px-3 py-2 text-sm font-medium text-white hover:bg-emerald-700">Quick Daily Mark (آج کی حاضری)</a>
-                <a href="{{ route('attendance.register', ['project_id'=>$project->id]) }}" class="rounded-md bg-indigo-600 px-3 py-2 text-sm font-medium text-white hover:bg-indigo-700">📅 Month Register (مہینہ رجسٹر)</a>
+            {{-- Day grid: project start -> current month. Marked days locked. --}}
+            <div x-data="{
+                    sel: {},
+                    marked: {{ \Illuminate\Support\Js::from($attMarked) }},
+                    isMarked(w,d){ return this.marked[w] && this.marked[w][d]; },
+                    toggle(w,d){ if(this.isMarked(w,d)) return; let k=w+'|'+d; this.sel[k]=!this.sel[k]; },
+                    on(w,d){ return !!this.sel[w+'|'+d]; },
+                    selectRow(w, days){ days.forEach(d=>{ if(!this.isMarked(w,d)) this.sel[w+'|'+d]=true; }); },
+                    get count(){ return Object.values(this.sel).filter(Boolean).length; },
+                    payload(){ return JSON.stringify(Object.keys(this.sel).filter(k=>this.sel[k])); }
+                 }" class="mb-6">
+                <form method="POST" action="{{ route('projects.attendance.bulk', $project) }}">
+                    @csrf
+                    <input type="hidden" name="cells" :value="payload()">
+                    <x-card class="!p-0">
+                        <div class="flex flex-wrap items-center gap-3 border-b border-gray-100 p-3">
+                            <h2 class="font-semibold text-gray-900">Attendance Grid — din select karo (حاضری)</h2>
+                            <span class="text-xs text-gray-400">Green ✓ = lagi hui (locked) · Blue = abhi select · click karke lagao</span>
+                            <span class="flex-1"></span>
+                            <span class="text-sm text-gray-600"><span x-text="count"></span> din selected</span>
+                            <button class="rounded-md bg-emerald-600 px-4 py-2 text-sm font-semibold text-white hover:bg-emerald-700">Save Haazri (محفوظ)</button>
+                        </div>
+                        <div class="overflow-x-auto">
+                            <table class="text-sm">
+                                <thead>
+                                    <tr class="bg-gray-50 text-[10px] text-gray-500">
+                                        <th class="sticky left-0 z-10 bg-gray-50 px-3 py-2 text-left">Worker</th>
+                                        @foreach($attDays as $d)
+                                            <th class="w-8 px-0 py-1 text-center {{ $d['fri'] ? 'text-amber-600' : '' }}">
+                                                <div>{{ $d['d'] }}</div><div class="opacity-50">{{ $d['mon'] }}</div>
+                                            </th>
+                                        @endforeach
+                                    </tr>
+                                </thead>
+                                <tbody class="divide-y divide-gray-100">
+                                    @forelse($attWorkers as $w)
+                                        <tr>
+                                            <td class="sticky left-0 z-10 bg-white px-3 py-1.5 font-medium text-gray-700 whitespace-nowrap">
+                                                {{ $w->name }}
+                                                <button type="button" @click="selectRow({{ $w->id }}, {{ \Illuminate\Support\Js::from(collect($attDays)->pluck('date')) }})" class="ml-1 text-[10px] text-emerald-600 hover:underline">all</button>
+                                            </td>
+                                            @foreach($attDays as $d)
+                                                <td class="p-0.5 text-center">
+                                                    <button type="button" @click="toggle({{ $w->id }}, '{{ $d['date'] }}')"
+                                                        :disabled="isMarked({{ $w->id }}, '{{ $d['date'] }}')"
+                                                        class="mx-auto flex h-7 w-7 items-center justify-center rounded text-xs font-bold"
+                                                        :class="isMarked({{ $w->id }}, '{{ $d['date'] }}') ? 'bg-emerald-500 text-white cursor-not-allowed' : (on({{ $w->id }}, '{{ $d['date'] }}') ? 'bg-blue-500 text-white' : 'bg-gray-100 text-gray-300 hover:bg-gray-200')"
+                                                        x-text="isMarked({{ $w->id }}, '{{ $d['date'] }}') ? '✓' : (on({{ $w->id }}, '{{ $d['date'] }}') ? '✓' : '')"></button>
+                                                </td>
+                                            @endforeach
+                                        </tr>
+                                    @empty
+                                        <tr><td class="px-4 py-6 text-center text-gray-400">Koi worker nahi. Niche se ya Attendance se add karo.</td></tr>
+                                    @endforelse
+                                </tbody>
+                            </table>
+                        </div>
+                    </x-card>
+                </form>
             </div>
+
             <div class="grid grid-cols-1 gap-6 lg:grid-cols-3">
                 <div class="space-y-6">
-                    <x-card title="Haazri lagao (حاضری)">
-                        <form method="POST" action="{{ route('projects.work-entries.store', $project) }}" class="space-y-3">
-                            @csrf
-                            <select name="worker_id" required class="block w-full rounded-md border-gray-300 text-sm shadow-sm focus:border-emerald-500 focus:ring-emerald-500">
-                                <option value="">— worker chuno —</option>
-                                @foreach($allWorkers as $w)<option value="{{ $w->id }}">{{ $w->name }}</option>@endforeach
-                            </select>
-                            <input type="date" name="date" value="{{ now()->format('Y-m-d') }}" required class="block w-full rounded-md border-gray-300 text-sm shadow-sm focus:border-emerald-500 focus:ring-emerald-500">
-                            <input type="number" step="0.5" name="days_present" value="1" placeholder="Din (0.5=half)" class="block w-full rounded-md border-gray-300 text-sm shadow-sm focus:border-emerald-500 focus:ring-emerald-500">
-                            <button class="w-full rounded-md bg-emerald-600 px-3 py-2 text-sm font-semibold text-white hover:bg-emerald-700">Add (شامل)</button>
-                        </form>
-                    </x-card>
                     <x-card title="Mazdoori do (ادائیگی)">
                         <form method="POST" action="{{ route('projects.wage-payments.store', $project) }}" class="space-y-3">
                             @csrf

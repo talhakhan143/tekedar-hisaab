@@ -26,6 +26,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::post('/projects/{project}/payments', [ProjectController::class, 'storePayment'])->name('projects.payments.store');
     Route::post('/projects/{project}/materials', [ProjectController::class, 'storeMaterial'])->name('projects.materials.store');
     Route::post('/projects/{project}/expenses', [ProjectController::class, 'storeExpense'])->name('projects.expenses.store');
+    Route::post('/projects/{project}/attendance-bulk', [ProjectController::class, 'storeBulkAttendance'])->name('projects.attendance.bulk');
 
     // Estimates (nested under project for index/store; flat for update/destroy)
     Route::get('projects/{project}/estimates', [EstimateController::class, 'index'])->name('estimates.index');
@@ -49,6 +50,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('/materials/{materialPurchase}/edit', [MaterialPurchaseController::class, 'edit'])->name('materials.edit');
     Route::put('/materials/{materialPurchase}', [MaterialPurchaseController::class, 'update'])->name('materials.update');
     Route::delete('/materials/{materialPurchase}', [MaterialPurchaseController::class, 'destroy'])->name('materials.destroy');
+    Route::post('/materials/{materialPurchase}/pay', [MaterialPurchaseController::class, 'pay'])->name('materials.pay');
     // alias used by project show page
     Route::get('/material-purchases/create', [MaterialPurchaseController::class, 'create'])->name('material-purchases.create');
 

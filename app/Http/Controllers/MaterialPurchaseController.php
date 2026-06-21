@@ -77,6 +77,26 @@ class MaterialPurchaseController extends Controller
         return back()->with('status', 'Purchase hata di (soft delete).');
     }
 
+    /** Pay off (part of) a purchase's outstanding udhaar. */
+    public function pay(Request $request, MaterialPurchase $materialPurchase)
+    {
+        $v = $request->validate(['amount' => ['required', 'numeric', 'min:0']]);
+        $pay = Money::toPaisa($v['amount']);
+        $balance = (int) $materialPurchase->balance_due_paisa;
+        $pay = min($pay, $balance); // never overpay
+
+        $materialPurchase->update([
+            'amount_paid_paisa' => (int) $materialPurchase->amount_paid_paisa + $pay,
+            'balance_due_paisa' => $balance - $pay,
+        ]);
+
+        $back = $materialPurchase->project_id
+            ? route('projects.show', ['project' => $materialPurchase->project_id, 'tab' => 'materials'])
+            : url()->previous();
+
+        return redirect($back)->with('status', 'Vendor ko payment ho gayi (udhaar kam).');
+    }
+
     private function validatedData(Request $request): array
     {
         $v = $request->validate([

@@ -89,6 +89,27 @@ class ProjectController extends Controller
         ]);
         $allWorkers = \App\Models\Worker::orderBy('name')->get(['id', 'name', 'wage_type']);
 
+        // ---- Attendance day-grid: project start -> end of current month (capped ~180 days) ----
+        $attWorkers = \App\Models\Worker::where('wage_type', '!=', 'contract_piece')->orderBy('name')->get();
+        $gridEnd = now()->endOfMonth();
+        $gridStart = $project->start_date ? $project->start_date->copy() : now()->startOfMonth();
+        if ($gridStart->lt($gridEnd->copy()->subDays(180))) {
+            $gridStart = $gridEnd->copy()->subDays(180);
+        }
+        if ($gridStart->gt($gridEnd)) {
+            $gridStart = $gridEnd->copy()->startOfMonth();
+        }
+        $attDays = [];
+        for ($d = $gridStart->copy(); $d->lte($gridEnd); $d->addDay()) {
+            $attDays[] = ['date' => $d->format('Y-m-d'), 'd' => $d->day, 'mon' => $d->format('M'), 'wd' => $d->format('D')[0], 'fri' => $d->isFriday()];
+        }
+        // Which (worker, date) already have attendance (any project) -> locked.
+        $attMarked = [];
+        \App\Models\WorkEntry::whereBetween('date', [$gridStart->format('Y-m-d'), $gridEnd->format('Y-m-d')])
+            ->get(['worker_id', 'date'])->each(function ($e) use (&$attMarked) {
+                $attMarked[$e->worker_id][$e->date->format('Y-m-d')] = true;
+            });
+
         // Data for the in-project tabs.
         $estimatesGrouped = $project->estimates;
         $vendors = \App\Models\Vendor::orderBy('name')->get(['id', 'name', 'type']);
@@ -99,8 +120,33 @@ class ProjectController extends Controller
 
         return view('projects.show', compact(
             'project', 'f', 'variance', 'projectWorkers', 'allWorkers',
-            'vendors', 'defaultRetention', 'defaultWastage', 'estimateCategories', 'expenseCategories'
+            'vendors', 'defaultRetention', 'defaultWastage', 'estimateCategories', 'expenseCategories',
+            'attWorkers', 'attDays', 'attMarked'
         ));
+    }
+
+    /** Bulk mark attendance from the project day-grid (selected cells = present). */
+    public function storeBulkAttendance(Request $request, Project $project)
+    {
+        $cells = json_decode($request->input('cells', '[]'), true) ?: [];
+        $created = 0; $skipped = 0;
+        $workers = \App\Models\Worker::whereIn('id', collect($cells)->map(fn ($c) => explode('|', $c)[0])->unique())->get()->keyBy('id');
+
+        foreach ($cells as $cell) {
+            [$wid, $date] = array_pad(explode('|', $cell), 2, null);
+            $worker = $workers[$wid] ?? null;
+            if (! $worker || ! $date) { continue; }
+            if (\App\Models\WorkEntry::where('worker_id', $wid)->whereDate('date', $date)->exists()) {
+                $skipped++; continue;
+            }
+            \App\Models\WorkEntry::create([
+                'worker_id' => $wid, 'project_id' => $project->id, 'date' => $date,
+                'days_present' => 1, 'computed_wage_paisa' => (int) $worker->default_wage_paisa,
+            ]);
+            $created++;
+        }
+
+        return $this->backToTab($project, 'attendance', "Haazri lag gayi — {$created} din" . ($skipped ? ", {$skipped} pehle se thi" : '') . '.');
     }
 
     // ---------- In-project quick-add actions (project hub) ----------
