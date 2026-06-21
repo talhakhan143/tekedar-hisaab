@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\DashboardController;
+use App\Http\Controllers\EstimateController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\ProjectController;
 use Illuminate\Support\Facades\Route;
@@ -11,6 +12,12 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
 
     Route::resource('projects', ProjectController::class);
+
+    // Estimates (nested under project for index/store; flat for update/destroy)
+    Route::get('projects/{project}/estimates', [EstimateController::class, 'index'])->name('estimates.index');
+    Route::post('projects/{project}/estimates', [EstimateController::class, 'store'])->name('estimates.store');
+    Route::put('estimates/{estimate}', [EstimateController::class, 'update'])->name('estimates.update');
+    Route::delete('estimates/{estimate}', [EstimateController::class, 'destroy'])->name('estimates.destroy');
 
     // Module shells — replaced with real controllers in later steps.
     $stubs = [
