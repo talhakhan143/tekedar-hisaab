@@ -8,6 +8,8 @@ use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\ProjectController;
 use App\Http\Controllers\RetentionReleaseController;
 use App\Http\Controllers\VendorController;
+use App\Http\Controllers\WorkerController;
+use App\Http\Controllers\WorkLedgerController;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', fn () => redirect()->route('dashboard'));
@@ -42,10 +44,18 @@ Route::middleware(['auth', 'verified'])->group(function () {
     // alias used by project show page
     Route::get('/material-purchases/create', [MaterialPurchaseController::class, 'create'])->name('material-purchases.create');
 
+    // Workers + sub-ledgers (attendance, advances, wage payments)
+    Route::resource('workers', WorkerController::class);
+    Route::post('/workers/{worker}/work-entries', [WorkLedgerController::class, 'storeWork'])->name('work-entries.store');
+    Route::delete('/work-entries/{workEntry}', [WorkLedgerController::class, 'destroyWork'])->name('work-entries.destroy');
+    Route::post('/workers/{worker}/advances', [WorkLedgerController::class, 'storeAdvance'])->name('worker-advances.store');
+    Route::delete('/worker-advances/{workerAdvance}', [WorkLedgerController::class, 'destroyAdvance'])->name('worker-advances.destroy');
+    Route::post('/workers/{worker}/wage-payments', [WorkLedgerController::class, 'storePayment'])->name('wage-payments.store');
+    Route::delete('/wage-payments/{wagePayment}', [WorkLedgerController::class, 'destroyPayment'])->name('wage-payments.destroy');
+
     // Module shells — replaced with real controllers in later steps.
     $stubs = [
         'money-out' => ['Money Out', 'Step 6–8'],
-        'workers'   => ['Workers', 'Step 7'],
         'reports'   => ['Reports', 'Step 10'],
         'settings'  => ['Settings', 'Step 11'],
     ];
