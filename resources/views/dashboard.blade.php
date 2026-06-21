@@ -6,35 +6,27 @@
         <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
     @endpush
 
-    {{-- Quick actions — rozana kaam ek click pe --}}
-    <div class="mb-5 grid grid-cols-2 gap-3 sm:grid-cols-4">
-        <a href="{{ route('attendance') }}" class="flex items-center justify-center gap-2 rounded-xl bg-emerald-600 px-4 py-4 text-sm font-semibold text-white shadow-sm hover:bg-emerald-700">
-            <svg class="h-5 w-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
-            Haazri (حاضری)
-        </a>
-        <a href="{{ route('client-payments.create') }}" class="flex items-center justify-center gap-2 rounded-xl bg-sky-600 px-4 py-4 text-sm font-semibold text-white shadow-sm hover:bg-sky-700">
-            <svg class="h-5 w-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4"/></svg>
-            Payment In (آمدنی)
-        </a>
-        <a href="{{ route('materials.create') }}" class="flex items-center justify-center gap-2 rounded-xl bg-amber-600 px-4 py-4 text-sm font-semibold text-white shadow-sm hover:bg-amber-700">
-            <svg class="h-5 w-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"/></svg>
-            Maal (مٹیریل)
-        </a>
-        <a href="{{ route('money-out') }}" class="flex items-center justify-center gap-2 rounded-xl bg-rose-600 px-4 py-4 text-sm font-semibold text-white shadow-sm hover:bg-rose-700">
-            <svg class="h-5 w-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M20 12H4"/></svg>
-            Kharch (خرچ)
-        </a>
-    </div>
-
     {{-- Headline cards --}}
-    <div class="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
+    <div class="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
         <x-stat label="Active Projects (چالو پروجیکٹس)" :value="number_format($activeProjects)" color="text-emerald-600" />
         <x-stat label="Total Contract Value (کل ٹھیکہ مالیت)" :value="\App\Support\Money::short($contractValue)" color="text-sky-600" />
         <x-stat label="This Month — Net Profit (اس ماہ کا منافع)" :value="\App\Support\Money::short($monthNetProfit)"
                 :color="$monthNetProfit < 0 ? 'text-red-600' : 'text-indigo-600'"
                 :sub="'In '.\App\Support\Money::short($monthReceived).' · Out '.\App\Support\Money::short($monthSpent)" />
-        <x-stat label="Retention Outstanding (روکی گئی رقم)" :value="\App\Support\Money::short($retentionOutstanding)" color="text-amber-600"
-                :sub="$retentionAging ? 'Aging: '.$retentionAging.' days' : null" />
+    </div>
+
+    {{-- Lena / Dena overview --}}
+    <div class="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2">
+        <div class="rounded-xl bg-emerald-50 p-5 ring-1 ring-emerald-200">
+            <div class="text-sm font-medium text-emerald-700">📥 Total Lena — Receivable (کل وصولی)</div>
+            <div class="mt-2 text-3xl font-bold text-emerald-700">{{ \App\Support\Money::short($totalReceivable) }}</div>
+            <div class="mt-1 text-xs text-emerald-600/70">Client se baqi (saare projects)</div>
+        </div>
+        <div class="rounded-xl bg-rose-50 p-5 ring-1 ring-rose-200">
+            <div class="text-sm font-medium text-rose-700">📤 Total Dena — Payable (کل واجبات)</div>
+            <div class="mt-2 text-3xl font-bold text-rose-700">{{ \App\Support\Money::short($totalPayable) }}</div>
+            <div class="mt-1 text-xs text-rose-600/70">Vendor udhaar + mazdoor baqi</div>
+        </div>
     </div>
 
     {{-- Charts --}}

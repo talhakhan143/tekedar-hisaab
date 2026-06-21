@@ -42,6 +42,7 @@
                         $nav = [
                             ['dashboard',       'dashboard',  'Dashboard',  'ڈیش بورڈ',  'M3 12l9-9 9 9M4 10v10h5v-6h6v6h5V10'],
                             ['projects.index',  'projects.*', 'Projects',   'پروجیکٹس',  'M3 7h18M3 12h18M3 17h18'],
+                            ['vendors.index',   'vendors.*',  'Vendors',    'سپلائرز',   'M3 3h2l.4 2M7 13h10l4-8H5.4'],
                             ['calculator',      'calculator', 'Calculator', 'کیلکولیٹر', 'M9 7h6m-6 4h6m-6 4h2m-5 5h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z'],
                             ['reports',         'reports*',   'Reports',    'رپورٹس',    'M9 17v-6m4 6V7m4 10v-3M3 21h18'],
                             ['settings',        'settings*',  'Settings',   'ترتیبات',   'M12 15a3 3 0 100-6 3 3 0 000 6z'],

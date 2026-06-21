@@ -22,6 +22,8 @@ class DashboardController extends Controller
             'cashProfit'           => $d->cashProfitPaisa(),
             'retentionOutstanding' => $d->retentionOutstandingPaisa(),
             'retentionAging'       => $d->retentionAgingDays(),
+            'totalReceivable'      => $d->totalReceivablePaisa(),
+            'totalPayable'         => $d->totalPayablePaisa(),
             'vendorPayables'       => $d->vendorPayablePaisa(),
             'workerAdvances'       => $d->workerAdvancesOutstandingPaisa(),
             'profitTrend'          => $d->profitTrend(),

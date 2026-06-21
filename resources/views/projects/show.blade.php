@@ -9,6 +9,9 @@
         $expense   = $f->totalAccruedCostPaisa();
         $profit    = $contract - $expense;
         $pie       = $f->costPie();
+        $workerDueTotal = $projectWorkers->sum(fn($r)=>max(0, $r['earned'] - $r['paid'] - ($r['advnet']??0)));
+        $payable   = $workerDueTotal + $f->vendorPayablePaisa();
+        $receivable = $balance;
     @endphp
 
     <div x-data="{ tab: new URLSearchParams(window.location.search).get('tab') || 'overview' }">
@@ -51,6 +54,20 @@
                 <x-stat label="Expense (خرچ)" :value="\App\Support\Money::short($expense)" color="text-rose-600" />
                 <x-stat label="Profit (منافع)" :value="\App\Support\Money::short($profit)" :color="$profit < 0 ? 'text-red-600' : 'text-indigo-600'" sub="contract − kharch" />
                 <x-stat label="Completion" :value="rtrim(rtrim($project->completion_percent,'0'),'.').'%'" color="text-gray-700" />
+            </div>
+
+            {{-- Lena / Dena quick cards (click -> ledger tab) --}}
+            <div class="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2">
+                <button type="button" @click="tab='ledger'" class="rounded-xl bg-emerald-50 p-5 text-left ring-1 ring-emerald-200 hover:ring-emerald-400">
+                    <div class="text-sm font-medium text-emerald-700">📥 Lena hai — Receivable (وصولی)</div>
+                    <div class="mt-1 text-2xl font-bold text-emerald-700">@money($receivable)</div>
+                    <div class="mt-1 text-xs text-emerald-600/70">Client se baqi · click → Lena/Dena</div>
+                </button>
+                <button type="button" @click="tab='ledger'" class="rounded-xl bg-rose-50 p-5 text-left ring-1 ring-rose-200 hover:ring-rose-400">
+                    <div class="text-sm font-medium text-rose-700">📤 Dena hai — Payable (واجبات)</div>
+                    <div class="mt-1 text-2xl font-bold text-rose-700">@money($payable)</div>
+                    <div class="mt-1 text-xs text-rose-600/70">Mazdoor @money($workerDueTotal) + Vendor @money($f->vendorPayablePaisa())</div>
+                </button>
             </div>
 
             <div class="mt-6 grid grid-cols-1 gap-6 lg:grid-cols-3">

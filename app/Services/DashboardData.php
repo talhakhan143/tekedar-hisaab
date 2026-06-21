@@ -83,6 +83,28 @@ class DashboardData
         return $earliest ? Carbon::parse($earliest)->diffInDays(now()) : null;
     }
 
+    // ---------- Lena / Dena (overall) ----------
+    /** Total receivable from clients = Σ (contract − billed), only positive. */
+    public function totalReceivablePaisa(): int
+    {
+        $sum = 0;
+        foreach (Project::with('clientPayments')->get() as $p) {
+            $billed = (int) $p->clientPayments->sum('gross_amount_paisa');
+            $sum += max(0, (int) $p->contract_value_paisa - $billed);
+        }
+        return $sum;
+    }
+
+    /** Total payable = vendor udhaar + Σ worker dues (positive). */
+    public function totalPayablePaisa(): int
+    {
+        $workers = 0;
+        foreach (Worker::all() as $w) {
+            $workers += max(0, $w->payablePaisa());
+        }
+        return $this->vendorPayablePaisa() + $workers;
+    }
+
     // ---------- This month ----------
     public function monthReceivedPaisa(?Carbon $month = null): int
     {
