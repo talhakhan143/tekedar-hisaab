@@ -47,6 +47,9 @@ Route::middleware(['auth', 'verified'])->group(function () {
     // alias used by project show page
     Route::get('/material-purchases/create', [MaterialPurchaseController::class, 'create'])->name('material-purchases.create');
 
+    // Pre-contract estimate calculator (POS-style, client-side only)
+    Route::view('/calculator', 'calculator')->name('calculator');
+
     // Daily attendance (bulk single-day or range/month)
     Route::get('/attendance', [\App\Http\Controllers\AttendanceController::class, 'index'])->name('attendance');
     Route::post('/attendance', [\App\Http\Controllers\AttendanceController::class, 'store'])->name('attendance.store');
