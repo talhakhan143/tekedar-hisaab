@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\ProfileController;
+use App\Http\Controllers\ProjectController;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', fn () => redirect()->route('dashboard'));
@@ -9,9 +10,10 @@ Route::get('/', fn () => redirect()->route('dashboard'));
 Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
 
+    Route::resource('projects', ProjectController::class);
+
     // Module shells — replaced with real controllers in later steps.
     $stubs = [
-        'projects'  => ['Projects', 'Step 3'],
         'money-in'  => ['Money In', 'Step 5'],
         'money-out' => ['Money Out', 'Step 6–8'],
         'workers'   => ['Workers', 'Step 7'],
