@@ -7,6 +7,7 @@ use App\Http\Controllers\MaterialPurchaseController;
 use App\Http\Controllers\MoneyOutController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\ProjectController;
+use App\Http\Controllers\ReportController;
 use App\Http\Controllers\RetentionReleaseController;
 use App\Http\Controllers\VendorController;
 use App\Http\Controllers\WorkerController;
@@ -61,9 +62,14 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::post('/overheads', [MoneyOutController::class, 'storeOverhead'])->name('overheads.store');
     Route::delete('/overheads/{generalOverhead}', [MoneyOutController::class, 'destroyOverhead'])->name('overheads.destroy');
 
+    // Reports + exports
+    Route::get('/reports', [ReportController::class, 'index'])->name('reports');
+    Route::get('/reports/monthly', [ReportController::class, 'monthly'])->name('reports.monthly');
+    Route::get('/reports/outstanding', [ReportController::class, 'outstanding'])->name('reports.outstanding');
+    Route::get('/reports/closeout/{project}', [ReportController::class, 'closeout'])->name('reports.closeout');
+
     // Module shells — replaced with real controllers in later steps.
     $stubs = [
-        'reports'   => ['Reports', 'Step 10'],
         'settings'  => ['Settings', 'Step 11'],
     ];
     foreach ($stubs as $slug => [$label, $step]) {
