@@ -47,8 +47,10 @@ class WorkLedgerController extends Controller
 
         $worker = Worker::findOrFail($v['worker_id']);
 
+        $tabUrl = route('projects.show', ['project' => $project, 'tab' => 'attendance']);
+
         if ($this->attendanceExists($worker->id, $v['date'])) {
-            return back()->with('error', $worker->name . ' ki ' . \Carbon\Carbon::parse($v['date'])->format('d-m-Y') . ' ki haazri pehle lag chuki hai. Dobara nahi lag sakti (edit worker page se).');
+            return redirect($tabUrl)->with('error', $worker->name . ' ki ' . \Carbon\Carbon::parse($v['date'])->format('d-m-Y') . ' ki haazri pehle lag chuki hai. Dobara nahi lag sakti.');
         }
 
         WorkEntry::create([
@@ -60,7 +62,7 @@ class WorkLedgerController extends Controller
             'computed_wage_paisa' => $this->wageFor($worker, $v['days_present'] ?? null, $v['units_done'] ?? null),
         ]);
 
-        return back()->with('status', $worker->name . ' ki haazri is project me lag gayi.');
+        return redirect($tabUrl)->with('status', $worker->name . ' ki haazri lag gayi.');
     }
 
     public function storeProjectWage(Request $request, Project $project)
@@ -90,7 +92,8 @@ class WorkLedgerController extends Controller
             'period_label' => $v['period_label'] ?? null,
         ]);
 
-        return back()->with('status', $worker->name . ' ko wage pay ho gayi.');
+        return redirect(route('projects.show', ['project' => $project, 'tab' => 'attendance']))
+            ->with('status', $worker->name . ' ko wage pay ho gayi.');
     }
 
     public function storeWork(Request $request, Worker $worker)

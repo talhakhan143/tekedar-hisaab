@@ -22,6 +22,11 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
     Route::resource('projects', ProjectController::class);
 
+    // In-project quick-add (project hub)
+    Route::post('/projects/{project}/payments', [ProjectController::class, 'storePayment'])->name('projects.payments.store');
+    Route::post('/projects/{project}/materials', [ProjectController::class, 'storeMaterial'])->name('projects.materials.store');
+    Route::post('/projects/{project}/expenses', [ProjectController::class, 'storeExpense'])->name('projects.expenses.store');
+
     // Estimates (nested under project for index/store; flat for update/destroy)
     Route::get('projects/{project}/estimates', [EstimateController::class, 'index'])->name('estimates.index');
     Route::post('projects/{project}/estimates', [EstimateController::class, 'store'])->name('estimates.store');

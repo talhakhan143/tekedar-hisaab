@@ -89,7 +89,101 @@ class ProjectController extends Controller
         ]);
         $allWorkers = \App\Models\Worker::orderBy('name')->get(['id', 'name', 'wage_type']);
 
-        return view('projects.show', compact('project', 'f', 'variance', 'projectWorkers', 'allWorkers'));
+        // Data for the in-project tabs.
+        $estimatesGrouped = $project->estimates;
+        $vendors = \App\Models\Vendor::orderBy('name')->get(['id', 'name', 'type']);
+        $defaultRetention = Setting::get('default_retention');
+        $defaultWastage = Setting::get('default_wastage');
+        $estimateCategories = \App\Http\Controllers\EstimateController::CATEGORIES;
+        $expenseCategories = \App\Http\Controllers\MoneyOutController::EXPENSE_CATEGORIES;
+
+        return view('projects.show', compact(
+            'project', 'f', 'variance', 'projectWorkers', 'allWorkers',
+            'vendors', 'defaultRetention', 'defaultWastage', 'estimateCategories', 'expenseCategories'
+        ));
+    }
+
+    // ---------- In-project quick-add actions (project hub) ----------
+
+    public function storePayment(Request $request, Project $project)
+    {
+        $v = $request->validate([
+            'date'           => ['required', 'date'],
+            'amount'         => ['required', 'numeric', 'min:0'],
+            'payment_method' => ['required', 'in:cash,bank,cheque,online'],
+            'is_advance'     => ['nullable', 'boolean'],
+            'notes'          => ['nullable', 'string'],
+        ]);
+
+        // Simple model: amount given = received. No retention/net split.
+        $amount = \App\Support\Money::toPaisa($v['amount']);
+        $project->clientPayments()->create([
+            'date' => $v['date'], 'gross_amount_paisa' => $amount,
+            'retention_held_paisa' => 0, 'net_received_paisa' => $amount,
+            'payment_method' => $v['payment_method'],
+            'is_mobilization' => $request->boolean('is_advance'),
+            'notes' => $v['notes'] ?? null,
+        ]);
+
+        return $this->backToTab($project, 'money-in', 'Payment record ho gayi.');
+    }
+
+    public function storeRelease(Request $request, Project $project)
+    {
+        $v = $request->validate(['date' => ['required', 'date'], 'amount' => ['required', 'numeric', 'min:0'], 'notes' => ['nullable', 'string']]);
+        $project->retentionReleases()->create([
+            'date' => $v['date'], 'amount_paisa' => \App\Support\Money::toPaisa($v['amount']), 'notes' => $v['notes'] ?? null,
+        ]);
+
+        return $this->backToTab($project, 'money-in', 'Retention release record ho gayi.');
+    }
+
+    public function storeMaterial(Request $request, Project $project)
+    {
+        $v = $request->validate([
+            'vendor_id'     => ['nullable', 'exists:vendors,id'],
+            'date'          => ['required', 'date'],
+            'item_name'     => ['required', 'string', 'max:255'],
+            'qty'           => ['required', 'numeric', 'min:0'],
+            'unit'          => ['nullable', 'string', 'max:50'],
+            'rate_per_unit' => ['required', 'numeric', 'min:0'],
+            'amount_paid'   => ['nullable', 'numeric', 'min:0'],
+            'notes'         => ['nullable', 'string'],
+        ]);
+        $amount = (int) round((float) $v['qty'] * \App\Support\Money::toPaisa($v['rate_per_unit']));
+        $paid = min(\App\Support\Money::toPaisa($v['amount_paid'] ?? 0), $amount);
+
+        $project->materialPurchases()->create([
+            'vendor_id' => $v['vendor_id'] ?? null, 'date' => $v['date'], 'item_name' => $v['item_name'],
+            'qty' => $v['qty'], 'unit' => $v['unit'] ?? null,
+            'rate_per_unit_paisa' => \App\Support\Money::toPaisa($v['rate_per_unit']),
+            'amount_paisa' => $amount, 'amount_paid_paisa' => $paid, 'balance_due_paisa' => $amount - $paid,
+            'notes' => $v['notes'] ?? null,
+        ]);
+
+        return $this->backToTab($project, 'materials', 'Purchase record ho gayi.');
+    }
+
+    public function storeExpense(Request $request, Project $project)
+    {
+        $v = $request->validate([
+            'date'        => ['required', 'date'],
+            'category'    => ['required', 'in:' . implode(',', MoneyOutController::EXPENSE_CATEGORIES)],
+            'description' => ['nullable', 'string', 'max:255'],
+            'amount'      => ['required', 'numeric', 'min:0'],
+            'paid_to'     => ['nullable', 'string', 'max:255'],
+        ]);
+        $project->otherExpenses()->create([
+            'date' => $v['date'], 'category' => $v['category'], 'description' => $v['description'] ?? null,
+            'amount_paisa' => \App\Support\Money::toPaisa($v['amount']), 'paid_to' => $v['paid_to'] ?? null,
+        ]);
+
+        return $this->backToTab($project, 'expenses', 'Expense record ho gaya.');
+    }
+
+    private function backToTab(Project $project, string $tab, string $msg)
+    {
+        return redirect()->route('projects.show', ['project' => $project, 'tab' => $tab])->with('status', $msg);
     }
 
     public function edit(Project $project)
