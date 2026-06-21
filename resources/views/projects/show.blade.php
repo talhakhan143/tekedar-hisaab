@@ -201,12 +201,14 @@
                     <x-card class="!p-0">
                         <div class="flex flex-wrap items-center gap-3 border-b border-gray-100 p-3">
                             <h2 class="font-semibold text-gray-900">Attendance Grid (حاضری)</h2>
-                            <select onchange="window.location='{{ route('projects.show', $project) }}?tab=attendance&att_month='+this.value"
-                                    class="rounded-md border-gray-300 text-sm shadow-sm focus:border-emerald-500 focus:ring-emerald-500">
-                                @foreach($attMonthOptions as $opt)
-                                    <option value="{{ $opt['value'] }}" @selected($opt['value']===$attMonth)>{{ $opt['label'] }}</option>
-                                @endforeach
-                            </select>
+                            <div class="flex items-center gap-2" x-data="{ y:'{{ $attYear }}', m:'{{ $attMon }}', go(){ window.location='{{ route('projects.show', $project) }}?tab=attendance&att_month='+this.y+'-'+this.m } }">
+                                <select x-model="y" @change="go()" class="rounded-md border-gray-300 text-sm shadow-sm focus:border-emerald-500 focus:ring-emerald-500">
+                                    @foreach($attYears as $yr)<option value="{{ $yr }}" @selected((int)$yr===(int)$attYear)>{{ $yr }}</option>@endforeach
+                                </select>
+                                <select x-model="m" @change="go()" class="rounded-md border-gray-300 text-sm shadow-sm focus:border-emerald-500 focus:ring-emerald-500">
+                                    @foreach($attMonthNames as $mv => $ml)<option value="{{ $mv }}" @selected($mv===$attMon)>{{ $ml }}</option>@endforeach
+                                </select>
+                            </div>
                             <span class="text-xs text-gray-400">Green ✓ = lagi (locked) · Blue = select · click karke lagao</span>
                             <span class="flex-1"></span>
                             <span class="text-sm text-gray-600"><span x-text="count"></span> din selected</span>

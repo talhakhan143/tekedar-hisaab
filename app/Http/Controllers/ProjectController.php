@@ -103,16 +103,13 @@ class ProjectController extends Controller
         for ($d = $gridStart->copy(); $d->lte($gridEnd); $d->addDay()) {
             $attDays[] = ['date' => $d->format('Y-m-d'), 'd' => $d->day, 'mon' => $d->format('M'), 'wd' => $d->format('D')[0], 'fri' => $d->isFriday()];
         }
-        // Month options: current month back to (project start OR 18 months, whichever is earlier).
-        $attMonthOptions = [];
-        $omEnd = now()->startOfMonth();
-        $earliest = $omEnd->copy()->subMonths(18);
-        if ($project->start_date && $project->start_date->copy()->startOfMonth()->lt($earliest)) {
-            $earliest = $project->start_date->copy()->startOfMonth();
-        }
-        for ($m = $omEnd->copy(); $m->gte($earliest); $m->subMonth()) {
-            $attMonthOptions[] = ['value' => $m->format('Y-m'), 'label' => $m->format('F Y')];
-        }
+        // Separate year + month selectors.
+        $attYear = (int) $gridStart->format('Y');
+        $attMon  = $gridStart->format('m');
+        $startYear = $project->start_date ? (int) $project->start_date->format('Y') : (int) now()->subYear()->format('Y');
+        $startYear = min($startYear, (int) now()->format('Y') - 1);
+        $attYears = range((int) now()->format('Y'), $startYear); // current .. earliest
+        $attMonthNames = ['01'=>'Jan','02'=>'Feb','03'=>'Mar','04'=>'Apr','05'=>'May','06'=>'Jun','07'=>'Jul','08'=>'Aug','09'=>'Sep','10'=>'Oct','11'=>'Nov','12'=>'Dec'];
         // Which (worker, date) already have attendance (any project) -> locked.
         $attMarked = [];
         \App\Models\WorkEntry::whereBetween('date', [$gridStart->format('Y-m-d'), $gridEnd->format('Y-m-d')])
@@ -131,7 +128,7 @@ class ProjectController extends Controller
         return view('projects.show', compact(
             'project', 'f', 'variance', 'projectWorkers', 'allWorkers',
             'vendors', 'defaultRetention', 'defaultWastage', 'estimateCategories', 'expenseCategories',
-            'attWorkers', 'attDays', 'attMarked', 'attMonth', 'attMonthOptions'
+            'attWorkers', 'attDays', 'attMarked', 'attMonth', 'attYear', 'attMon', 'attYears', 'attMonthNames'
         ));
     }
 
