@@ -89,19 +89,27 @@ class ProjectController extends Controller
         ]);
         $allWorkers = \App\Models\Worker::orderBy('name')->get(['id', 'name', 'wage_type']);
 
-        // ---- Attendance day-grid: project start -> end of current month (capped ~180 days) ----
+        // ---- Attendance day-grid: ONE month (dropdown), default current month ----
         $attWorkers = \App\Models\Worker::where('wage_type', '!=', 'contract_piece')->orderBy('name')->get();
-        $gridEnd = now()->endOfMonth();
-        $gridStart = $project->start_date ? $project->start_date->copy() : now()->startOfMonth();
-        if ($gridStart->lt($gridEnd->copy()->subDays(180))) {
-            $gridStart = $gridEnd->copy()->subDays(180);
+        $attMonth = request('att_month', now()->format('Y-m'));
+        try {
+            $gridStart = \Carbon\Carbon::createFromFormat('Y-m-d', $attMonth . '-01')->startOfMonth();
+        } catch (\Throwable $e) {
+            $gridStart = now()->startOfMonth();
+            $attMonth = $gridStart->format('Y-m');
         }
-        if ($gridStart->gt($gridEnd)) {
-            $gridStart = $gridEnd->copy()->startOfMonth();
-        }
+        $gridEnd = $gridStart->copy()->endOfMonth();
         $attDays = [];
         for ($d = $gridStart->copy(); $d->lte($gridEnd); $d->addDay()) {
             $attDays[] = ['date' => $d->format('Y-m-d'), 'd' => $d->day, 'mon' => $d->format('M'), 'wd' => $d->format('D')[0], 'fri' => $d->isFriday()];
+        }
+        // Month options: project start month -> current month.
+        $attMonthOptions = [];
+        $om = ($project->start_date ? $project->start_date->copy() : now())->startOfMonth();
+        $omEnd = now()->startOfMonth();
+        if ($om->gt($omEnd)) { $om = $omEnd->copy(); }
+        for ($m = $omEnd->copy(); $m->gte($om); $m->subMonth()) {
+            $attMonthOptions[] = ['value' => $m->format('Y-m'), 'label' => $m->format('F Y')];
         }
         // Which (worker, date) already have attendance (any project) -> locked.
         $attMarked = [];
@@ -121,7 +129,7 @@ class ProjectController extends Controller
         return view('projects.show', compact(
             'project', 'f', 'variance', 'projectWorkers', 'allWorkers',
             'vendors', 'defaultRetention', 'defaultWastage', 'estimateCategories', 'expenseCategories',
-            'attWorkers', 'attDays', 'attMarked'
+            'attWorkers', 'attDays', 'attMarked', 'attMonth', 'attMonthOptions'
         ));
     }
 
@@ -146,7 +154,8 @@ class ProjectController extends Controller
             $created++;
         }
 
-        return $this->backToTab($project, 'attendance', "Haazri lag gayi — {$created} din" . ($skipped ? ", {$skipped} pehle se thi" : '') . '.');
+        return redirect()->route('projects.show', ['project' => $project, 'tab' => 'attendance', 'att_month' => $request->input('att_month')])
+            ->with('status', "Haazri lag gayi — {$created} din" . ($skipped ? ", {$skipped} pehle se thi" : '') . '.');
     }
 
     // ---------- In-project quick-add actions (project hub) ----------

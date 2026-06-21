@@ -197,10 +197,17 @@
                 <form method="POST" action="{{ route('projects.attendance.bulk', $project) }}">
                     @csrf
                     <input type="hidden" name="cells" :value="payload()">
+                    <input type="hidden" name="att_month" value="{{ $attMonth }}">
                     <x-card class="!p-0">
                         <div class="flex flex-wrap items-center gap-3 border-b border-gray-100 p-3">
-                            <h2 class="font-semibold text-gray-900">Attendance Grid — din select karo (حاضری)</h2>
-                            <span class="text-xs text-gray-400">Green ✓ = lagi hui (locked) · Blue = abhi select · click karke lagao</span>
+                            <h2 class="font-semibold text-gray-900">Attendance Grid (حاضری)</h2>
+                            <select onchange="window.location='{{ route('projects.show', $project) }}?tab=attendance&att_month='+this.value"
+                                    class="rounded-md border-gray-300 text-sm shadow-sm focus:border-emerald-500 focus:ring-emerald-500">
+                                @foreach($attMonthOptions as $opt)
+                                    <option value="{{ $opt['value'] }}" @selected($opt['value']===$attMonth)>{{ $opt['label'] }}</option>
+                                @endforeach
+                            </select>
+                            <span class="text-xs text-gray-400">Green ✓ = lagi (locked) · Blue = select · click karke lagao</span>
                             <span class="flex-1"></span>
                             <span class="text-sm text-gray-600"><span x-text="count"></span> din selected</span>
                             <button class="rounded-md bg-emerald-600 px-4 py-2 text-sm font-semibold text-white hover:bg-emerald-700">Save Haazri (محفوظ)</button>
@@ -264,16 +271,21 @@
                 <div class="lg:col-span-2">
                     <x-card title="Is project ke mazdoor (لیبر)" class="!p-0">
                         <table class="min-w-full divide-y divide-gray-200 text-sm">
-                            <thead class="bg-gray-50 text-left text-xs uppercase text-gray-500"><tr><th class="px-4 py-3">Worker</th><th class="px-4 py-3 text-right">Days</th><th class="px-4 py-3 text-right">Earned</th><th class="px-4 py-3 text-right">Paid</th></tr></thead>
+                            <thead class="bg-gray-50 text-left text-xs uppercase text-gray-500"><tr><th class="px-4 py-3">Worker</th><th class="px-4 py-3 text-right">Days</th><th class="px-4 py-3 text-right">Earned</th><th class="px-4 py-3 text-right">Paid</th><th class="px-4 py-3 text-right">Baqi dena (باقی)</th></tr></thead>
                             <tbody class="divide-y divide-gray-100">
                                 @forelse($projectWorkers as $row)
+                                    @php $baqi = max(0, $row['earned'] - $row['paid']); @endphp
                                     <tr><td class="px-4 py-2.5"><a href="{{ route('workers.show', $row['worker']) }}" class="font-medium text-emerald-700 hover:underline">{{ $row['worker']->name }}</a></td>
                                     <td class="px-4 py-2.5 text-right">{{ rtrim(rtrim(number_format($row['days'],1),'0'),'.') }}</td>
                                     <td class="px-4 py-2.5 text-right font-medium">@money($row['earned'])</td>
-                                    <td class="px-4 py-2.5 text-right text-emerald-600">@money($row['paid'])</td></tr>
-                                @empty<tr><td colspan="4" class="px-4 py-6 text-center text-gray-400">Abhi koi haazri nahi.</td></tr>@endforelse
+                                    <td class="px-4 py-2.5 text-right text-emerald-600">@money($row['paid'])</td>
+                                    <td class="px-4 py-2.5 text-right font-semibold {{ $baqi > 0 ? 'text-red-600' : 'text-gray-400' }}">@money($baqi)</td></tr>
+                                @empty<tr><td colspan="5" class="px-4 py-6 text-center text-gray-400">Abhi koi haazri nahi.</td></tr>@endforelse
                             </tbody>
-                            @if($projectWorkers->count())<tfoot class="bg-gray-50 font-semibold"><tr><td class="px-4 py-3">Total</td><td class="px-4 py-3 text-right">{{ rtrim(rtrim(number_format($projectWorkers->sum('days'),1),'0'),'.') }}</td><td class="px-4 py-3 text-right">@money($projectWorkers->sum('earned'))</td><td class="px-4 py-3 text-right text-emerald-600">@money($projectWorkers->sum('paid'))</td></tr></tfoot>@endif
+                            @if($projectWorkers->count())
+                                @php $totEarned=$projectWorkers->sum('earned'); $totPaid=$projectWorkers->sum('paid'); $totBaqi=$projectWorkers->sum(fn($r)=>max(0,$r['earned']-$r['paid'])); @endphp
+                                <tfoot class="bg-gray-50 font-semibold"><tr><td class="px-4 py-3">Total</td><td class="px-4 py-3 text-right">{{ rtrim(rtrim(number_format($projectWorkers->sum('days'),1),'0'),'.') }}</td><td class="px-4 py-3 text-right">@money($totEarned)</td><td class="px-4 py-3 text-right text-emerald-600">@money($totPaid)</td><td class="px-4 py-3 text-right text-red-600">@money($totBaqi)</td></tr></tfoot>
+                            @endif
                         </table>
                     </x-card>
                 </div>
