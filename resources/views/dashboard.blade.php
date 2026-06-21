@@ -8,48 +8,48 @@
 
     {{-- Headline cards --}}
     <div class="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
-        <x-stat label="Active Projects" :value="number_format($activeProjects)" color="text-emerald-600" />
-        <x-stat label="Total Contract Value" :value="\App\Support\Money::short($contractValue)" color="text-sky-600" />
-        <x-stat label="This Month — Net Profit" :value="\App\Support\Money::short($monthNetProfit)"
+        <x-stat label="Active Projects (چالو پروجیکٹس)" :value="number_format($activeProjects)" color="text-emerald-600" />
+        <x-stat label="Total Contract Value (کل ٹھیکہ مالیت)" :value="\App\Support\Money::short($contractValue)" color="text-sky-600" />
+        <x-stat label="This Month — Net Profit (اس ماہ کا منافع)" :value="\App\Support\Money::short($monthNetProfit)"
                 :color="$monthNetProfit < 0 ? 'text-red-600' : 'text-indigo-600'"
                 :sub="'In '.\App\Support\Money::short($monthReceived).' · Out '.\App\Support\Money::short($monthSpent)" />
-        <x-stat label="Retention Outstanding" :value="\App\Support\Money::short($retentionOutstanding)" color="text-amber-600"
+        <x-stat label="Retention Outstanding (روکی گئی رقم)" :value="\App\Support\Money::short($retentionOutstanding)" color="text-amber-600"
                 :sub="$retentionAging ? 'Aging: '.$retentionAging.' days' : null" />
     </div>
 
     {{-- Charts --}}
     <div class="mt-6 grid grid-cols-1 gap-4 lg:grid-cols-3">
-        <x-card title="Profit Trend (last 12 months)" class="lg:col-span-2">
+        <x-card title="Profit Trend — last 12 months (منافع کا رجحان)" class="lg:col-span-2">
             <div class="h-64"><canvas id="trendChart"></canvas></div>
         </x-card>
-        <x-card title="Cost Breakdown">
+        <x-card title="Cost Breakdown (لاگت کی تقسیم)">
             <div class="h-64"><canvas id="costChart"></canvas></div>
         </x-card>
     </div>
 
     {{-- Overall profit + outstanding --}}
     <div class="mt-6 grid grid-cols-1 gap-4 lg:grid-cols-2">
-        <x-card title="Overall Profit (all-time)">
+        <x-card title="Overall Profit — all-time (مجموعی منافع)">
             <dl class="space-y-3 text-sm">
-                <div class="flex justify-between"><dt class="text-gray-500">Total Billed (incl. retention)</dt><dd class="font-semibold">@money($totalBilled)</dd></div>
-                <div class="flex justify-between"><dt class="text-gray-500">Total Cost (incl. overheads)</dt><dd class="font-semibold">@money($totalCost)</dd></div>
-                <div class="flex justify-between border-t pt-3"><dt class="font-medium text-gray-700">Accrued Profit</dt><dd class="font-bold {{ $accruedProfit < 0 ? 'text-red-600' : 'text-emerald-600' }}">@money($accruedProfit)</dd></div>
-                <div class="flex justify-between"><dt class="font-medium text-gray-700">Cash-in-hand Profit</dt><dd class="font-bold {{ $cashProfit < 0 ? 'text-red-600' : 'text-indigo-600' }}">@money($cashProfit)</dd></div>
-                <p class="text-xs text-gray-400">Cash profit excludes unreleased retention (₨{{ number_format($retentionOutstanding/100) }} still held by clients).</p>
+                <div class="flex justify-between"><dt class="text-gray-500">Total Billed, incl. retention (کل بل)</dt><dd class="font-semibold">@money($totalBilled)</dd></div>
+                <div class="flex justify-between"><dt class="text-gray-500">Total Cost, incl. overheads (کل لاگت)</dt><dd class="font-semibold">@money($totalCost)</dd></div>
+                <div class="flex justify-between border-t pt-3"><dt class="font-medium text-gray-700">Accrued Profit (کھاتہ منافع)</dt><dd class="font-bold {{ $accruedProfit < 0 ? 'text-red-600' : 'text-emerald-600' }}">@money($accruedProfit)</dd></div>
+                <div class="flex justify-between"><dt class="font-medium text-gray-700">Cash-in-hand Profit (نقد منافع)</dt><dd class="font-bold {{ $cashProfit < 0 ? 'text-red-600' : 'text-indigo-600' }}">@money($cashProfit)</dd></div>
+                <p class="text-xs text-gray-400">Cash profit me abhi tak roki gayi retention shaamil nahi (₨{{ number_format($retentionOutstanding/100) }} client ke paas).</p>
             </dl>
         </x-card>
-        <x-card title="Outstanding">
+        <x-card title="Outstanding (واجبات)">
             <dl class="space-y-3 text-sm">
-                <div class="flex justify-between"><dt class="text-gray-500">Vendor Payables (udhaar)</dt><dd class="font-semibold text-red-600">@money($vendorPayables)</dd></div>
-                <div class="flex justify-between"><dt class="text-gray-500">Worker Advances Outstanding</dt><dd class="font-semibold text-amber-600">@money($workerAdvances)</dd></div>
-                <div class="flex justify-between"><dt class="text-gray-500">Retention Held by Client</dt><dd class="font-semibold text-amber-600">@money($retentionOutstanding)</dd></div>
+                <div class="flex justify-between"><dt class="text-gray-500">Vendor Payables — udhaar (سپلائر کا اُدھار)</dt><dd class="font-semibold text-red-600">@money($vendorPayables)</dd></div>
+                <div class="flex justify-between"><dt class="text-gray-500">Worker Advances (مزدور پیشگی)</dt><dd class="font-semibold text-amber-600">@money($workerAdvances)</dd></div>
+                <div class="flex justify-between"><dt class="text-gray-500">Retention Held by Client (کلائنٹ کے پاس روکی رقم)</dt><dd class="font-semibold text-amber-600">@money($retentionOutstanding)</dd></div>
             </dl>
         </x-card>
     </div>
 
     {{-- Top projects + loss flags --}}
     <div class="mt-6 grid grid-cols-1 gap-4 lg:grid-cols-2">
-        <x-card title="Top Projects by Projected Profit" class="!p-0">
+        <x-card title="Top Projects by Profit (سب سے زیادہ منافع)" class="!p-0">
             <table class="min-w-full divide-y divide-gray-200 text-sm">
                 <tbody class="divide-y divide-gray-100">
                     @forelse($topProjects as $row)
@@ -63,7 +63,7 @@
                 </tbody>
             </table>
         </x-card>
-        <x-card title="⚠️ Loss-making Projects (red flag)" class="!p-0">
+        <x-card title="⚠️ Loss-making Projects (نقصان والے پروجیکٹس)" class="!p-0">
             <table class="min-w-full divide-y divide-gray-200 text-sm">
                 <tbody class="divide-y divide-gray-100">
                     @forelse($lossProjects as $row)

@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Project;
 use App\Models\WagePayment;
 use App\Models\Worker;
 use App\Models\WorkEntry;
@@ -16,6 +17,68 @@ use Illuminate\Validation\ValidationException;
  */
 class WorkLedgerController extends Controller
 {
+    /** Compute a worker's wage for a work entry (daily/monthly vs piece). */
+    private function wageFor(Worker $worker, ?float $days, ?float $units): int
+    {
+        if ($worker->wage_type === 'contract_piece') {
+            return (int) round((float) ($units ?? 0) * $worker->default_wage_paisa);
+        }
+        return (int) round((float) ($days ?? 0) * $worker->default_wage_paisa);
+    }
+
+    // ---------- Project-scoped quick entry (from the project page) ----------
+    public function storeProjectWork(Request $request, Project $project)
+    {
+        $v = $request->validate([
+            'worker_id'    => ['required', 'exists:workers,id'],
+            'date'         => ['required', 'date'],
+            'days_present' => ['nullable', 'numeric', 'min:0', 'max:31'],
+            'units_done'   => ['nullable', 'numeric', 'min:0'],
+        ]);
+
+        $worker = Worker::findOrFail($v['worker_id']);
+        WorkEntry::create([
+            'worker_id'           => $worker->id,
+            'project_id'          => $project->id,
+            'date'                => $v['date'],
+            'days_present'        => $v['days_present'] ?? null,
+            'units_done'          => $v['units_done'] ?? null,
+            'computed_wage_paisa' => $this->wageFor($worker, $v['days_present'] ?? null, $v['units_done'] ?? null),
+        ]);
+
+        return back()->with('status', $worker->name . ' ki haazri is project me lag gayi.');
+    }
+
+    public function storeProjectWage(Request $request, Project $project)
+    {
+        $v = $request->validate([
+            'worker_id'    => ['required', 'exists:workers,id'],
+            'date'         => ['required', 'date'],
+            'amount'       => ['required', 'numeric', 'min:0'],
+            'period_label' => ['nullable', 'string', 'max:100'],
+            'override'     => ['nullable', 'boolean'],
+        ]);
+
+        $worker = Worker::findOrFail($v['worker_id']);
+        $amount = Money::toPaisa($v['amount']);
+
+        if ($amount > $worker->payablePaisa() && ! $request->boolean('override')) {
+            throw ValidationException::withMessages([
+                'amount' => $worker->name . ' ka payable sirf ' . Money::format($worker->payablePaisa()) . ' hai. Zyada dena hai to override check karo.',
+            ]);
+        }
+
+        WagePayment::create([
+            'worker_id'    => $worker->id,
+            'project_id'   => $project->id,
+            'date'         => $v['date'],
+            'amount_paisa' => $amount,
+            'period_label' => $v['period_label'] ?? null,
+        ]);
+
+        return back()->with('status', $worker->name . ' ko wage pay ho gayi.');
+    }
+
     public function storeWork(Request $request, Worker $worker)
     {
         $v = $request->validate([

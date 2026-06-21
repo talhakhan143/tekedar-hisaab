@@ -1,13 +1,13 @@
 <x-app-layout>
     <x-slot name="title">Material Purchases</x-slot>
-    <x-slot name="header">Material Purchases</x-slot>
+    <x-slot name="header">Material Purchases (مٹیریل خریداری)</x-slot>
 
     <div class="mb-5 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div class="grid grid-cols-2 gap-4">
-            <x-stat label="Total Material Spent" :value="\App\Support\Money::format($totalSpent)" color="text-amber-600" />
-            <x-stat label="Outstanding (udhaar)" :value="\App\Support\Money::format($totalDue)" color="text-red-600" />
+            <x-stat label="Total Material Spent (کل خرچ)" :value="\App\Support\Money::format($totalSpent)" color="text-amber-600" />
+            <x-stat label="Outstanding — udhaar (باقی اُدھار)" :value="\App\Support\Money::format($totalDue)" color="text-red-600" />
         </div>
-        <a href="{{ route('materials.create') }}" class="inline-flex items-center justify-center rounded-md bg-emerald-600 px-4 py-2.5 text-sm font-semibold text-white hover:bg-emerald-700">+ New Purchase</a>
+        <a href="{{ route('materials.create') }}" class="inline-flex items-center justify-center rounded-md bg-emerald-600 px-4 py-2.5 text-sm font-semibold text-white hover:bg-emerald-700">+ New Purchase (نئی خریداری)</a>
     </div>
 
     <x-card class="!p-0">
@@ -15,13 +15,13 @@
             <table class="min-w-full divide-y divide-gray-200 text-sm">
                 <thead class="bg-gray-50 text-left text-xs uppercase tracking-wide text-gray-500">
                     <tr>
-                        <th class="px-4 py-3">Date</th>
-                        <th class="px-4 py-3">Item</th>
-                        <th class="px-4 py-3">Project</th>
-                        <th class="px-4 py-3">Vendor</th>
-                        <th class="px-4 py-3 text-right">Amount</th>
-                        <th class="px-4 py-3 text-right">Paid</th>
-                        <th class="px-4 py-3 text-right">Balance</th>
+                        <th class="px-4 py-3">Date (تاریخ)</th>
+                        <th class="px-4 py-3">Item (چیز)</th>
+                        <th class="px-4 py-3">Project (پروجیکٹ)</th>
+                        <th class="px-4 py-3">Vendor (سپلائر)</th>
+                        <th class="px-4 py-3 text-right">Amount (رقم)</th>
+                        <th class="px-4 py-3 text-right">Paid (دیا)</th>
+                        <th class="px-4 py-3 text-right">Balance (باقی)</th>
                         <th class="px-4 py-3"></th>
                     </tr>
                 </thead>

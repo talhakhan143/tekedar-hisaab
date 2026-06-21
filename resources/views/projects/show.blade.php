@@ -23,15 +23,15 @@
 
     {{-- Profit headline --}}
     <div class="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
-        <x-stat label="Accrued Profit" :value="\App\Support\Money::format($f->accruedProfitPaisa())"
+        <x-stat label="Accrued Profit (کھاتہ منافع)" :value="\App\Support\Money::format($f->accruedProfitPaisa())"
                 :color="$f->accruedProfitPaisa() < 0 ? 'text-red-600' : 'text-emerald-600'"
-                sub="Gross billed − cost so far" />
-        <x-stat label="Cash-in-hand Profit" :value="\App\Support\Money::format($f->cashProfitPaisa())"
+                sub="Bill kiya − ab tak lagat" />
+        <x-stat label="Cash-in-hand Profit (نقد منافع)" :value="\App\Support\Money::format($f->cashProfitPaisa())"
                 :color="$f->cashProfitPaisa() < 0 ? 'text-red-600' : 'text-indigo-600'"
-                sub="Received+released − cash paid" />
-        <x-stat label="Projected Final Profit" :value="\App\Support\Money::format($f->projectedProfitPaisa())"
+                sub="Aaya − nakad diya" />
+        <x-stat label="Projected Final Profit (متوقع منافع)" :value="\App\Support\Money::format($f->projectedProfitPaisa())"
                 :color="$f->projectedProfitPaisa() < 0 ? 'text-red-600' : 'text-emerald-600'"
-                sub="Contract value − cost so far" />
+                sub="Theka maliyat − ab tak lagat" />
         @if($perSqft)
             <x-stat label="Margin / sq.ft" :value="\App\Support\Money::format($f->marginPerSqftPaisa())"
                     :color="($f->marginPerSqftPaisa() ?? 0) < 0 ? 'text-red-600' : 'text-emerald-600'"
@@ -43,7 +43,7 @@
 
     <div class="mt-6 grid grid-cols-1 gap-6 lg:grid-cols-3">
         {{-- Contract summary --}}
-        <x-card title="Contract Summary">
+        <x-card title="Contract Summary (ٹھیکہ تفصیل)">
             <dl class="space-y-2.5 text-sm">
                 <div class="flex justify-between"><dt class="text-gray-500">Type</dt><dd class="font-medium">{{ $project->contractTypeLabel() }}</dd></div>
                 <div class="flex justify-between"><dt class="text-gray-500">Pricing</dt><dd class="font-medium">{{ $perSqft ? 'Per sq.ft' : 'Lump sum' }}</dd></div>
@@ -60,19 +60,19 @@
         </x-card>
 
         {{-- Money position --}}
-        <x-card title="Money Position">
+        <x-card title="Money Position (رقم کی صورتحال)">
             <dl class="space-y-2.5 text-sm">
-                <div class="flex justify-between"><dt class="text-gray-500">Gross Billed</dt><dd class="font-medium">@money($f->grossBilledPaisa())</dd></div>
-                <div class="flex justify-between"><dt class="text-gray-500">Net Received</dt><dd class="font-medium text-emerald-600">@money($f->netReceivedPaisa())</dd></div>
-                <div class="flex justify-between"><dt class="text-gray-500">Retention Held</dt><dd class="font-medium text-amber-600">@money($f->retentionHeldPaisa())</dd></div>
-                <div class="flex justify-between"><dt class="text-gray-500">Retention Released</dt><dd class="font-medium">@money($f->retentionReleasedPaisa())</dd></div>
-                <div class="flex justify-between border-t pt-2"><dt class="text-gray-500">Retention Outstanding</dt><dd class="font-bold text-amber-600">@money($f->retentionOutstandingPaisa())</dd></div>
-                <div class="flex justify-between"><dt class="text-gray-500">Balance Receivable</dt><dd class="font-bold">@money($f->receivablePaisa())</dd></div>
+                <div class="flex justify-between"><dt class="text-gray-500">Gross Billed (کل بل کیا)</dt><dd class="font-medium">@money($f->grossBilledPaisa())</dd></div>
+                <div class="flex justify-between"><dt class="text-gray-500">Net Received (ہاتھ میں آیا)</dt><dd class="font-medium text-emerald-600">@money($f->netReceivedPaisa())</dd></div>
+                <div class="flex justify-between"><dt class="text-gray-500">Retention Held (روکی رقم)</dt><dd class="font-medium text-amber-600">@money($f->retentionHeldPaisa())</dd></div>
+                <div class="flex justify-between"><dt class="text-gray-500">Retention Released (واپس ملی)</dt><dd class="font-medium">@money($f->retentionReleasedPaisa())</dd></div>
+                <div class="flex justify-between border-t pt-2"><dt class="text-gray-500">Retention Outstanding (ابھی روکی ہوئی)</dt><dd class="font-bold text-amber-600">@money($f->retentionOutstandingPaisa())</dd></div>
+                <div class="flex justify-between"><dt class="text-gray-500">Balance Receivable (باقی وصولی)</dt><dd class="font-bold">@money($f->receivablePaisa())</dd></div>
             </dl>
         </x-card>
 
         {{-- Cost ledger --}}
-        <x-card title="Cost Ledger (actual)">
+        <x-card title="Cost Ledger — actual (لاگت کھاتہ)">
             <dl class="space-y-2.5 text-sm">
                 @foreach($f->actualByCategory() as $cat => $amt)
                     @if($amt > 0)
@@ -88,7 +88,7 @@
 
     {{-- Estimate vs Actual --}}
     <div class="mt-6">
-        <x-card title="Estimate vs Actual (variance — overruns in red)" class="!p-0">
+        <x-card title="Estimate vs Actual — overruns red (تخمینہ بمقابلہ اصل)" class="!p-0">
             <div class="overflow-x-auto">
                 <table class="min-w-full divide-y divide-gray-200 text-sm">
                     <thead class="bg-gray-50 text-left text-xs uppercase tracking-wide text-gray-500">
@@ -131,9 +131,81 @@
         </x-card>
     </div>
 
+    {{-- Workers / Attendance for THIS project --}}
+    <div class="mt-6 grid grid-cols-1 gap-6 lg:grid-cols-3">
+        <div class="lg:col-span-1 space-y-6">
+            <x-card title="Add Attendance (حاضری لگائیں)">
+                <form method="POST" action="{{ route('projects.work-entries.store', $project) }}" class="space-y-3" x-data="{ wid: '' }">
+                    @csrf
+                    <select name="worker_id" x-model="wid" required class="block w-full rounded-md border-gray-300 text-sm shadow-sm focus:border-emerald-500 focus:ring-emerald-500">
+                        <option value="">— worker chuno (مزدور) —</option>
+                        @foreach($allWorkers as $w)<option value="{{ $w->id }}" data-piece="{{ $w->wage_type === 'contract_piece' ? '1':'0' }}">{{ $w->name }}</option>@endforeach
+                    </select>
+                    <input type="date" name="date" value="{{ now()->format('Y-m-d') }}" required class="block w-full rounded-md border-gray-300 text-sm shadow-sm focus:border-emerald-500 focus:ring-emerald-500">
+                    <input type="number" step="0.5" name="days_present" placeholder="Days / din (0.5 = half)" value="1" class="block w-full rounded-md border-gray-300 text-sm shadow-sm focus:border-emerald-500 focus:ring-emerald-500">
+                    <input type="number" step="0.001" name="units_done" placeholder="Units (piece-work)" class="block w-full rounded-md border-gray-300 text-sm shadow-sm focus:border-emerald-500 focus:ring-emerald-500">
+                    <button class="w-full rounded-md bg-emerald-600 px-3 py-2 text-sm font-semibold text-white hover:bg-emerald-700">Add (شامل کریں)</button>
+                    <x-input-error :messages="$errors->get('days_present')" />
+                </form>
+            </x-card>
+            <x-card title="Pay Wage (مزدوری دیں)">
+                <form method="POST" action="{{ route('projects.wage-payments.store', $project) }}" class="space-y-3">
+                    @csrf
+                    <select name="worker_id" required class="block w-full rounded-md border-gray-300 text-sm shadow-sm focus:border-emerald-500 focus:ring-emerald-500">
+                        <option value="">— worker chuno (مزدور) —</option>
+                        @foreach($allWorkers as $w)<option value="{{ $w->id }}">{{ $w->name }}</option>@endforeach
+                    </select>
+                    <input type="date" name="date" value="{{ now()->format('Y-m-d') }}" required class="block w-full rounded-md border-gray-300 text-sm shadow-sm focus:border-emerald-500 focus:ring-emerald-500">
+                    <x-money-input name="amount" label="Amount (رقم)" required />
+                    <label class="flex items-center gap-2 text-xs text-gray-600"><input type="hidden" name="override" value="0"><input type="checkbox" name="override" value="1" class="rounded border-gray-300 text-emerald-600"> Override (payable se zyada)</label>
+                    <x-input-error :messages="$errors->get('amount')" />
+                    <button class="w-full rounded-md bg-indigo-600 px-3 py-2 text-sm font-semibold text-white hover:bg-indigo-700">Pay (ادائیگی)</button>
+                </form>
+            </x-card>
+        </div>
+        <div class="lg:col-span-2">
+            <x-card title="Workers on this Project — labour (اس پروجیکٹ کے مزدور)" class="!p-0">
+                <div class="overflow-x-auto">
+                    <table class="min-w-full divide-y divide-gray-200 text-sm">
+                        <thead class="bg-gray-50 text-left text-xs uppercase tracking-wide text-gray-500">
+                            <tr>
+                                <th class="px-4 py-3">Worker (مزدور)</th>
+                                <th class="px-4 py-3 text-right">Days (دن)</th>
+                                <th class="px-4 py-3 text-right">Earned (کمایا)</th>
+                                <th class="px-4 py-3 text-right">Paid (دیا)</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-gray-100">
+                            @forelse($projectWorkers as $row)
+                                <tr>
+                                    <td class="px-4 py-2.5"><a href="{{ route('workers.show', $row['worker']) }}" class="font-medium text-emerald-700 hover:underline">{{ $row['worker']->name }}</a> <span class="text-xs text-gray-400">{{ ucfirst($row['worker']->role) }}</span></td>
+                                    <td class="px-4 py-2.5 text-right">{{ rtrim(rtrim(number_format($row['days'],1),'0'),'.') }}</td>
+                                    <td class="px-4 py-2.5 text-right font-medium">@money($row['earned'])</td>
+                                    <td class="px-4 py-2.5 text-right text-emerald-600">@money($row['paid'])</td>
+                                </tr>
+                            @empty
+                                <tr><td colspan="4" class="px-4 py-6 text-center text-gray-400">Is project pe abhi koi haazri nahi. Left form se lagao (حاضری شامل کریں).</td></tr>
+                            @endforelse
+                        </tbody>
+                        @if($projectWorkers->count())
+                            <tfoot class="bg-gray-50 font-semibold">
+                                <tr>
+                                    <td class="px-4 py-3">Total (کل)</td>
+                                    <td class="px-4 py-3 text-right">{{ rtrim(rtrim(number_format($projectWorkers->sum('days'),1),'0'),'.') }}</td>
+                                    <td class="px-4 py-3 text-right">@money($projectWorkers->sum('earned'))</td>
+                                    <td class="px-4 py-3 text-right text-emerald-600">@money($projectWorkers->sum('paid'))</td>
+                                </tr>
+                            </tfoot>
+                        @endif
+                    </table>
+                </div>
+            </x-card>
+        </div>
+    </div>
+
     {{-- Client payments ledger --}}
     <div class="mt-6">
-        <x-card title="Client Payments Ledger" class="!p-0">
+        <x-card title="Client Payments Ledger (کلائنٹ کی ادائیگیاں)" class="!p-0">
             <div class="overflow-x-auto">
                 <table class="min-w-full divide-y divide-gray-200 text-sm">
                     <thead class="bg-gray-50 text-left text-xs uppercase tracking-wide text-gray-500">

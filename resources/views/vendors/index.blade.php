@@ -1,10 +1,10 @@
 <x-app-layout>
     <x-slot name="title">Vendors</x-slot>
-    <x-slot name="header">Vendors</x-slot>
+    <x-slot name="header">Vendors (سپلائرز)</x-slot>
 
     <div class="mb-5 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <x-stat label="Total Payable (udhaar you owe)" :value="\App\Support\Money::format($totalPayable)" color="text-red-600" />
-        <a href="{{ route('vendors.create') }}" class="inline-flex items-center justify-center rounded-md bg-emerald-600 px-4 py-2.5 text-sm font-semibold text-white hover:bg-emerald-700">+ New Vendor</a>
+        <x-stat label="Total Payable — udhaar (کل اُدھار)" :value="\App\Support\Money::format($totalPayable)" color="text-red-600" />
+        <a href="{{ route('vendors.create') }}" class="inline-flex items-center justify-center rounded-md bg-emerald-600 px-4 py-2.5 text-sm font-semibold text-white hover:bg-emerald-700">+ New Vendor (نیا سپلائر)</a>
     </div>
 
     <x-card class="!p-0">
@@ -12,10 +12,10 @@
             <table class="min-w-full divide-y divide-gray-200 text-sm">
                 <thead class="bg-gray-50 text-left text-xs uppercase tracking-wide text-gray-500">
                     <tr>
-                        <th class="px-4 py-3">Name</th>
-                        <th class="px-4 py-3">Type</th>
-                        <th class="px-4 py-3">Phone</th>
-                        <th class="px-4 py-3 text-right">Payable</th>
+                        <th class="px-4 py-3">Name (نام)</th>
+                        <th class="px-4 py-3">Type (قسم)</th>
+                        <th class="px-4 py-3">Phone (فون)</th>
+                        <th class="px-4 py-3 text-right">Payable (اُدھار)</th>
                         <th class="px-4 py-3"></th>
                     </tr>
                 </thead>

@@ -47,6 +47,10 @@ Route::middleware(['auth', 'verified'])->group(function () {
     // alias used by project show page
     Route::get('/material-purchases/create', [MaterialPurchaseController::class, 'create'])->name('material-purchases.create');
 
+    // Project-scoped quick worker entry (from project page)
+    Route::post('/projects/{project}/work-entries', [WorkLedgerController::class, 'storeProjectWork'])->name('projects.work-entries.store');
+    Route::post('/projects/{project}/wage-payments', [WorkLedgerController::class, 'storeProjectWage'])->name('projects.wage-payments.store');
+
     // Workers + sub-ledgers (attendance, advances, wage payments)
     Route::resource('workers', WorkerController::class);
     Route::post('/workers/{worker}/work-entries', [WorkLedgerController::class, 'storeWork'])->name('work-entries.store');

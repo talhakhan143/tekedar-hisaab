@@ -1,6 +1,6 @@
 <x-app-layout>
     <x-slot name="title">Projects</x-slot>
-    <x-slot name="header">Projects</x-slot>
+    <x-slot name="header">Projects (پروجیکٹس)</x-slot>
 
     <div class="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <form method="GET" class="flex gap-2">
@@ -16,7 +16,7 @@
         </form>
         <a href="{{ route('projects.create') }}"
            class="inline-flex items-center justify-center gap-2 rounded-md bg-emerald-600 px-4 py-2.5 text-sm font-semibold text-white hover:bg-emerald-700">
-            + New Project
+            + New Project (نیا پروجیکٹ)
         </a>
     </div>
 
@@ -25,12 +25,12 @@
             <table class="min-w-full divide-y divide-gray-200 text-sm">
                 <thead class="bg-gray-50 text-left text-xs uppercase tracking-wide text-gray-500">
                     <tr>
-                        <th class="px-4 py-3">Project</th>
-                        <th class="px-4 py-3">Type</th>
-                        <th class="px-4 py-3 text-right">Contract</th>
-                        <th class="px-4 py-3 text-right">Cost so far</th>
-                        <th class="px-4 py-3 text-right">Projected P/L</th>
-                        <th class="px-4 py-3">Status</th>
+                        <th class="px-4 py-3">Project (پروجیکٹ)</th>
+                        <th class="px-4 py-3">Type (قسم)</th>
+                        <th class="px-4 py-3 text-right">Contract (ٹھیکہ)</th>
+                        <th class="px-4 py-3 text-right">Cost so far (اب تک لاگت)</th>
+                        <th class="px-4 py-3 text-right">Projected P/L (متوقع نفع/نقصان)</th>
+                        <th class="px-4 py-3">Status (حالت)</th>
                         <th class="px-4 py-3"></th>
                     </tr>
                 </thead>

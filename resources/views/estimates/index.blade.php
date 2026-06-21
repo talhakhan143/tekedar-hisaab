@@ -1,6 +1,6 @@
 <x-app-layout>
     <x-slot name="title">Estimates · {{ $project->name }}</x-slot>
-    <x-slot name="header">Estimates · {{ $project->name }}</x-slot>
+    <x-slot name="header">Estimates / تخمینہ · {{ $project->name }}</x-slot>
 
     <div class="mb-4 flex items-center gap-3">
         <a href="{{ route('projects.show', $project) }}" class="text-sm font-medium text-emerald-700 hover:underline">← Back to project</a>
@@ -12,7 +12,7 @@
     <div class="grid grid-cols-1 gap-6 lg:grid-cols-3">
         {{-- Add form --}}
         <div class="lg:col-span-1">
-            <x-card title="Add Estimate Line">
+            <x-card title="Add Estimate Line (تخمینہ شامل کریں)">
                 <form method="POST" action="{{ route('estimates.store', $project) }}" class="space-y-4"
                       x-data="{ cat: 'material' }">
                     @csrf

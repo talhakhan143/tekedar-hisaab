@@ -1,26 +1,26 @@
 <x-app-layout>
     <x-slot name="title">Money Out</x-slot>
-    <x-slot name="header">Money Out</x-slot>
+    <x-slot name="header">Money Out (اخراجات)</x-slot>
 
     {{-- Summary --}}
     <div class="mb-5 grid grid-cols-2 gap-4 xl:grid-cols-5">
-        <x-stat label="Material" :value="\App\Support\Money::short($materialSpent)" color="text-amber-600" />
-        <x-stat label="Labour Paid" :value="\App\Support\Money::short($labourPaid)" color="text-indigo-600" />
-        <x-stat label="Other Expenses" :value="\App\Support\Money::short($otherTotal)" color="text-sky-600" />
-        <x-stat label="General Overheads" :value="\App\Support\Money::short($overheadTotal)" color="text-gray-700" />
-        <x-stat label="Grand Total Out" :value="\App\Support\Money::short($grandTotal)" color="text-red-600" />
+        <x-stat label="Material (مٹیریل)" :value="\App\Support\Money::short($materialSpent)" color="text-amber-600" />
+        <x-stat label="Labour Paid (مزدوری)" :value="\App\Support\Money::short($labourPaid)" color="text-indigo-600" />
+        <x-stat label="Other Expenses (دیگر اخراجات)" :value="\App\Support\Money::short($otherTotal)" color="text-sky-600" />
+        <x-stat label="General Overheads (دفتری اخراجات)" :value="\App\Support\Money::short($overheadTotal)" color="text-gray-700" />
+        <x-stat label="Grand Total Out (کل اخراجات)" :value="\App\Support\Money::short($grandTotal)" color="text-red-600" />
     </div>
 
     <div class="mb-6 flex flex-wrap gap-2">
-        <a href="{{ route('materials.create') }}" class="rounded-md bg-amber-600 px-3 py-2 text-sm font-medium text-white hover:bg-amber-700">+ Material Purchase</a>
-        <a href="{{ route('materials.index') }}" class="rounded-md bg-white px-3 py-2 text-sm font-medium text-gray-700 ring-1 ring-gray-300 hover:bg-gray-50">All Materials</a>
-        <a href="{{ route('workers.index') }}" class="rounded-md bg-white px-3 py-2 text-sm font-medium text-gray-700 ring-1 ring-gray-300 hover:bg-gray-50">Wages (Workers)</a>
+        <a href="{{ route('materials.create') }}" class="rounded-md bg-amber-600 px-3 py-2 text-sm font-medium text-white hover:bg-amber-700">+ Material Purchase (مٹیریل خریداری)</a>
+        <a href="{{ route('materials.index') }}" class="rounded-md bg-white px-3 py-2 text-sm font-medium text-gray-700 ring-1 ring-gray-300 hover:bg-gray-50">All Materials (تمام مٹیریل)</a>
+        <a href="{{ route('workers.index') }}" class="rounded-md bg-white px-3 py-2 text-sm font-medium text-gray-700 ring-1 ring-gray-300 hover:bg-gray-50">Wages — Workers (مزدوری)</a>
     </div>
 
     {{-- Other expenses --}}
     <div class="grid grid-cols-1 gap-6 lg:grid-cols-3">
         <div class="lg:col-span-1">
-            <x-card title="Add Other Expense">
+            <x-card title="Add Other Expense (دیگر خرچ شامل کریں)">
                 <form method="POST" action="{{ route('expenses.store') }}" class="space-y-3">
                     @csrf
                     <select name="category" class="block w-full rounded-md border-gray-300 text-sm shadow-sm focus:border-emerald-500 focus:ring-emerald-500">
@@ -39,7 +39,7 @@
             </x-card>
         </div>
         <div class="lg:col-span-2">
-            <x-card title="Other Expenses" class="!p-0">
+            <x-card title="Other Expenses (دیگر اخراجات)" class="!p-0">
                 <div class="max-h-96 overflow-y-auto">
                     <table class="min-w-full divide-y divide-gray-200 text-sm">
                         <thead class="sticky top-0 bg-gray-50 text-left text-xs uppercase text-gray-500"><tr><th class="px-4 py-3">Date</th><th class="px-4 py-3">Category</th><th class="px-4 py-3">Description</th><th class="px-4 py-3">Project</th><th class="px-4 py-3 text-right">Amount</th><th></th></tr></thead>
@@ -64,7 +64,7 @@
     {{-- General overheads --}}
     <div class="mt-6 grid grid-cols-1 gap-6 lg:grid-cols-3">
         <div class="lg:col-span-1">
-            <x-card title="Add General Overhead (monthly)">
+            <x-card title="Add General Overhead — monthly (ماہانہ دفتری خرچ)">
                 <form method="POST" action="{{ route('overheads.store') }}" class="space-y-3">
                     @csrf
                     <input type="month" name="month" value="{{ now()->format('Y-m') }}" required class="block w-full rounded-md border-gray-300 text-sm shadow-sm focus:border-emerald-500 focus:ring-emerald-500">
@@ -76,7 +76,7 @@
             </x-card>
         </div>
         <div class="lg:col-span-2">
-            <x-card title="General Overheads" class="!p-0">
+            <x-card title="General Overheads (دفتری اخراجات)" class="!p-0">
                 <div class="max-h-96 overflow-y-auto">
                     <table class="min-w-full divide-y divide-gray-200 text-sm">
                         <thead class="sticky top-0 bg-gray-50 text-left text-xs uppercase text-gray-500"><tr><th class="px-4 py-3">Month</th><th class="px-4 py-3">Category</th><th class="px-4 py-3 text-right">Amount</th><th></th></tr></thead>

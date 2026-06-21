@@ -73,7 +73,23 @@ class ProjectController extends Controller
             ];
         }
 
-        return view('projects.show', compact('project', 'f', 'variance'));
+        // Per-project labour summary (which workers worked here + earned/paid on THIS project).
+        $earned = \App\Models\WorkEntry::where('project_id', $project->id)
+            ->selectRaw('worker_id, SUM(computed_wage_paisa) as earned, SUM(COALESCE(days_present,0)) as days')
+            ->groupBy('worker_id')->get()->keyBy('worker_id');
+        $paid = \App\Models\WagePayment::where('project_id', $project->id)
+            ->selectRaw('worker_id, SUM(amount_paisa) as paid')
+            ->groupBy('worker_id')->pluck('paid', 'worker_id');
+        $workerIds = $earned->keys()->merge($paid->keys())->unique();
+        $projectWorkers = \App\Models\Worker::whereIn('id', $workerIds)->orderBy('name')->get()->map(fn ($w) => [
+            'worker' => $w,
+            'days'   => (float) ($earned[$w->id]->days ?? 0),
+            'earned' => (int) ($earned[$w->id]->earned ?? 0),
+            'paid'   => (int) ($paid[$w->id] ?? 0),
+        ]);
+        $allWorkers = \App\Models\Worker::orderBy('name')->get(['id', 'name', 'wage_type']);
+
+        return view('projects.show', compact('project', 'f', 'variance', 'projectWorkers', 'allWorkers'));
     }
 
     public function edit(Project $project)

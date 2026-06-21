@@ -1,11 +1,11 @@
 <x-app-layout>
     <x-slot name="title">Settings</x-slot>
-    <x-slot name="header">Settings</x-slot>
+    <x-slot name="header">Settings (ترتیبات)</x-slot>
 
     <form method="POST" action="{{ route('settings.update') }}" enctype="multipart/form-data" class="max-w-2xl space-y-6">
         @csrf @method('PUT')
 
-        <x-card title="Company">
+        <x-card title="Company (کمپنی)">
             <div class="space-y-5">
                 <div>
                     <x-input-label for="company_name" value="Company Name *" />
@@ -23,7 +23,7 @@
             </div>
         </x-card>
 
-        <x-card title="Defaults">
+        <x-card title="Defaults (طے شدہ اقدار)">
             <div class="grid grid-cols-1 gap-5 sm:grid-cols-2">
                 <div>
                     <x-input-label for="default_retention" value="Default Retention % *" />

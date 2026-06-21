@@ -1,10 +1,10 @@
 <x-app-layout>
     <x-slot name="title">Workers</x-slot>
-    <x-slot name="header">Workers</x-slot>
+    <x-slot name="header">Workers (مزدور)</x-slot>
 
     <div class="mb-5 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <x-stat label="Total Worker Advances Outstanding" :value="\App\Support\Money::format($totalAdvances)" color="text-amber-600" />
-        <a href="{{ route('workers.create') }}" class="inline-flex items-center justify-center rounded-md bg-emerald-600 px-4 py-2.5 text-sm font-semibold text-white hover:bg-emerald-700">+ New Worker</a>
+        <x-stat label="Total Worker Advances (کل پیشگی)" :value="\App\Support\Money::format($totalAdvances)" color="text-amber-600" />
+        <a href="{{ route('workers.create') }}" class="inline-flex items-center justify-center rounded-md bg-emerald-600 px-4 py-2.5 text-sm font-semibold text-white hover:bg-emerald-700">+ New Worker (نیا مزدور)</a>
     </div>
 
     <x-card class="!p-0">
@@ -12,12 +12,12 @@
             <table class="min-w-full divide-y divide-gray-200 text-sm">
                 <thead class="bg-gray-50 text-left text-xs uppercase tracking-wide text-gray-500">
                     <tr>
-                        <th class="px-4 py-3">Name</th>
-                        <th class="px-4 py-3">Role</th>
-                        <th class="px-4 py-3">Wage</th>
-                        <th class="px-4 py-3 text-right">Earned</th>
-                        <th class="px-4 py-3 text-right">Advances Out</th>
-                        <th class="px-4 py-3 text-right">Payable Now</th>
+                        <th class="px-4 py-3">Name (نام)</th>
+                        <th class="px-4 py-3">Role (کام)</th>
+                        <th class="px-4 py-3">Wage (دیہاڑی)</th>
+                        <th class="px-4 py-3 text-right">Earned (کمایا)</th>
+                        <th class="px-4 py-3 text-right">Advances (پیشگی)</th>
+                        <th class="px-4 py-3 text-right">Payable Now (قابلِ ادائیگی)</th>
                         <th class="px-4 py-3"></th>
                     </tr>
                 </thead>

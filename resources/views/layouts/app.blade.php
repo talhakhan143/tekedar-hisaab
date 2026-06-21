@@ -39,17 +39,17 @@
                 <nav class="flex-1 overflow-y-auto px-3 py-4 space-y-1 text-sm">
                     @php
                         $nav = [
-                            ['dashboard',       'dashboard',  'Dashboard',  'M3 12l9-9 9 9M4 10v10h5v-6h6v6h5V10'],
-                            ['projects.index',  'projects.*', 'Projects',   'M3 7h18M3 12h18M3 17h18'],
-                            ['money-in',        'money-in',   'Money In',   'M12 4v16m8-8H4'],
-                            ['money-out',       'money-out',  'Money Out',  'M4 12h16'],
-                            ['workers.index',   'workers.*',  'Workers',    'M17 20h5v-2a4 4 0 00-3-3.87M9 20H4v-2a4 4 0 013-3.87m6-1.13a4 4 0 10-4-4'],
-                            ['vendors.index',   'vendors.*',  'Vendors',    'M3 3h2l.4 2M7 13h10l4-8H5.4'],
-                            ['reports',         'reports*',   'Reports',    'M9 17v-6m4 6V7m4 10v-3M3 21h18'],
-                            ['settings',        'settings*',  'Settings',   'M12 15a3 3 0 100-6 3 3 0 000 6z'],
+                            ['dashboard',       'dashboard',  'Dashboard',  'ڈیش بورڈ',  'M3 12l9-9 9 9M4 10v10h5v-6h6v6h5V10'],
+                            ['projects.index',  'projects.*', 'Projects',   'پروجیکٹس',  'M3 7h18M3 12h18M3 17h18'],
+                            ['money-in',        'money-in',   'Money In',   'آمدنی',     'M12 4v16m8-8H4'],
+                            ['money-out',       'money-out',  'Money Out',  'اخراجات',   'M4 12h16'],
+                            ['workers.index',   'workers.*',  'Workers',    'مزدور',     'M17 20h5v-2a4 4 0 00-3-3.87M9 20H4v-2a4 4 0 013-3.87m6-1.13a4 4 0 10-4-4'],
+                            ['vendors.index',   'vendors.*',  'Vendors',    'سپلائرز',   'M3 3h2l.4 2M7 13h10l4-8H5.4'],
+                            ['reports',         'reports*',   'Reports',    'رپورٹس',    'M9 17v-6m4 6V7m4 10v-3M3 21h18'],
+                            ['settings',        'settings*',  'Settings',   'ترتیبات',   'M12 15a3 3 0 100-6 3 3 0 000 6z'],
                         ];
                     @endphp
-                    @foreach ($nav as [$route, $pattern, $label, $icon])
+                    @foreach ($nav as [$route, $pattern, $label, $urdu, $icon])
                         @php $active = request()->routeIs($pattern); @endphp
                         <a href="{{ Route::has($route) ? route($route) : '#' }}"
                            class="flex items-center gap-3 rounded-lg px-3 py-2.5 font-medium transition
@@ -57,7 +57,7 @@
                             <svg class="h-5 w-5 shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" d="{{ $icon }}"/>
                             </svg>
-                            {{ $label }}
+                            <span>{{ $label }} <span class="text-xs opacity-70">({{ $urdu }})</span></span>
                         </a>
                     @endforeach
                 </nav>
@@ -70,7 +70,7 @@
                             <svg class="h-5 w-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/>
                             </svg>
-                            Log Out
+                            Log Out (لاگ آؤٹ)
                         </button>
                     </form>
                 </div>

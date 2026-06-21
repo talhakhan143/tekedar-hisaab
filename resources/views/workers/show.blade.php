@@ -12,16 +12,16 @@
 
     {{-- Ledger summary --}}
     <div class="mb-6 grid grid-cols-2 gap-4 xl:grid-cols-4">
-        <x-stat label="Earned (wages)" :value="\App\Support\Money::format($earned)" />
-        <x-stat label="Paid" :value="\App\Support\Money::format($paid)" color="text-emerald-600" />
-        <x-stat label="Advances Outstanding" :value="\App\Support\Money::format($advances)" color="text-amber-600" />
-        <x-stat label="Payable Now" :value="\App\Support\Money::format($payable)" :color="$payable < 0 ? 'text-red-600' : 'text-indigo-600'" sub="Earned − paid − advances" />
+        <x-stat label="Earned — wages (کمایا)" :value="\App\Support\Money::format($earned)" />
+        <x-stat label="Paid (دیا)" :value="\App\Support\Money::format($paid)" color="text-emerald-600" />
+        <x-stat label="Advances Outstanding (پیشگی باقی)" :value="\App\Support\Money::format($advances)" color="text-amber-600" />
+        <x-stat label="Payable Now (قابلِ ادائیگی)" :value="\App\Support\Money::format($payable)" :color="$payable < 0 ? 'text-red-600' : 'text-indigo-600'" sub="Kamaya − diya − peshgi" />
     </div>
 
     {{-- Entry forms --}}
     <div class="grid grid-cols-1 gap-6 lg:grid-cols-3">
         {{-- Attendance / work --}}
-        <x-card title="Add Attendance / Work">
+        <x-card title="Add Attendance / Work (حاضری لگائیں)">
             <form method="POST" action="{{ route('work-entries.store', $worker) }}" class="space-y-3">
                 @csrf
                 <select name="project_id" class="block w-full rounded-md border-gray-300 text-sm shadow-sm focus:border-emerald-500 focus:ring-emerald-500">
@@ -39,7 +39,7 @@
         </x-card>
 
         {{-- Advance (peshgi) --}}
-        <x-card title="Advance / Recovery (Peshgi)">
+        <x-card title="Advance / Recovery — Peshgi (پیشگی / وصولی)">
             <form method="POST" action="{{ route('worker-advances.store', $worker) }}" class="space-y-3">
                 @csrf
                 <select name="type" class="block w-full rounded-md border-gray-300 text-sm shadow-sm focus:border-emerald-500 focus:ring-emerald-500">
@@ -57,7 +57,7 @@
         </x-card>
 
         {{-- Wage payment --}}
-        <x-card title="Pay Wages">
+        <x-card title="Pay Wages (مزدوری دیں)">
             <form method="POST" action="{{ route('wage-payments.store', $worker) }}" class="space-y-3" x-data="{ override: false }">
                 @csrf
                 <div class="rounded-md bg-indigo-50 px-3 py-2 text-center text-sm">

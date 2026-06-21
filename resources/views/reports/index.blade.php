@@ -1,9 +1,9 @@
 <x-app-layout>
     <x-slot name="title">Reports</x-slot>
-    <x-slot name="header">Reports</x-slot>
+    <x-slot name="header">Reports (رپورٹس)</x-slot>
 
     <div class="grid grid-cols-1 gap-6 lg:grid-cols-3">
-        <x-card title="Monthly Profit Report">
+        <x-card title="Monthly Profit Report (ماہانہ منافع)">
             <form method="GET" action="{{ route('reports.monthly') }}" class="space-y-3">
                 <input type="month" name="month" value="{{ $thisMonth }}" class="block w-full rounded-md border-gray-300 text-sm shadow-sm focus:border-emerald-500 focus:ring-emerald-500">
                 <div class="flex gap-2">
@@ -15,7 +15,7 @@
             </form>
         </x-card>
 
-        <x-card title="Outstanding Report">
+        <x-card title="Outstanding Report (واجبات رپورٹ)">
             <div class="space-y-3">
                 <p class="text-sm text-gray-500">Client receivables + vendor payables + worker advances.</p>
                 <div class="flex gap-2">
@@ -26,7 +26,7 @@
             </div>
         </x-card>
 
-        <x-card title="Project Closeout Report">
+        <x-card title="Project Closeout Report (پروجیکٹ کلوزآؤٹ)">
             <form method="GET" action="{{ url('reports/closeout') }}/{{ $projects->first()?->id }}" class="space-y-3" x-data="{ pid: '{{ $projects->first()?->id }}' }" @submit="$el.action = '{{ url('reports/closeout') }}/' + pid">
                 <select x-model="pid" class="block w-full rounded-md border-gray-300 text-sm shadow-sm focus:border-emerald-500 focus:ring-emerald-500">
                     @foreach($projects as $p)<option value="{{ $p->id }}">{{ $p->name }}</option>@endforeach

@@ -1,17 +1,17 @@
 <x-app-layout>
     <x-slot name="title">Money In</x-slot>
-    <x-slot name="header">Money In</x-slot>
+    <x-slot name="header">Money In (آمدنی)</x-slot>
 
     <div class="mb-5 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div class="grid grid-cols-2 gap-4">
-            <x-stat label="Total Net Received" :value="\App\Support\Money::format($totalReceived)" color="text-emerald-600" />
-            <x-stat label="Retention Outstanding" :value="\App\Support\Money::format($totalRetention)" color="text-amber-600" />
+            <x-stat label="Total Net Received (کل وصولی)" :value="\App\Support\Money::format($totalReceived)" color="text-emerald-600" />
+            <x-stat label="Retention Outstanding (روکی رقم)" :value="\App\Support\Money::format($totalRetention)" color="text-amber-600" />
         </div>
-        <a href="{{ route('client-payments.create') }}" class="inline-flex items-center justify-center rounded-md bg-emerald-600 px-4 py-2.5 text-sm font-semibold text-white hover:bg-emerald-700">+ New Client Payment</a>
+        <a href="{{ route('client-payments.create') }}" class="inline-flex items-center justify-center rounded-md bg-emerald-600 px-4 py-2.5 text-sm font-semibold text-white hover:bg-emerald-700">+ New Client Payment (نئی ادائیگی)</a>
     </div>
 
     {{-- Client payments --}}
-    <x-card title="Client Payments" class="!p-0">
+    <x-card title="Client Payments (کلائنٹ کی ادائیگیاں)" class="!p-0">
         <div class="overflow-x-auto">
             <table class="min-w-full divide-y divide-gray-200 text-sm">
                 <thead class="bg-gray-50 text-left text-xs uppercase tracking-wide text-gray-500">
@@ -55,7 +55,7 @@
     {{-- Retention releases --}}
     <div class="mt-6 grid grid-cols-1 gap-6 lg:grid-cols-3">
         <div class="lg:col-span-1">
-            <x-card title="Release Retention">
+            <x-card title="Release Retention (روکی رقم واپس)">
                 <form method="POST" action="{{ route('retention-releases.store') }}" class="space-y-4">
                     @csrf
                     <div>
@@ -75,7 +75,7 @@
             </x-card>
         </div>
         <div class="lg:col-span-2">
-            <x-card title="Retention Releases" class="!p-0">
+            <x-card title="Retention Releases (واپس ملی رقم)" class="!p-0">
                 <div class="overflow-x-auto">
                     <table class="min-w-full divide-y divide-gray-200 text-sm">
                         <thead class="bg-gray-50 text-left text-xs uppercase tracking-wide text-gray-500">
