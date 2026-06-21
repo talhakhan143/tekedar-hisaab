@@ -3,9 +3,11 @@
 use App\Http\Controllers\ClientPaymentController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\EstimateController;
+use App\Http\Controllers\MaterialPurchaseController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\ProjectController;
 use App\Http\Controllers\RetentionReleaseController;
+use App\Http\Controllers\VendorController;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', fn () => redirect()->route('dashboard'));
@@ -29,11 +31,21 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::post('/retention-releases', [RetentionReleaseController::class, 'store'])->name('retention-releases.store');
     Route::delete('/retention-releases/{retentionRelease}', [RetentionReleaseController::class, 'destroy'])->name('retention-releases.destroy');
 
+    // Vendors + material purchases (payables)
+    Route::resource('vendors', VendorController::class);
+    Route::get('/materials', [MaterialPurchaseController::class, 'index'])->name('materials.index');
+    Route::get('/materials/create', [MaterialPurchaseController::class, 'create'])->name('materials.create');
+    Route::post('/materials', [MaterialPurchaseController::class, 'store'])->name('materials.store');
+    Route::get('/materials/{materialPurchase}/edit', [MaterialPurchaseController::class, 'edit'])->name('materials.edit');
+    Route::put('/materials/{materialPurchase}', [MaterialPurchaseController::class, 'update'])->name('materials.update');
+    Route::delete('/materials/{materialPurchase}', [MaterialPurchaseController::class, 'destroy'])->name('materials.destroy');
+    // alias used by project show page
+    Route::get('/material-purchases/create', [MaterialPurchaseController::class, 'create'])->name('material-purchases.create');
+
     // Module shells — replaced with real controllers in later steps.
     $stubs = [
         'money-out' => ['Money Out', 'Step 6–8'],
         'workers'   => ['Workers', 'Step 7'],
-        'vendors'   => ['Vendors', 'Step 6'],
         'reports'   => ['Reports', 'Step 10'],
         'settings'  => ['Settings', 'Step 11'],
     ];
