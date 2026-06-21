@@ -39,18 +39,18 @@
                 <nav class="flex-1 overflow-y-auto px-3 py-4 space-y-1 text-sm">
                     @php
                         $nav = [
-                            ['dashboard',  'Dashboard',  'M3 12l9-9 9 9M4 10v10h5v-6h6v6h5V10'],
-                            ['projects',   'Projects',   'M3 7h18M3 12h18M3 17h18'],
-                            ['money-in',   'Money In',   'M12 4v16m8-8H4'],
-                            ['money-out',  'Money Out',  'M4 12h16'],
-                            ['workers',    'Workers',    'M17 20h5v-2a4 4 0 00-3-3.87M9 20H4v-2a4 4 0 013-3.87m6-1.13a4 4 0 10-4-4'],
-                            ['vendors',    'Vendors',    'M3 3h2l.4 2M7 13h10l4-8H5.4'],
-                            ['reports',    'Reports',    'M9 17v-6m4 6V7m4 10v-3M3 21h18'],
-                            ['settings',   'Settings',   'M12 15a3 3 0 100-6 3 3 0 000 6z'],
+                            ['dashboard',       'dashboard',  'Dashboard',  'M3 12l9-9 9 9M4 10v10h5v-6h6v6h5V10'],
+                            ['projects.index',  'projects.*', 'Projects',   'M3 7h18M3 12h18M3 17h18'],
+                            ['money-in',        'money-in',   'Money In',   'M12 4v16m8-8H4'],
+                            ['money-out',       'money-out',  'Money Out',  'M4 12h16'],
+                            ['workers.index',   'workers.*',  'Workers',    'M17 20h5v-2a4 4 0 00-3-3.87M9 20H4v-2a4 4 0 013-3.87m6-1.13a4 4 0 10-4-4'],
+                            ['vendors.index',   'vendors.*',  'Vendors',    'M3 3h2l.4 2M7 13h10l4-8H5.4'],
+                            ['reports',         'reports*',   'Reports',    'M9 17v-6m4 6V7m4 10v-3M3 21h18'],
+                            ['settings',        'settings*',  'Settings',   'M12 15a3 3 0 100-6 3 3 0 000 6z'],
                         ];
                     @endphp
-                    @foreach ($nav as [$route, $label, $icon])
-                        @php $active = request()->routeIs($route) || request()->routeIs($route.'.*'); @endphp
+                    @foreach ($nav as [$route, $pattern, $label, $icon])
+                        @php $active = request()->routeIs($pattern); @endphp
                         <a href="{{ Route::has($route) ? route($route) : '#' }}"
                            class="flex items-center gap-3 rounded-lg px-3 py-2.5 font-medium transition
                                   {{ $active ? 'bg-emerald-600 text-white' : 'text-gray-300 hover:bg-gray-800 hover:text-white' }}">

@@ -1,58 +1,75 @@
-<p align="center"><a href="https://laravel.com" target="_blank"><img src="https://raw.githubusercontent.com/laravel/art/master/logo-lockup/5%20SVG/2%20CMYK/1%20Full%20Color/laravel-logolockup-cmyk-red.svg" width="400" alt="Laravel Logo"></a></p>
+# Tekedar Hisaab — Money & Profit Tracking
 
-<p align="center">
-<a href="https://github.com/laravel/framework/actions"><img src="https://github.com/laravel/framework/workflows/tests/badge.svg" alt="Build Status"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/dt/laravel/framework" alt="Total Downloads"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/v/laravel/framework" alt="Latest Stable Version"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/l/laravel/framework" alt="License"></a>
-</p>
+Single-admin money-management and profit-tracking app for a Pakistani building/interior
+contractor (tekedar). Tracks every rupee in/out per theka (contract) and answers, at any
+moment: per-project profit/loss and overall monthly position.
 
-## About Laravel
+Built with **Laravel 13 + Blade + Tailwind + Alpine.js + MySQL**. Runs on Hostinger shared
+cPanel hosting (no Node runtime, no queues, no Redis). All money stored as **integer paisa
+(BIGINT)** — zero floating-point errors.
 
-Laravel is a web application framework with expressive, elegant syntax. We believe development must be an enjoyable and creative experience to be truly fulfilling. Laravel takes the pain out of development by easing common tasks used in many web projects, such as:
+## Core concepts
 
-- [Simple, fast routing engine](https://laravel.com/docs/routing).
-- [Powerful dependency injection container](https://laravel.com/docs/container).
-- Multiple back-ends for [session](https://laravel.com/docs/session) and [cache](https://laravel.com/docs/cache) storage.
-- Expressive, intuitive [database ORM](https://laravel.com/docs/eloquent).
-- Database agnostic [schema migrations](https://laravel.com/docs/migrations).
-- [Robust background job processing](https://laravel.com/docs/queues).
-- [Real-time event broadcasting](https://laravel.com/docs/broadcasting).
+- **Accrued profit** = total gross client billing − total cost incurred.
+- **Cash profit** = (net received + retention released) − cash actually paid out. Excludes
+  retention still held by the client. These two are tracked **separately** everywhere.
+- **Retention** accrues as a separate receivable; only a `retention_release` moves it to cash.
+- **Estimate vs Actual** per category is the heart of the app — that gap is the profit.
 
-Laravel is accessible, powerful, and provides tools required for large, robust applications.
-
-## Learning Laravel
-
-Laravel has the most extensive and thorough [documentation](https://laravel.com/docs) and video tutorial library of all modern web application frameworks, making it a breeze to get started with the framework.
-
-In addition, [Laracasts](https://laracasts.com) contains thousands of video tutorials on a range of topics including Laravel, modern PHP, unit testing, and JavaScript. Boost your skills by digging into our comprehensive video library.
-
-You can also watch bite-sized lessons with real-world projects on [Laravel Learn](https://laravel.com/learn), where you will be guided through building a Laravel application from scratch while learning PHP fundamentals.
-
-## Agentic Development
-
-Laravel's predictable structure and conventions make it ideal for AI coding agents like Claude Code, Cursor, and GitHub Copilot. Install [Laravel Boost](https://laravel.com/docs/ai) to supercharge your AI workflow:
+## Local development
 
 ```bash
-composer require laravel/boost --dev
-
-php artisan boost:install
+composer install
+cp .env.example .env        # then set DB_* + APP_TIMEZONE=Asia/Karachi
+php artisan key:generate
+php artisan migrate --seed   # creates admin + full demo project
+npm install && npm run build
+php artisan storage:link
+php artisan serve
 ```
 
-Boost provides your agent 15+ tools and skills that help agents build Laravel applications while following best practices.
+Login: **admin@tekedar.test / password**
 
-## Contributing
+The demo seeder creates one realistic project: 1500 sq.ft full-finished theka @ ₨2,200/sqft,
+7% retention, 3 client payments, 10 material purchases (2 on udhaar), 4 workers with
+attendance + 2 advances, 6 other expenses, monthly overheads.
 
-Thank you for considering contributing to the Laravel framework! The contribution guide can be found in the [Laravel documentation](https://laravel.com/docs/contributions).
+## Deploy to Hostinger (cPanel)
 
-## Code of Conduct
+1. Build assets locally and commit `public/build` (no Node on the server):
+   ```bash
+   npm run build
+   ```
+2. Upload the project (git or File Manager) **outside** `public_html`, e.g. `~/tekedar`.
+3. Point the domain/subdomain document root to `~/tekedar/public`, OR move `public/*` into
+   `public_html` and adjust `index.php` paths accordingly.
+4. Create a MySQL DB + user in cPanel; put credentials in `.env`
+   (`APP_ENV=production`, `APP_DEBUG=false`, `APP_TIMEZONE=Asia/Karachi`).
+5. SSH (or cPanel Terminal):
+   ```bash
+   composer install --no-dev --optimize-autoloader
+   php artisan key:generate
+   php artisan migrate --force --seed     # drop --seed if you don't want demo data
+   php artisan storage:link
+   php artisan config:cache && php artisan route:cache && php artisan view:cache
+   ```
+6. **Cron** (cPanel → Cron Jobs, every minute):
+   ```
+   * * * * * php /home/USER/tekedar/artisan schedule:run >> /dev/null 2>&1
+   ```
+   (No scheduled jobs ship yet; the cron is ready for future reminders/aging tasks.)
 
-In order to ensure that the Laravel community is welcoming to all, please review and abide by the [Code of Conduct](https://laravel.com/docs/contributions#code-of-conduct).
+## Tech notes
 
-## Security Vulnerabilities
+- Money helper: `app/Support/Money.php` (`toPaisa`, `format`, `short`) + `@money`/`@moneyc`
+  Blade directives + `App\Casts\PaisaCast`.
+- P&L engine: `app/Services/ProjectFinance.php` (per project) and
+  `app/Services/DashboardData.php` (all-company).
+- Everything financial is soft-deleted (audit trail); purchase reassignments logged to `audit_logs`.
+- Reports export to CSV (streamed) and PDF (`barryvdh/laravel-dompdf`).
 
-If you discover a security vulnerability within Laravel, please send an e-mail to Taylor Otwell via [taylor@laravel.com](mailto:taylor@laravel.com). All security vulnerabilities will be promptly addressed.
+## Modules
 
-## License
-
-The Laravel framework is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
+Dashboard · Projects (CRUD + P&L) · Estimates · Money In (client payments + retention) ·
+Money Out (materials + wages + expenses + overheads) · Workers (attendance/advances/wages) ·
+Vendors (ledger + payables) · Reports (monthly/outstanding/closeout, CSV+PDF) · Settings.
