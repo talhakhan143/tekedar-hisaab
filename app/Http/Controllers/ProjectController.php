@@ -103,12 +103,14 @@ class ProjectController extends Controller
         for ($d = $gridStart->copy(); $d->lte($gridEnd); $d->addDay()) {
             $attDays[] = ['date' => $d->format('Y-m-d'), 'd' => $d->day, 'mon' => $d->format('M'), 'wd' => $d->format('D')[0], 'fri' => $d->isFriday()];
         }
-        // Month options: project start month -> current month.
+        // Month options: current month back to (project start OR 18 months, whichever is earlier).
         $attMonthOptions = [];
-        $om = ($project->start_date ? $project->start_date->copy() : now())->startOfMonth();
         $omEnd = now()->startOfMonth();
-        if ($om->gt($omEnd)) { $om = $omEnd->copy(); }
-        for ($m = $omEnd->copy(); $m->gte($om); $m->subMonth()) {
+        $earliest = $omEnd->copy()->subMonths(18);
+        if ($project->start_date && $project->start_date->copy()->startOfMonth()->lt($earliest)) {
+            $earliest = $project->start_date->copy()->startOfMonth();
+        }
+        for ($m = $omEnd->copy(); $m->gte($earliest); $m->subMonth()) {
             $attMonthOptions[] = ['value' => $m->format('Y-m'), 'label' => $m->format('F Y')];
         }
         // Which (worker, date) already have attendance (any project) -> locked.
