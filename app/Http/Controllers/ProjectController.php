@@ -131,11 +131,14 @@ class ProjectController extends Controller
         $defaultWastage = Setting::get('default_wastage');
         $estimateCategories = \App\Http\Controllers\EstimateController::CATEGORIES;
         $expenseCategories = \App\Http\Controllers\MoneyOutController::EXPENSE_CATEGORIES;
+        $adjustments = \App\Models\WorkerAdvance::with('worker')->where('project_id', $project->id)
+            ->orderByDesc('date')->orderByDesc('id')->get();
 
         return view('projects.show', compact(
             'project', 'f', 'variance', 'projectWorkers', 'allWorkers',
             'vendors', 'defaultRetention', 'defaultWastage', 'estimateCategories', 'expenseCategories',
-            'attWorkers', 'attDays', 'attMarked', 'attMonth', 'attYear', 'attMon', 'attYears', 'attMonthNames'
+            'attWorkers', 'attDays', 'attMarked', 'attMonth', 'attYear', 'attMon', 'attYears', 'attMonthNames',
+            'adjustments'
         ));
     }
 
@@ -263,7 +266,7 @@ class ProjectController extends Controller
             'notes'        => ($v['type'] === 'deduction' ? 'Katauti: ' : 'Bonus: ') . ($v['notes'] ?? ''),
         ]);
 
-        return $this->backToTab($project, 'attendance', 'Adjustment record ho gaya.');
+        return $this->backToTab($project, 'adjustment', 'Adjustment record ho gaya.');
     }
 
     private function backToTab(Project $project, string $tab, string $msg)
