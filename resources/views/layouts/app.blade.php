@@ -93,14 +93,29 @@
                     </div>
                 </header>
 
-                @if (session('status'))
-                    <div class="mx-4 mt-4 rounded-lg bg-emerald-50 px-4 py-3 text-sm text-emerald-800 sm:mx-6">
-                        {{ session('status') }}
-                    </div>
-                @endif
-                @if (session('error'))
-                    <div class="mx-4 mt-4 rounded-lg bg-red-50 px-4 py-3 text-sm font-medium text-red-700 sm:mx-6">
-                        {{ session('error') }}
+                {{-- Toast popup (auto-dismiss, click to close) for flash messages --}}
+                @if (session('status') || session('error'))
+                    @php $isErr = (bool) session('error'); $toastMsg = session('error') ?: session('status'); @endphp
+                    <div x-data="{ show: false }"
+                         x-init="$nextTick(() => { show = true }); setTimeout(() => show = false, 4500)"
+                         x-show="show"
+                         x-transition:enter="transition ease-out duration-300"
+                         x-transition:enter-start="opacity-0 -translate-y-4"
+                         x-transition:enter-end="opacity-100 translate-y-0"
+                         x-transition:leave="transition ease-in duration-200"
+                         x-transition:leave-start="opacity-100 translate-y-0"
+                         x-transition:leave-end="opacity-0 -translate-y-4"
+                         @click="show = false"
+                         class="fixed left-1/2 top-5 z-[60] -translate-x-1/2 cursor-pointer"
+                         style="display:none">
+                        <div class="flex items-center gap-3 rounded-xl px-5 py-3.5 text-sm font-semibold shadow-lg ring-1
+                                    {{ $isErr ? 'bg-red-600 text-white ring-red-700' : 'bg-emerald-600 text-white ring-emerald-700' }}">
+                            <span class="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-white/20 text-lg">
+                                {{ $isErr ? '✕' : '✓' }}
+                            </span>
+                            <span>{{ $toastMsg }}</span>
+                            <span class="ml-2 text-white/60">×</span>
+                        </div>
                     </div>
                 @endif
 
