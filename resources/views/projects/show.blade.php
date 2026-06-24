@@ -30,7 +30,6 @@
                 ['overview',   'Overview (خلاصہ)'],
                 ['money-in',   'Client Payments (وصولی)'],
                 ['materials',  'Materials (مٹیریل)'],
-                ['subcontractor', 'Sub-contractor (ٹھیکہ)'],
                 ['attendance', 'Labour / Attendance (مزدوری)'],
                 ['adjustment', 'Adjustment (کٹوتی/بونس)'],
                 ['expenses',   'Other Expenses (اخراجات)'],
