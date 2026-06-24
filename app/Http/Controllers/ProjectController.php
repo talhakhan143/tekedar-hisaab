@@ -95,34 +95,20 @@ class ProjectController extends Controller
         ]);
         $allWorkers = \App\Models\Worker::orderBy('name')->get(['id', 'name', 'wage_type']);
 
-        // ---- Attendance day-grid: ONE month (dropdown), default current month ----
+        // ---- Attendance: per-worker calendar modal. Load ALL marked days (value = days_present) ----
         $attWorkers = \App\Models\Worker::where('wage_type', '!=', 'contract_piece')->orderBy('name')->get();
-        $attMonth = request('att_month', now()->format('Y-m'));
-        try {
-            $gridStart = \Carbon\Carbon::createFromFormat('Y-m-d', $attMonth . '-01')->startOfMonth();
-        } catch (\Throwable $e) {
-            $gridStart = now()->startOfMonth();
-            $attMonth = $gridStart->format('Y-m');
-        }
-        $gridEnd = $gridStart->copy()->endOfMonth();
-        $attDays = [];
-        for ($d = $gridStart->copy(); $d->lte($gridEnd); $d->addDay()) {
-            $attDays[] = ['date' => $d->format('Y-m-d'), 'd' => $d->day, 'mon' => $d->format('M'), 'wd' => $d->format('D'), 'fri' => $d->isFriday()];
-        }
-        // Separate year + month selectors.
-        $attYear = (int) $gridStart->format('Y');
-        $attMon  = $gridStart->format('m');
-        $startYear = $project->start_date ? (int) $project->start_date->format('Y') : (int) now()->subYear()->format('Y');
-        $startYear = min($startYear, (int) now()->format('Y') - 1);
-        $attYears = range((int) now()->format('Y'), $startYear); // current .. earliest
-        $attMonthNames = ['01'=>'Jan','02'=>'Feb','03'=>'Mar','04'=>'Apr','05'=>'May','06'=>'Jun','07'=>'Jul','08'=>'Aug','09'=>'Sep','10'=>'Oct','11'=>'Nov','12'=>'Dec'];
-        // Which (worker, date) already have attendance ON THIS PROJECT -> locked (green = counted here).
         $attMarked = [];
         \App\Models\WorkEntry::where('project_id', $project->id)
-            ->whereBetween('date', [$gridStart->format('Y-m-d'), $gridEnd->format('Y-m-d')])
-            ->get(['worker_id', 'date'])->each(function ($e) use (&$attMarked) {
-                $attMarked[$e->worker_id][$e->date->format('Y-m-d')] = true;
+            ->get(['worker_id', 'date', 'days_present'])->each(function ($e) use (&$attMarked) {
+                $attMarked[$e->worker_id][$e->date->format('Y-m-d')] = (float) $e->days_present;
             });
+        $startYear = $project->start_date ? (int) $project->start_date->format('Y') : (int) now()->format('Y');
+        $startYear = min($startYear, (int) now()->format('Y'));
+        $attYears = range((int) now()->format('Y'), $startYear); // current .. earliest
+        $attMonthNames = ['01'=>'Jan','02'=>'Feb','03'=>'Mar','04'=>'Apr','05'=>'May','06'=>'Jun','07'=>'Jul','08'=>'Aug','09'=>'Sep','10'=>'Oct','11'=>'Nov','12'=>'Dec'];
+        $attToday   = now()->format('Y-m-d');
+        $attCurYear = (int) now()->format('Y');
+        $attCurMon  = now()->format('m');
 
         // Data for the in-project tabs.
         $estimatesGrouped = $project->estimates;
@@ -137,34 +123,72 @@ class ProjectController extends Controller
         return view('projects.show', compact(
             'project', 'f', 'variance', 'projectWorkers', 'allWorkers',
             'vendors', 'defaultRetention', 'defaultWastage', 'estimateCategories', 'expenseCategories',
-            'attWorkers', 'attDays', 'attMarked', 'attMonth', 'attYear', 'attMon', 'attYears', 'attMonthNames',
+            'attWorkers', 'attMarked', 'attYears', 'attMonthNames', 'attToday', 'attCurYear', 'attCurMon',
             'adjustments'
         ));
     }
 
-    /** Bulk mark attendance from the project day-grid (selected cells = present). */
+    /** Mark attendance for ONE worker from the calendar modal. Status -> days_present (1 / 0.5 / 0). */
     public function storeBulkAttendance(Request $request, Project $project)
     {
-        $cells = json_decode($request->input('cells', '[]'), true) ?: [];
-        $created = 0; $skipped = 0;
-        $workers = \App\Models\Worker::whereIn('id', collect($cells)->map(fn ($c) => explode('|', $c)[0])->unique())->get()->keyBy('id');
+        $v = $request->validate([
+            'worker_id' => ['required', 'exists:workers,id'],
+            'status'    => ['required', 'in:present,half,absent'],
+            'dates'     => ['required', 'string'],
+        ]);
+        $worker = \App\Models\Worker::findOrFail($v['worker_id']);
+        $dates  = json_decode($v['dates'], true) ?: [];
+        $dayVal = ['present' => 1.0, 'half' => 0.5, 'absent' => 0.0][$v['status']];
+        $today  = now()->format('Y-m-d');
 
-        foreach ($cells as $cell) {
-            [$wid, $date] = array_pad(explode('|', $cell), 2, null);
-            $worker = $workers[$wid] ?? null;
-            if (! $worker || ! $date) { continue; }
-            if (\App\Models\WorkEntry::where('worker_id', $wid)->where('project_id', $project->id)->whereDate('date', $date)->exists()) {
+        $created = 0; $skipped = 0;
+        foreach ($dates as $date) {
+            if (! is_string($date) || ! preg_match('/^\d{4}-\d{2}-\d{2}$/', $date)) { continue; }
+            if ($date > $today) { continue; } // never mark future
+            if (\App\Models\WorkEntry::where('worker_id', $worker->id)->where('project_id', $project->id)->whereDate('date', $date)->exists()) {
                 $skipped++; continue;
             }
             \App\Models\WorkEntry::create([
-                'worker_id' => $wid, 'project_id' => $project->id, 'date' => $date,
-                'days_present' => 1, 'computed_wage_paisa' => (int) $worker->default_wage_paisa,
+                'worker_id' => $worker->id, 'project_id' => $project->id, 'date' => $date,
+                'days_present' => $dayVal,
+                'computed_wage_paisa' => (int) round((int) $worker->default_wage_paisa * $dayVal),
             ]);
             $created++;
         }
 
-        return redirect()->route('projects.show', ['project' => $project, 'tab' => 'attendance', 'att_month' => $request->input('att_month')])
-            ->with('status', "Haazri lag gayi — {$created} din" . ($skipped ? ", {$skipped} pehle se thi" : '') . '.');
+        return redirect()->route('projects.show', ['project' => $project, 'tab' => 'attendance'])
+            ->with('status', "Haazri lagi — {$created} din" . ($skipped ? ", {$skipped} pehle se thi" : '') . '.');
+    }
+
+    /** Sub-contractor (theka) deal — reuses vendor(type=subcontractor) + material_purchase row. */
+    public function storeSubcontractor(Request $request, Project $project)
+    {
+        $v = $request->validate([
+            'vendor_id' => ['nullable', 'exists:vendors,id'],
+            'new_name'  => ['nullable', 'string', 'max:255'],
+            'date'      => ['required', 'date'],
+            'work'      => ['required', 'string', 'max:255'],
+            'agreed'    => ['required', 'numeric', 'min:0'],
+            'paid'      => ['nullable', 'numeric', 'min:0'],
+        ]);
+
+        $vendorId = $v['vendor_id'] ?? null;
+        if (! $vendorId) {
+            if (empty($v['new_name'])) {
+                return back()->with('error', 'Sub-contractor chuno ya naya naam likho.');
+            }
+            $vendorId = \App\Models\Vendor::create(['name' => $v['new_name'], 'type' => 'subcontractor'])->id;
+        }
+
+        $agreed = \App\Support\Money::toPaisa($v['agreed']);
+        $paid   = min(\App\Support\Money::toPaisa($v['paid'] ?? 0), $agreed);
+        $project->materialPurchases()->create([
+            'vendor_id' => $vendorId, 'date' => $v['date'], 'item_name' => $v['work'],
+            'qty' => 1, 'unit' => 'theka', 'rate_per_unit_paisa' => $agreed,
+            'amount_paisa' => $agreed, 'amount_paid_paisa' => $paid, 'balance_due_paisa' => $agreed - $paid,
+        ]);
+
+        return $this->backToTab($project, 'subcontractor', 'Sub-contractor theka record ho gaya.');
     }
 
     // ---------- In-project quick-add actions (project hub) ----------

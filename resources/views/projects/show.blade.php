@@ -30,6 +30,7 @@
                 ['overview',   'Overview (خلاصہ)'],
                 ['money-in',   'Client Payments (وصولی)'],
                 ['materials',  'Materials (مٹیریل)'],
+                ['subcontractor', 'Sub-contractor (ٹھیکہ)'],
                 ['attendance', 'Labour / Attendance (مزدوری)'],
                 ['adjustment', 'Adjustment (کٹوتی/بونس)'],
                 ['expenses',   'Other Expenses (اخراجات)'],
@@ -161,8 +162,8 @@
                         </div>
                         <x-money-input name="rate_per_unit" label="Rate / unit (ریٹ)" required x-model.number="rate" />
                         <select name="vendor_id" class="block w-full rounded-md border-gray-300 text-sm shadow-sm focus:border-emerald-500 focus:ring-emerald-500">
-                            <option value="">— vendor (optional) —</option>
-                            @foreach($vendors as $vd)<option value="{{ $vd->id }}">{{ $vd->name }}</option>@endforeach
+                            <option value="">— supplier (optional) —</option>
+                            @foreach($vendors->where('type','supplier') as $vd)<option value="{{ $vd->id }}">{{ $vd->name }}</option>@endforeach
                         </select>
                         <x-money-input name="amount_paid" label="Paid (jo diya — baqi udhaar)" x-model.number="paid" />
                         <div class="rounded bg-gray-50 p-2 text-center text-xs text-gray-500">Amount: <span class="font-bold text-gray-800" x-text="fmt(amt)"></span> · Udhaar: <span class="font-bold text-red-600" x-text="fmt(Math.max(0,amt-paid))"></span></div>
@@ -175,7 +176,7 @@
                     <table class="min-w-full divide-y divide-gray-200 text-sm">
                         <thead class="bg-gray-50 text-left text-xs uppercase text-gray-500"><tr><th class="px-4 py-3">Date</th><th class="px-4 py-3">Item</th><th class="px-4 py-3">Vendor</th><th class="px-4 py-3 text-right">Amount</th><th class="px-4 py-3 text-right">Udhaar</th><th></th></tr></thead>
                         <tbody class="divide-y divide-gray-100">
-                            @forelse($project->materialPurchases->sortByDesc('date') as $pur)
+                            @forelse($project->materialPurchases->filter(fn($p)=>!$p->vendor || $p->vendor->type==='supplier')->sortByDesc('date') as $pur)
                                 <tr>
                                     <td class="px-4 py-2.5">{{ $pur->date->format('d-m-Y') }}</td>
                                     <td class="px-4 py-2.5 font-medium text-gray-700">{{ $pur->item_name }}<div class="text-xs text-gray-400">{{ rtrim(rtrim($pur->qty,'0'),'.') }} {{ $pur->unit }}</div></td>
@@ -200,79 +201,132 @@
             </div>
         </div>
 
-        {{-- ================= ATTENDANCE / LABOUR ================= --}}
-        <div x-show="tab==='attendance'" x-cloak>
-            {{-- Day grid: project start -> current month. Marked days locked. --}}
-            <div x-data="{
-                    sel: {},
-                    marked: {{ \Illuminate\Support\Js::from($attMarked) }},
-                    isMarked(w,d){ return this.marked[w] && this.marked[w][d]; },
-                    toggle(w,d){ if(this.isMarked(w,d)) return; let k=w+'|'+d; this.sel[k]=!this.sel[k]; },
-                    on(w,d){ return !!this.sel[w+'|'+d]; },
-                    selectRow(w, days){ days.forEach(d=>{ if(!this.isMarked(w,d)) this.sel[w+'|'+d]=true; }); },
-                    get count(){ return Object.values(this.sel).filter(Boolean).length; },
-                    payload(){ return JSON.stringify(Object.keys(this.sel).filter(k=>this.sel[k])); }
-                 }" class="mb-6">
-                <form method="POST" action="{{ route('projects.attendance.bulk', $project) }}">
-                    @csrf
-                    <input type="hidden" name="cells" :value="payload()">
-                    <input type="hidden" name="att_month" value="{{ $attMonth }}">
-                    <x-card class="!p-0">
-                        <div class="flex flex-wrap items-center gap-3 border-b border-gray-100 p-3">
-                            <h2 class="font-semibold text-gray-900">Attendance Grid (حاضری)</h2>
-                            <div class="flex items-center gap-2" x-data="{ y:'{{ $attYear }}', m:'{{ $attMon }}', go(){ window.location='{{ route('projects.show', $project) }}?tab=attendance&att_month='+this.y+'-'+this.m } }">
-                                <select x-model="y" @change="go()" class="rounded-md border-gray-300 text-sm shadow-sm focus:border-emerald-500 focus:ring-emerald-500">
-                                    @foreach($attYears as $yr)<option value="{{ $yr }}" @selected((int)$yr===(int)$attYear)>{{ $yr }}</option>@endforeach
-                                </select>
-                                <select x-model="m" @change="go()" class="rounded-md border-gray-300 text-sm shadow-sm focus:border-emerald-500 focus:ring-emerald-500">
-                                    @foreach($attMonthNames as $mv => $ml)<option value="{{ $mv }}" @selected($mv===$attMon)>{{ $ml }}</option>@endforeach
-                                </select>
-                            </div>
-                            <span class="text-xs text-gray-400">Green ✓ = lagi (locked) · Blue = select · click karke lagao</span>
-                            <span class="flex-1"></span>
-                            <span class="text-sm text-gray-600"><span x-text="count"></span> din selected</span>
-                            <button class="rounded-md bg-emerald-600 px-4 py-2 text-sm font-semibold text-white hover:bg-emerald-700">Save Haazri (محفوظ)</button>
+        {{-- ================= SUB-CONTRACTOR (THEKA) ================= --}}
+        @php
+            $subDeals = $project->materialPurchases->filter(fn($p)=>$p->vendor && $p->vendor->type==='subcontractor')->sortByDesc('date');
+            $subAgreed = (int) $subDeals->sum('amount_paisa');
+            $subPaid   = (int) $subDeals->sum('amount_paid_paisa');
+            $subBaqi   = (int) $subDeals->sum('balance_due_paisa');
+        @endphp
+        <div x-show="tab==='subcontractor'" x-cloak class="grid grid-cols-1 gap-6 lg:grid-cols-3">
+            <div>
+                <x-card title="Theka do (ٹھیکہ پر کام)">
+                    <p class="mb-3 text-xs text-gray-500">Kisi sub-contractor ko kaam theke pe diya — agreed amount, advance jo diya. Baqi "Lena/Dena" me dena ban jata hai.</p>
+                    <form method="POST" action="{{ route('projects.subcontractor.store', $project) }}" class="space-y-3"
+                          x-data="{ mode:'old' }">
+                        @csrf
+                        <div class="flex gap-2 text-xs">
+                            <label class="flex items-center gap-1"><input type="radio" value="old" x-model="mode" class="text-emerald-600"> Purana</label>
+                            <label class="flex items-center gap-1"><input type="radio" value="new" x-model="mode" class="text-emerald-600"> Naya</label>
                         </div>
-                        <div class="overflow-x-auto">
-                            <table class="text-sm">
-                                <thead>
-                                    <tr class="bg-gray-50 text-[10px] text-gray-500">
-                                        <th class="sticky left-0 z-10 bg-gray-50 px-3 py-2 text-left">Worker</th>
-                                        @foreach($attDays as $d)
-                                            <th class="w-9 px-0 py-1 text-center {{ $d['fri'] ? 'text-amber-600 font-semibold' : '' }}">
-                                                <div class="opacity-60">{{ $d['wd'] }}</div><div class="text-xs font-semibold text-gray-700">{{ $d['d'] }}</div>
-                                            </th>
-                                        @endforeach
-                                    </tr>
-                                </thead>
-                                <tbody class="divide-y divide-gray-100">
-                                    @forelse($attWorkers as $w)
-                                        <tr>
-                                            <td class="sticky left-0 z-10 bg-white px-3 py-1.5 font-medium text-gray-700 whitespace-nowrap">
-                                                {{ $w->name }}
-                                                <button type="button" @click="selectRow({{ $w->id }}, {{ \Illuminate\Support\Js::from(collect($attDays)->pluck('date')) }})" class="ml-1 text-[10px] text-emerald-600 hover:underline">all</button>
-                                            </td>
-                                            @foreach($attDays as $d)
-                                                <td class="p-0.5 text-center">
-                                                    <button type="button" @click="toggle({{ $w->id }}, '{{ $d['date'] }}')"
-                                                        :disabled="isMarked({{ $w->id }}, '{{ $d['date'] }}')"
-                                                        class="mx-auto flex h-7 w-7 items-center justify-center rounded text-xs font-bold"
-                                                        :class="isMarked({{ $w->id }}, '{{ $d['date'] }}') ? 'bg-emerald-500 text-white cursor-not-allowed' : (on({{ $w->id }}, '{{ $d['date'] }}') ? 'bg-blue-500 text-white' : 'bg-gray-100 text-gray-300 hover:bg-gray-200')"
-                                                        x-text="isMarked({{ $w->id }}, '{{ $d['date'] }}') ? '✓' : (on({{ $w->id }}, '{{ $d['date'] }}') ? '✓' : '')"></button>
-                                                </td>
-                                            @endforeach
-                                        </tr>
-                                    @empty
-                                        <tr><td class="px-4 py-6 text-center text-gray-400">Koi worker nahi. Niche se ya Attendance se add karo.</td></tr>
-                                    @endforelse
-                                </tbody>
-                            </table>
-                        </div>
-                    </x-card>
-                </form>
+                        <select name="vendor_id" x-show="mode==='old'" class="block w-full rounded-md border-gray-300 text-sm shadow-sm focus:border-emerald-500 focus:ring-emerald-500">
+                            <option value="">— sub-contractor chuno —</option>
+                            @foreach($vendors->where('type','subcontractor') as $vd)<option value="{{ $vd->id }}">{{ $vd->name }}</option>@endforeach
+                        </select>
+                        <input type="text" name="new_name" x-show="mode==='new'" placeholder="Naya sub-contractor naam" class="block w-full rounded-md border-gray-300 text-sm shadow-sm focus:border-emerald-500 focus:ring-emerald-500">
+                        <input type="date" name="date" value="{{ now()->format('Y-m-d') }}" required class="block w-full rounded-md border-gray-300 text-sm shadow-sm focus:border-emerald-500 focus:ring-emerald-500">
+                        <input type="text" name="work" placeholder="Kaam (plaster, tile work…)" required class="block w-full rounded-md border-gray-300 text-sm shadow-sm focus:border-emerald-500 focus:ring-emerald-500">
+                        <x-money-input name="agreed" label="Theka amount (طے شدہ رقم)" required />
+                        <x-money-input name="paid" label="Advance jo diya (optional)" />
+                        <button class="w-full rounded-md bg-emerald-600 px-3 py-2 text-sm font-semibold text-white hover:bg-emerald-700">Add Theka (شامل کریں)</button>
+                    </form>
+                    <div class="mt-4 space-y-1 rounded-lg bg-gray-50 p-3 text-sm">
+                        <div class="flex justify-between"><span class="text-gray-500">Total theka</span><span class="font-bold">@money($subAgreed)</span></div>
+                        <div class="flex justify-between"><span class="text-gray-500">Diya</span><span class="font-bold text-emerald-600">@money($subPaid)</span></div>
+                        <div class="flex justify-between"><span class="text-gray-500">Baqi (dena)</span><span class="font-bold text-red-600">@money($subBaqi)</span></div>
+                    </div>
+                </x-card>
             </div>
+            <div class="lg:col-span-2">
+                <x-card title="Sub-contractor theke (ٹھیکے)" class="!p-0">
+                    <table class="min-w-full divide-y divide-gray-200 text-sm">
+                        <thead class="bg-gray-50 text-left text-xs uppercase text-gray-500"><tr><th class="px-4 py-3">Date</th><th class="px-4 py-3">Sub-contractor</th><th class="px-4 py-3">Kaam</th><th class="px-4 py-3 text-right">Theka</th><th class="px-4 py-3 text-right">Baqi</th><th></th></tr></thead>
+                        <tbody class="divide-y divide-gray-100">
+                            @forelse($subDeals as $sd)
+                                <tr>
+                                    <td class="px-4 py-2.5">{{ $sd->date->format('d-m-Y') }}</td>
+                                    <td class="px-4 py-2.5 font-medium text-gray-700">{{ $sd->vendor->name ?? '—' }}</td>
+                                    <td class="px-4 py-2.5 text-gray-500">{{ $sd->item_name }}</td>
+                                    <td class="px-4 py-2.5 text-right">@money($sd->amount_paisa)</td>
+                                    <td class="px-4 py-2.5 text-right {{ $sd->balance_due_paisa>0?'text-red-600':'text-gray-400' }}">@money($sd->balance_due_paisa)</td>
+                                    <td class="px-4 py-2.5 text-right whitespace-nowrap">
+                                        @if($sd->balance_due_paisa > 0)
+                                            <form method="POST" action="{{ route('materials.pay', $sd) }}" class="inline-flex items-center gap-1">
+                                                @csrf
+                                                <input type="number" step="0.01" name="amount" value="{{ \App\Support\Money::toRupees($sd->balance_due_paisa) }}" class="w-24 rounded border-gray-300 px-2 py-1 text-xs" title="baqi pay">
+                                                <button class="rounded bg-emerald-600 px-2 py-1 text-xs font-semibold text-white hover:bg-emerald-700">Pay</button>
+                                            </form>
+                                        @endif
+                                        <form method="POST" action="{{ route('materials.destroy', $sd) }}" class="ml-1 inline" onsubmit="return confirm('Delete?')">@csrf @method('DELETE')<button class="text-red-400 hover:text-red-600">✕</button></form>
+                                    </td>
+                                </tr>
+                            @empty<tr><td colspan="6" class="px-4 py-6 text-center text-gray-400">Koi theka nahi. Side se add karo.</td></tr>@endforelse
+                        </tbody>
+                    </table>
+                </x-card>
+            </div>
+        </div>
+
+        {{-- ================= ATTENDANCE / LABOUR ================= --}}
+        <div x-show="tab==='attendance'" x-cloak
+             x-data="attendanceHub({
+                marked: {{ \Illuminate\Support\Js::from($attMarked) }},
+                today: '{{ $attToday }}',
+                curYear: {{ $attCurYear }},
+                curMon: '{{ $attCurMon }}',
+                years: {{ \Illuminate\Support\Js::from(array_values($attYears)) }}
+             })">
 
             <div class="grid grid-cols-1 gap-6 lg:grid-cols-3">
+                {{-- Worker list -> Haazri button per worker --}}
+                <div class="lg:col-span-2 space-y-6">
+                    <x-card title="Mazdoor — Haazri lagao (حاضری)" class="!p-0">
+                        <table class="min-w-full divide-y divide-gray-200 text-sm">
+                            <thead class="bg-gray-50 text-left text-xs uppercase text-gray-500"><tr><th class="px-4 py-3">Worker</th><th class="px-4 py-3">Kaam</th><th class="px-4 py-3 text-right">Dihaadi</th><th class="px-4 py-3 text-right">Haazri</th></tr></thead>
+                            <tbody class="divide-y divide-gray-100">
+                                @forelse($attWorkers as $w)
+                                    <tr>
+                                        <td class="px-4 py-2.5 font-medium text-gray-700">{{ $w->name }}</td>
+                                        <td class="px-4 py-2.5 capitalize text-gray-500">{{ $w->role }}</td>
+                                        <td class="px-4 py-2.5 text-right">@money($w->default_wage_paisa)</td>
+                                        <td class="px-4 py-2.5 text-right">
+                                            <button type="button" @click="openModal({{ $w->id }}, @js($w->name))"
+                                                class="rounded-md bg-emerald-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-emerald-700">📅 Haazri lagao</button>
+                                        </td>
+                                    </tr>
+                                @empty
+                                    <tr><td colspan="4" class="px-4 py-6 text-center text-gray-400">Koi mazdoor nahi. Side se "Naya Mazdoor" add karo.</td></tr>
+                                @endforelse
+                            </tbody>
+                        </table>
+                    </x-card>
+
+                    <x-card title="Is project ke mazdoor — hisaab (لیبر)" class="!p-0">
+                        <table class="min-w-full divide-y divide-gray-200 text-sm">
+                            <thead class="bg-gray-50 text-left text-xs uppercase text-gray-500"><tr><th class="px-4 py-3">Worker</th><th class="px-4 py-3 text-right">Days</th><th class="px-4 py-3 text-right">Earned</th><th class="px-4 py-3 text-right">Paid</th><th class="px-4 py-3 text-right">Baqi / Advance</th></tr></thead>
+                            <tbody class="divide-y divide-gray-100">
+                                @forelse($projectWorkers as $row)
+                                    @php $net = $row['earned'] - $row['paid'] - ($row['advnet'] ?? 0); @endphp
+                                    <tr><td class="px-4 py-2.5"><a href="{{ route('workers.show', $row['worker']) }}" class="font-medium text-emerald-700 hover:underline">{{ $row['worker']->name }}</a></td>
+                                    <td class="px-4 py-2.5 text-right">{{ rtrim(rtrim(number_format($row['days'],1),'0'),'.') }}</td>
+                                    <td class="px-4 py-2.5 text-right font-medium">@money($row['earned'])</td>
+                                    <td class="px-4 py-2.5 text-right text-emerald-600">@money($row['paid'])</td>
+                                    <td class="px-4 py-2.5 text-right font-semibold">
+                                        @if($net > 0)<span class="text-red-600">@money($net)</span><span class="ml-1 text-xs font-normal text-gray-400">dena</span>
+                                        @elseif($net < 0)<span class="text-amber-600">@money(-$net)</span><span class="ml-1 text-xs font-normal text-gray-400">advance</span>
+                                        @else<span class="text-gray-400">—</span>@endif
+                                    </td></tr>
+                                @empty<tr><td colspan="5" class="px-4 py-6 text-center text-gray-400">Abhi koi haazri nahi.</td></tr>@endforelse
+                            </tbody>
+                            @if($projectWorkers->count())
+                                @php $totEarned=$projectWorkers->sum('earned'); $totPaid=$projectWorkers->sum('paid'); $totNet=$totEarned-$totPaid-$projectWorkers->sum('advnet'); @endphp
+                                <tfoot class="bg-gray-50 font-semibold"><tr><td class="px-4 py-3">Total</td><td class="px-4 py-3 text-right">{{ rtrim(rtrim(number_format($projectWorkers->sum('days'),1),'0'),'.') }}</td><td class="px-4 py-3 text-right">@money($totEarned)</td><td class="px-4 py-3 text-right text-emerald-600">@money($totPaid)</td>
+                                <td class="px-4 py-3 text-right">@if($totNet>=0)<span class="text-red-600">@money($totNet)</span> <span class="text-xs font-normal text-gray-400">dena</span>@else<span class="text-amber-600">@money(-$totNet)</span> <span class="text-xs font-normal text-gray-400">advance</span>@endif</td></tr></tfoot>
+                            @endif
+                        </table>
+                    </x-card>
+                </div>
+
                 <div class="space-y-6">
                     <x-card title="Naya Mazdoor (نیا مزدور)">
                         <form method="POST" action="{{ route('attendance.quick-worker') }}" class="space-y-3">
@@ -300,31 +354,85 @@
                         </form>
                     </x-card>
                 </div>
-                <div class="lg:col-span-2">
-                    <x-card title="Is project ke mazdoor (لیبر)" class="!p-0">
-                        <table class="min-w-full divide-y divide-gray-200 text-sm">
-                            <thead class="bg-gray-50 text-left text-xs uppercase text-gray-500"><tr><th class="px-4 py-3">Worker</th><th class="px-4 py-3 text-right">Days</th><th class="px-4 py-3 text-right">Earned</th><th class="px-4 py-3 text-right">Paid</th><th class="px-4 py-3 text-right">Baqi / Advance (باقی / پیشگی)</th></tr></thead>
-                            <tbody class="divide-y divide-gray-100">
-                                @forelse($projectWorkers as $row)
-                                    @php $net = $row['earned'] - $row['paid'] - ($row['advnet'] ?? 0); @endphp
-                                    <tr><td class="px-4 py-2.5"><a href="{{ route('workers.show', $row['worker']) }}" class="font-medium text-emerald-700 hover:underline">{{ $row['worker']->name }}</a></td>
-                                    <td class="px-4 py-2.5 text-right">{{ rtrim(rtrim(number_format($row['days'],1),'0'),'.') }}</td>
-                                    <td class="px-4 py-2.5 text-right font-medium">@money($row['earned'])</td>
-                                    <td class="px-4 py-2.5 text-right text-emerald-600">@money($row['paid'])</td>
-                                    <td class="px-4 py-2.5 text-right font-semibold">
-                                        @if($net > 0)<span class="text-red-600">@money($net)</span><span class="ml-1 text-xs font-normal text-gray-400">dena</span>
-                                        @elseif($net < 0)<span class="text-amber-600">@money(-$net)</span><span class="ml-1 text-xs font-normal text-gray-400">advance</span>
-                                        @else<span class="text-gray-400">—</span>@endif
-                                    </td></tr>
-                                @empty<tr><td colspan="5" class="px-4 py-6 text-center text-gray-400">Abhi koi haazri nahi.</td></tr>@endforelse
-                            </tbody>
-                            @if($projectWorkers->count())
-                                @php $totEarned=$projectWorkers->sum('earned'); $totPaid=$projectWorkers->sum('paid'); $totNet=$totEarned-$totPaid-$projectWorkers->sum('advnet'); @endphp
-                                <tfoot class="bg-gray-50 font-semibold"><tr><td class="px-4 py-3">Total</td><td class="px-4 py-3 text-right">{{ rtrim(rtrim(number_format($projectWorkers->sum('days'),1),'0'),'.') }}</td><td class="px-4 py-3 text-right">@money($totEarned)</td><td class="px-4 py-3 text-right text-emerald-600">@money($totPaid)</td>
-                                <td class="px-4 py-3 text-right">@if($totNet>=0)<span class="text-red-600">@money($totNet)</span> <span class="text-xs font-normal text-gray-400">dena</span>@else<span class="text-amber-600">@money(-$totNet)</span> <span class="text-xs font-normal text-gray-400">advance</span>@endif</td></tr></tfoot>
-                            @endif
-                        </table>
-                    </x-card>
+            </div>
+
+            {{-- ===== Haazri modal (per worker, calendar) ===== --}}
+            <div x-show="open" x-cloak class="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-black/50 p-4"
+                 @keydown.escape.window="close()">
+                <div class="my-8 w-full max-w-3xl rounded-2xl bg-white shadow-xl" @click.outside="close()">
+                    <form method="POST" action="{{ route('projects.attendance.bulk', $project) }}">
+                        @csrf
+                        <input type="hidden" name="worker_id" :value="wId">
+                        <input type="hidden" name="status" :value="status">
+                        <input type="hidden" name="dates" :value="selDates">
+
+                        <div class="flex items-center justify-between border-b border-gray-100 p-5">
+                            <h3 class="text-lg font-bold text-gray-900">Haazri — <span x-text="wName"></span></h3>
+                            <button type="button" @click="close()" class="text-xl text-gray-400 hover:text-gray-600">✕</button>
+                        </div>
+
+                        <div class="p-5">
+                            <div class="mb-4 flex flex-wrap gap-4">
+                                <div>
+                                    <label class="mb-1 block text-xs font-medium text-gray-500">Saal (year)</label>
+                                    <select x-model.number="year" class="rounded-md border-gray-300 text-sm shadow-sm focus:border-emerald-500 focus:ring-emerald-500">
+                                        @foreach($attYears as $yr)<option value="{{ $yr }}">{{ $yr }}</option>@endforeach
+                                    </select>
+                                </div>
+                                <div>
+                                    <label class="mb-1 block text-xs font-medium text-gray-500">Mahina (month)</label>
+                                    <select x-model="month" class="rounded-md border-gray-300 text-sm shadow-sm focus:border-emerald-500 focus:ring-emerald-500">
+                                        @foreach($attMonthNames as $mv => $ml)<option value="{{ $mv }}">{{ $ml }}</option>@endforeach
+                                    </select>
+                                </div>
+                                <div>
+                                    <label class="mb-1 block text-xs font-medium text-gray-500">Status (kya lagana)</label>
+                                    <select x-model="status" class="rounded-md border-gray-300 text-sm shadow-sm focus:border-emerald-500 focus:ring-emerald-500">
+                                        <option value="present">Present (poora din)</option>
+                                        <option value="half">Half (aadha din)</option>
+                                        <option value="absent">Absent (ghair-haazir)</option>
+                                    </select>
+                                </div>
+                            </div>
+
+                            <p class="mb-3 text-sm text-gray-500">Khaali din pe click karke select karein (ek ya kayi), phir niche "Mark" dabayein. Jis din pehle se haazri lag chuki wo <b>locked</b> hai — galti theek karni ho to Adjustments se.</p>
+
+                            <div class="mb-1 grid grid-cols-7 gap-1 text-center text-xs font-semibold text-gray-500">
+                                <div>Sun</div><div>Mon</div><div>Tue</div><div>Wed</div><div>Thu</div><div class="text-amber-600">Fri</div><div>Sat</div>
+                            </div>
+                            <div class="grid grid-cols-7 gap-1">
+                                <template x-for="(c, i) in cells" :key="i">
+                                    <div>
+                                        <template x-if="c.blank"><div class="h-16"></div></template>
+                                        <template x-if="!c.blank">
+                                            <button type="button" @click="toggle(c.day)"
+                                                :disabled="isLocked(c.day) || isFuture(c.day)"
+                                                :class="cellClass(c.day)"
+                                                class="flex h-16 w-full flex-col items-center justify-center rounded-lg border text-sm transition">
+                                                <span class="font-bold" x-text="c.day"></span>
+                                                <span class="text-[10px] opacity-70" x-text="weekdayLabel(c.day)"></span>
+                                                <span class="text-[10px] font-bold" x-text="cellLabel(c.day)"></span>
+                                            </button>
+                                        </template>
+                                    </div>
+                                </template>
+                            </div>
+
+                            <div class="mt-3 flex flex-wrap items-center gap-3 text-xs text-gray-500">
+                                <span class="flex items-center gap-1"><span class="inline-block h-2.5 w-2.5 rounded-sm bg-emerald-500"></span> Present</span>
+                                <span class="flex items-center gap-1"><span class="inline-block h-2.5 w-2.5 rounded-sm bg-amber-500"></span> Half</span>
+                                <span class="flex items-center gap-1"><span class="inline-block h-2.5 w-2.5 rounded-sm bg-red-500"></span> Absent</span>
+                                <span>Locked = pehle se lagi · faded = future</span>
+                            </div>
+                        </div>
+
+                        <div class="border-t border-gray-100 p-4">
+                            <button type="submit" :disabled="selCount===0"
+                                class="w-full rounded-lg bg-indigo-600 px-4 py-3 text-sm font-semibold text-white hover:bg-indigo-700 disabled:cursor-not-allowed disabled:opacity-40">
+                                Mark din — <span x-text="statusName"></span> <span x-show="selCount>0">(<span x-text="selCount"></span>)</span>
+                            </button>
+                        </div>
+                    </form>
                 </div>
             </div>
         </div>
@@ -464,7 +572,7 @@
             {{-- PAYABLE: vendors/suppliers --}}
             <x-card class="!p-0">
                 <button type="button" @click="open = open==='vnd' ? '' : 'vnd'" class="flex w-full items-center justify-between p-4 text-left">
-                    <span class="font-semibold text-gray-900">📤 Dena hai — Supplier (سپلائر اُدھار)</span>
+                    <span class="font-semibold text-gray-900">📤 Dena hai — Supplier / Sub-contractor (اُدھار)</span>
                     <span class="flex items-center gap-2"><span class="text-lg font-bold text-red-600">@money($vendorDueTotal)</span><span class="text-gray-400" x-text="open==='vnd' ? '▲' : '▼'"></span></span>
                 </button>
                 <div x-show="open==='vnd'" class="border-t border-gray-100 p-4 space-y-2">
@@ -500,4 +608,87 @@
             </x-card>
         </div>
     </div>
+
+    @push('head')
+    <script>
+        // Per-worker attendance calendar (Present / Half / Absent). Loaded before Alpine starts.
+        window.attendanceHub = function (cfg) {
+            return {
+                marked: cfg.marked || {},
+                today: cfg.today,
+                curYear: cfg.curYear,
+                curMon: cfg.curMon,
+                open: false,
+                wId: null,
+                wName: '',
+                year: cfg.curYear,
+                month: cfg.curMon,
+                status: 'present',
+                sel: {},
+
+                openModal(id, name) {
+                    this.wId = id; this.wName = name; this.sel = {};
+                    this.status = 'present'; this.year = this.curYear; this.month = this.curMon;
+                    this.open = true;
+                },
+                close() { this.open = false; },
+
+                pad(n) { return n < 10 ? '0' + n : '' + n; },
+                mInt() { return parseInt(this.month, 10); },
+                dateStr(day) { return this.year + '-' + this.month + '-' + this.pad(day); },
+                daysInMonth() { return new Date(this.year, this.mInt(), 0).getDate(); },
+                firstWeekday() { return new Date(this.year, this.mInt() - 1, 1).getDay(); },
+                weekdayLabel(day) { return ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'][new Date(this.year, this.mInt() - 1, day).getDay()]; },
+
+                get cells() {
+                    const out = [];
+                    const fw = this.firstWeekday();
+                    for (let i = 0; i < fw; i++) out.push({ blank: true });
+                    const n = this.daysInMonth();
+                    for (let d = 1; d <= n; d++) out.push({ blank: false, day: d });
+                    return out;
+                },
+
+                markedVal(day) {
+                    const w = this.marked[this.wId];
+                    if (!w) return null;
+                    const v = w[this.dateStr(day)];
+                    return (v === undefined) ? null : v;
+                },
+                isLocked(day) { return this.markedVal(day) !== null; },
+                isFuture(day) { return this.dateStr(day) > this.today; },
+                isSelected(day) { return !!this.sel[this.dateStr(day)]; },
+
+                toggle(day) {
+                    if (this.isLocked(day) || this.isFuture(day)) return;
+                    const d = this.dateStr(day);
+                    if (this.sel[d]) delete this.sel[d]; else this.sel[d] = true;
+                },
+
+                statusShort(s) { return s === 'present' ? 'P' : (s === 'half' ? 'H' : 'A'); },
+                get statusName() { return this.status === 'present' ? 'Present' : (this.status === 'half' ? 'Half' : 'Absent'); },
+
+                cellLabel(day) {
+                    const v = this.markedVal(day);
+                    if (v !== null) return v === 1 ? 'P' : (v === 0.5 ? 'H' : 'A');
+                    if (this.isSelected(day)) return this.statusShort(this.status);
+                    return '';
+                },
+                cellClass(day) {
+                    const v = this.markedVal(day);
+                    if (v !== null) {
+                        const c = v === 1 ? 'bg-emerald-500 border-emerald-500' : (v === 0.5 ? 'bg-amber-500 border-amber-500' : 'bg-red-500 border-red-500');
+                        return c + ' text-white cursor-not-allowed';
+                    }
+                    if (this.isFuture(day)) return 'bg-gray-50 border-gray-100 text-gray-300 cursor-not-allowed';
+                    if (this.isSelected(day)) return 'bg-indigo-600 border-indigo-600 text-white';
+                    return 'bg-white border-gray-200 text-gray-700 hover:bg-gray-50';
+                },
+
+                get selCount() { return Object.keys(this.sel).length; },
+                get selDates() { return JSON.stringify(Object.keys(this.sel)); },
+            };
+        };
+    </script>
+    @endpush
 </x-app-layout>
