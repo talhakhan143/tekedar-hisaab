@@ -318,9 +318,19 @@
                                 @empty<tr><td colspan="5" class="px-4 py-6 text-center text-gray-400">Abhi koi haazri nahi.</td></tr>@endforelse
                             </tbody>
                             @if($projectWorkers->count())
-                                @php $totEarned=$projectWorkers->sum('earned'); $totPaid=$projectWorkers->sum('paid'); $totNet=$totEarned-$totPaid-$projectWorkers->sum('advnet'); @endphp
+                                @php
+                                    $totEarned = $projectWorkers->sum('earned');
+                                    $totPaid   = $projectWorkers->sum('paid');
+                                    // Dena and advance kept SEPARATE — alag bandon ka cancel nahi hota.
+                                    $totDena    = $projectWorkers->sum(fn($r) => max(0, $r['earned'] - $r['paid'] - ($r['advnet'] ?? 0)));
+                                    $totAdvance = $projectWorkers->sum(fn($r) => max(0, -($r['earned'] - $r['paid'] - ($r['advnet'] ?? 0))));
+                                @endphp
                                 <tfoot class="bg-gray-50 font-semibold"><tr><td class="px-4 py-3">Total</td><td class="px-4 py-3 text-right">{{ rtrim(rtrim(number_format($projectWorkers->sum('days'),1),'0'),'.') }}</td><td class="px-4 py-3 text-right">@money($totEarned)</td><td class="px-4 py-3 text-right text-emerald-600">@money($totPaid)</td>
-                                <td class="px-4 py-3 text-right">@if($totNet>=0)<span class="text-red-600">@money($totNet)</span> <span class="text-xs font-normal text-gray-400">dena</span>@else<span class="text-amber-600">@money(-$totNet)</span> <span class="text-xs font-normal text-gray-400">advance</span>@endif</td></tr></tfoot>
+                                <td class="px-4 py-3 text-right">
+                                    @if($totDena > 0)<div><span class="text-red-600">@money($totDena)</span> <span class="text-xs font-normal text-gray-400">dena</span></div>@endif
+                                    @if($totAdvance > 0)<div><span class="text-amber-600">@money($totAdvance)</span> <span class="text-xs font-normal text-gray-400">advance</span></div>@endif
+                                    @if($totDena <= 0 && $totAdvance <= 0)<span class="text-gray-400">—</span>@endif
+                                </td></tr></tfoot>
                             @endif
                         </table>
                     </x-card>
@@ -517,6 +527,8 @@
         @php
             $workersDue = $projectWorkers->map(fn($r) => ['w'=>$r['worker'], 'net'=>$r['earned']-$r['paid']-($r['advnet']??0)])->filter(fn($r)=>$r['net']>0)->values();
             $workerDueTotal = $workersDue->sum('net');
+            $workersAdvance = $projectWorkers->map(fn($r) => ['w'=>$r['worker'], 'adv'=>-($r['earned']-$r['paid']-($r['advnet']??0))])->filter(fn($r)=>$r['adv']>0)->values();
+            $workerAdvanceTotal = $workersAdvance->sum('adv');
             $vendorDue = $project->materialPurchases->filter(fn($p)=>$p->balance_due_paisa>0)->sortByDesc('date');
             $vendorDueTotal = (int) $project->materialPurchases->sum('balance_due_paisa');
         @endphp
@@ -543,6 +555,22 @@
                     @else
                         <p class="text-sm text-gray-400">Client se kuch baqi nahi — poora vasool ho gaya.</p>
                     @endif
+                </div>
+            </x-card>
+
+            {{-- RECEIVABLE: worker advances (mazdoor se wapas lena) --}}
+            <x-card class="!p-0">
+                <button type="button" @click="open = open==='wadv' ? '' : 'wadv'" class="flex w-full items-center justify-between p-4 text-left">
+                    <span class="font-semibold text-gray-900">📥 Lena hai — Mazdoor se advance wapas (پیشگی)</span>
+                    <span class="flex items-center gap-2"><span class="text-lg font-bold text-amber-600">@money($workerAdvanceTotal)</span><span class="text-gray-400" x-text="open==='wadv' ? '▲' : '▼'"></span></span>
+                </button>
+                <div x-show="open==='wadv'" class="border-t border-gray-100 p-4 space-y-2">
+                    @forelse($workersAdvance as $row)
+                        <div class="flex flex-wrap items-center justify-between gap-3 rounded-lg bg-amber-50 p-3">
+                            <div><div class="font-medium text-gray-800">{{ $row['w']->name }}</div><div class="text-xs text-gray-500">Advance diya hua — wapas lena: @money($row['adv'])</div></div>
+                            <span class="text-xs text-gray-400">Agle kaam ki mazdoori se ya cash wapas — Adjustment me adjust hota.</span>
+                        </div>
+                    @empty<p class="text-sm text-gray-400">Kisi mazdoor ko zyada advance nahi gaya.</p>@endforelse
                 </div>
             </x-card>
 
