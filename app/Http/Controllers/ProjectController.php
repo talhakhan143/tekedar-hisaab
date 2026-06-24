@@ -119,12 +119,13 @@ class ProjectController extends Controller
         $expenseCategories = \App\Http\Controllers\MoneyOutController::EXPENSE_CATEGORIES;
         $adjustments = \App\Models\WorkerAdvance::with('worker')->where('project_id', $project->id)
             ->orderByDesc('date')->orderByDesc('id')->get();
+        $workerRoles = Setting::workerRoles();
 
         return view('projects.show', compact(
             'project', 'f', 'variance', 'projectWorkers', 'allWorkers',
             'vendors', 'defaultRetention', 'defaultWastage', 'estimateCategories', 'expenseCategories',
             'attWorkers', 'attMarked', 'attYears', 'attMonthNames', 'attToday', 'attCurYear', 'attCurMon',
-            'adjustments'
+            'adjustments', 'workerRoles'
         ));
     }
 

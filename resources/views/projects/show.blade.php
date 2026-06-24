@@ -332,8 +332,9 @@
                             @csrf
                             <input type="text" name="name" placeholder="Naam" required class="block w-full rounded-md border-gray-300 text-sm shadow-sm focus:border-emerald-500 focus:ring-emerald-500">
                             <select name="role" class="block w-full rounded-md border-gray-300 text-sm shadow-sm focus:border-emerald-500 focus:ring-emerald-500">
-                                @foreach(['mistri','mazdoor','electrician','plumber','painter','foreman','other'] as $r)<option value="{{ $r }}">{{ ucfirst($r) }}</option>@endforeach
+                                @foreach($workerRoles as $r)<option value="{{ $r }}">{{ ucfirst($r) }}</option>@endforeach
                             </select>
+                            <p class="text-[11px] text-gray-400">Role list <a href="{{ route('settings') }}" class="text-emerald-600 hover:underline">Settings</a> se edit hoti.</p>
                             <x-money-input name="default_wage" label="Dihaadi (روزانہ)" required />
                             <button class="w-full rounded-md bg-gray-800 px-3 py-2 text-sm font-semibold text-white hover:bg-gray-700">Add Worker (شامل)</button>
                         </form>

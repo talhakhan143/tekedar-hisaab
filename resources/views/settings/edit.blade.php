@@ -48,6 +48,17 @@
             </label>
         </x-card>
 
+        <x-card title="Worker Roles (مزدور کی قسمیں)">
+            <div>
+                <x-input-label for="worker_roles" value="Roles — comma se alag karo" />
+                <textarea id="worker_roles" name="worker_roles" rows="2"
+                          class="mt-1 block w-full rounded-md border-gray-300 text-sm shadow-sm focus:border-emerald-500 focus:ring-emerald-500"
+                          placeholder="mistri, mazdoor, electrician, plumber, painter, foreman, other">{{ old('worker_roles', $settings['worker_roles'] ?? '') }}</textarea>
+                <x-input-error :messages="$errors->get('worker_roles')" class="mt-1" />
+                <p class="mt-2 text-xs text-gray-500">Ye "Naya Mazdoor" form ke role dropdown me dikhte hain. Comma laga ke jitne chaaho add/edit/remove karo (jaise: <span class="font-medium">welder, tile mistri, helper</span>).</p>
+            </div>
+        </x-card>
+
         <x-card title="Expense Categories">
             <p class="text-sm text-gray-500">Money-out categories (material, labour, transport, equipment, subcontractor, utility, overhead, misc) aur other-expense categories code-level enums hain — naye categories add karne ke liye migration update karni hogi. General overhead categories free-text hain (Money Out page se koi bhi naam de sakte ho).</p>
         </x-card>

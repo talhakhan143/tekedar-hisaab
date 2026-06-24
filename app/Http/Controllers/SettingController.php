@@ -20,6 +20,7 @@ class SettingController extends Controller
             'default_retention'  => ['required', 'numeric', 'min:0', 'max:100'],
             'default_wastage'    => ['required', 'numeric', 'min:0', 'max:100'],
             'allocate_overheads' => ['nullable', 'boolean'],
+            'worker_roles'       => ['nullable', 'string', 'max:1000'],
             'logo'               => ['nullable', 'image', 'max:2048'],
         ]);
 
@@ -27,6 +28,11 @@ class SettingController extends Controller
         Setting::put('default_retention', $v['default_retention']);
         Setting::put('default_wastage', $v['default_wastage']);
         Setting::put('allocate_overheads', $request->boolean('allocate_overheads') ? '1' : '0');
+
+        // Normalise worker roles to a clean comma list (lowercase, trimmed, unique).
+        $roles = collect(explode(',', (string) ($v['worker_roles'] ?? '')))
+            ->map(fn ($r) => strtolower(trim($r)))->filter()->unique()->values();
+        Setting::put('worker_roles', $roles->isNotEmpty() ? $roles->implode(',') : Setting::DEFAULTS['worker_roles']);
 
         if ($request->hasFile('logo')) {
             $path = $request->file('logo')->store('public/branding');

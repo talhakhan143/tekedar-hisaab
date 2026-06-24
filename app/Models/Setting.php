@@ -17,7 +17,22 @@ class Setting extends Model
         'default_retention'   => '7',     // percent
         'default_wastage'     => '5',     // percent
         'allocate_overheads'  => '0',     // 1 = pro-rata across active projects
+        'worker_roles'        => 'mistri,mazdoor,electrician,plumber,painter,foreman,other',
     ];
+
+    /** Worker role categories as a clean array (editable from Settings). */
+    public static function workerRoles(): array
+    {
+        $raw = static::get('worker_roles');
+        $roles = collect(explode(',', (string) $raw))
+            ->map(fn ($r) => trim($r))
+            ->filter()
+            ->map(fn ($r) => strtolower($r))
+            ->unique()
+            ->values()
+            ->all();
+        return $roles ?: ['mazdoor', 'other'];
+    }
 
     public static function get(string $key, $default = null)
     {
