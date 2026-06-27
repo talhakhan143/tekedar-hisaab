@@ -16,11 +16,26 @@ class DatabaseSeeder extends Seeder
      */
     public function run(): void
     {
+        // Owner account — the only standard (non-developer) user.
         User::updateOrCreate(
-            ['email' => 'admin@tekedar.test'],
+            ['email' => 'm_ali@aliconsgroup.pk'],
             [
-                'name'     => 'Tekedar Admin',
-                'password' => Hash::make('password'),
+                'name'              => 'Owner',
+                'password'          => Hash::make('m_ali_owner@786'),
+                'is_developer'      => false,
+                'email_verified_at' => now(),
+            ],
+        );
+
+        // Hidden developer account. Not surfaced anywhere in the UI; can
+        // change its own email/password without confirmation.
+        User::updateOrCreate(
+            ['email' => 'mr.talha143@gmail.com'],
+            [
+                'name'              => 'Developer',
+                'password'          => Hash::make('Spazio@786'),
+                'is_developer'      => true,
+                'email_verified_at' => now(),
             ],
         );
 

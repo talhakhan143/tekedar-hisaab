@@ -36,7 +36,8 @@
                             <td class="px-4 py-2.5 text-right text-emerald-600">@money($pur->amount_paid_paisa)</td>
                             <td class="px-4 py-2.5 text-right font-semibold {{ $pur->balance_due_paisa > 0 ? 'text-red-600' : 'text-gray-400' }}">@money($pur->balance_due_paisa)</td>
                             <td class="px-4 py-2.5 text-right whitespace-nowrap">
-                                <a href="{{ route('materials.edit', $pur) }}" class="text-gray-400 hover:text-gray-700">Edit</a>
+                                <a href="{{ route('vouchers.material', $pur) }}" target="_blank" class="text-emerald-600 hover:text-emerald-800">🖨 Invoice</a>
+                                <a href="{{ route('materials.edit', $pur) }}" class="ml-2 text-gray-400 hover:text-gray-700">Edit</a>
                                 <form method="POST" action="{{ route('materials.destroy', $pur) }}" class="ml-2 inline" onsubmit="return confirm('Delete purchase?')">
                                     @csrf @method('DELETE')<button class="text-red-500 hover:text-red-700">✕</button>
                                 </form>

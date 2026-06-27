@@ -37,7 +37,12 @@ class Project extends Model
     // ---- Labels ----
     public function contractTypeLabel(): string
     {
-        return $this->contract_type === 'grey_structure' ? 'Grey Structure' : 'Full Finished';
+        return match ($this->contract_type) {
+            'structure'     => 'Structure',
+            'grey_structure' => 'Gray Structure',
+            'full_finished' => 'Full Furnish',
+            default         => 'Full Furnish',
+        };
     }
 
     public function statusColor(): string

@@ -93,7 +93,7 @@ class ProjectController extends Controller
             'paid'   => (int) ($paid[$w->id] ?? 0),
             'advnet' => (int) ($advGiven[$w->id] ?? 0) - (int) ($advRecov[$w->id] ?? 0), // deduction − bonus
         ]);
-        $allWorkers = \App\Models\Worker::orderBy('name')->get(['id', 'name', 'wage_type']);
+        $allWorkers = \App\Models\Worker::orderBy('name')->get(['id', 'name', 'role', 'wage_type']);
 
         // ---- Attendance: per-worker calendar modal. Load ALL marked days (value = days_present) ----
         $attWorkers = \App\Models\Worker::where('wage_type', '!=', 'contract_piece')->orderBy('name')->get();
@@ -326,7 +326,7 @@ class ProjectController extends Controller
             'client_name'       => ['nullable', 'string', 'max:255'],
             'client_phone'      => ['nullable', 'string', 'max:50'],
             'client_address'    => ['nullable', 'string', 'max:500'],
-            'contract_type'     => ['required', 'in:grey_structure,full_finished'],
+            'contract_type'     => ['required', 'in:structure,grey_structure,full_finished'],
             'pricing_mode'      => ['required', 'in:per_sqft,lump_sum'],
             'covered_area_sqft' => ['nullable', 'numeric', 'min:0', 'required_if:pricing_mode,per_sqft'],
             'rate_per_sqft'     => ['nullable', 'numeric', 'min:0', 'required_if:pricing_mode,per_sqft'],

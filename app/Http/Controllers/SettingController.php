@@ -17,6 +17,8 @@ class SettingController extends Controller
     {
         $v = $request->validate([
             'company_name'       => ['required', 'string', 'max:255'],
+            'company_address'    => ['nullable', 'string', 'max:255'],
+            'company_phone'      => ['nullable', 'string', 'max:100'],
             'default_retention'  => ['required', 'numeric', 'min:0', 'max:100'],
             'default_wastage'    => ['required', 'numeric', 'min:0', 'max:100'],
             'allocate_overheads' => ['nullable', 'boolean'],
@@ -25,6 +27,8 @@ class SettingController extends Controller
         ]);
 
         Setting::put('company_name', $v['company_name']);
+        Setting::put('company_address', $v['company_address'] ?? '');
+        Setting::put('company_phone', $v['company_phone'] ?? '');
         Setting::put('default_retention', $v['default_retention']);
         Setting::put('default_wastage', $v['default_wastage']);
         Setting::put('allocate_overheads', $request->boolean('allocate_overheads') ? '1' : '0');

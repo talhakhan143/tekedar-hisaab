@@ -5,6 +5,13 @@
 
     RewriteEngine On
 
+    # If the app is served from a subfolder, uncomment and set the base:
+    # RewriteBase /
+
+    # Force HTTPS — uncomment AFTER your SSL certificate is active in hPanel:
+    # RewriteCond %{HTTPS} !=on
+    # RewriteRule ^ https://%{HTTP_HOST}%{REQUEST_URI} [L,R=301]
+
     # Handle Authorization Header
     RewriteCond %{HTTP:Authorization} .
     RewriteRule .* - [E=HTTP_AUTHORIZATION:%{HTTP:Authorization}]
@@ -23,3 +30,8 @@
     RewriteCond %{REQUEST_FILENAME} !-f
     RewriteRule ^ index.php [L]
 </IfModule>
+
+# Defense in depth — never serve dotfiles / sensitive files even if misplaced.
+<FilesMatch "(^\.(env|git|htaccess|htpasswd))|(\.(env|lock|sqlite)$)|(composer\.(json|lock)$)">
+    Require all denied
+</FilesMatch>

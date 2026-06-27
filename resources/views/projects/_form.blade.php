@@ -39,8 +39,9 @@
             <div>
                 <x-input-label for="contract_type" value="Contract Type *" />
                 <select id="contract_type" name="contract_type" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-emerald-500 focus:ring-emerald-500">
-                    <option value="full_finished" @selected(old('contract_type',$project->contract_type)==='full_finished')>Full Finished / Furnished</option>
-                    <option value="grey_structure" @selected(old('contract_type',$project->contract_type)==='grey_structure')>Grey Structure</option>
+                    <option value="structure" @selected(old('contract_type',$project->contract_type)==='structure')>Structure</option>
+                    <option value="grey_structure" @selected(old('contract_type',$project->contract_type)==='grey_structure')>Gray Structure</option>
+                    <option value="full_finished" @selected(old('contract_type',$project->contract_type)==='full_finished')>Full Furnish</option>
                 </select>
             </div>
             <div>

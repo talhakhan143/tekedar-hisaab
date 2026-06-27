@@ -25,7 +25,7 @@
                     @forelse($rows as $row)
                         @php $w = $row['worker']; @endphp
                         <tr class="hover:bg-gray-50">
-                            <td class="px-4 py-2.5"><a href="{{ route('workers.show', $w) }}" class="font-medium text-emerald-700 hover:underline">{{ $w->name }}</a><div class="text-xs text-gray-400">{{ $w->phone }}</div></td>
+                            <td class="px-4 py-2.5"><a href="{{ route('workers.show', $w) }}" class="font-medium text-emerald-700 hover:underline">{{ $w->name }}</a> <span class="text-xs text-gray-400">#{{ $w->id }}</span><div class="text-xs text-gray-400">{{ $w->phone }}</div></td>
                             <td class="px-4 py-2.5 capitalize">{{ $w->role }}</td>
                             <td class="px-4 py-2.5 text-gray-500">@money($w->default_wage_paisa) / {{ str_replace('contract_piece','piece',$w->wage_type) }}</td>
                             <td class="px-4 py-2.5 text-right">@money($row['earned'])</td>

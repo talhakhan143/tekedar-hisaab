@@ -14,6 +14,8 @@ class Setting extends Model
     public const DEFAULTS = [
         'company_name'        => 'Tekedar Hisaab',
         'company_logo'        => null,
+        'company_address'     => null,
+        'company_phone'       => null,
         'default_retention'   => '7',     // percent
         'default_wastage'     => '5',     // percent
         'allocate_overheads'  => '0',     // 1 = pro-rata across active projects

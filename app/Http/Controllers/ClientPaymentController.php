@@ -61,7 +61,7 @@ class ClientPaymentController extends Controller
         }
         $retention = min($retention, $gross); // never exceed gross
 
-        ClientPayment::create([
+        $cp = ClientPayment::create([
             'project_id'           => $v['project_id'],
             'date'                 => $v['date'],
             'gross_amount_paisa'   => $gross,
@@ -73,7 +73,9 @@ class ClientPaymentController extends Controller
             'notes'                => $v['notes'] ?? null,
         ]);
 
-        return redirect()->route('money-in')->with('status', 'Client payment record ho gayi.');
+        return redirect()->route('money-in')->with('status', 'Client payment record ho gayi.')
+            ->with('voucher_url', route('vouchers.client-payment', $cp))
+            ->with('voucher_label', '🖨 Receipt');
     }
 
     public function destroy(ClientPayment $clientPayment)

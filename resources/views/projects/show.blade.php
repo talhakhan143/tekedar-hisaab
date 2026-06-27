@@ -137,7 +137,7 @@
                                     <td class="px-4 py-2.5 capitalize">{{ $pay->payment_method }} @if($pay->is_mobilization)<x-badge color="sky">Advance</x-badge>@endif</td>
                                     <td class="px-4 py-2.5 text-gray-500">{{ $pay->notes }}</td>
                                     <td class="px-4 py-2.5 text-right font-medium text-emerald-600">@money($pay->gross_amount_paisa)</td>
-                                    <td class="px-4 py-2.5 text-right"><form method="POST" action="{{ route('client-payments.destroy', $pay) }}" onsubmit="return confirm('Delete?')">@csrf @method('DELETE')<button class="text-red-400 hover:text-red-600">✕</button></form></td>
+                                    <td class="px-4 py-2.5 text-right whitespace-nowrap"><a href="{{ route('vouchers.client-payment', $pay) }}" target="_blank" class="text-emerald-600 hover:text-emerald-800" title="Print receipt">🖨</a><form method="POST" action="{{ route('client-payments.destroy', $pay) }}" class="ml-1 inline" onsubmit="return confirm('Delete?')">@csrf @method('DELETE')<button class="text-red-400 hover:text-red-600">✕</button></form></td>
                                 </tr>
                             @empty<tr><td colspan="5" class="px-4 py-6 text-center text-gray-400">Koi payment nahi.</td></tr>@endforelse
                         </tbody>
@@ -190,6 +190,7 @@
                                                 <button class="rounded bg-emerald-600 px-2 py-1 text-xs font-semibold text-white hover:bg-emerald-700">Pay</button>
                                             </form>
                                         @endif
+                                        <a href="{{ route('vouchers.material', $pur) }}" target="_blank" class="ml-1 text-emerald-600 hover:text-emerald-800" title="Print invoice">🖨</a>
                                         <form method="POST" action="{{ route('materials.destroy', $pur) }}" class="ml-1 inline" onsubmit="return confirm('Delete?')">@csrf @method('DELETE')<button class="text-red-400 hover:text-red-600">✕</button></form>
                                     </td>
                                 </tr>
@@ -256,6 +257,7 @@
                                                 <button class="rounded bg-emerald-600 px-2 py-1 text-xs font-semibold text-white hover:bg-emerald-700">Pay</button>
                                             </form>
                                         @endif
+                                        <a href="{{ route('vouchers.material', $sd) }}" target="_blank" class="ml-1 text-emerald-600 hover:text-emerald-800" title="Print invoice">🖨</a>
                                         <form method="POST" action="{{ route('materials.destroy', $sd) }}" class="ml-1 inline" onsubmit="return confirm('Delete?')">@csrf @method('DELETE')<button class="text-red-400 hover:text-red-600">✕</button></form>
                                     </td>
                                 </tr>
@@ -285,7 +287,7 @@
                             <tbody class="divide-y divide-gray-100">
                                 @forelse($attWorkers as $w)
                                     <tr>
-                                        <td class="px-4 py-2.5 font-medium text-gray-700">{{ $w->name }}</td>
+                                        <td class="px-4 py-2.5 font-medium text-gray-700">{{ $w->name }} <span class="text-xs font-normal text-gray-400">#{{ $w->id }}</span></td>
                                         <td class="px-4 py-2.5 capitalize text-gray-500">{{ $w->role }}</td>
                                         <td class="px-4 py-2.5 text-right">@money($w->default_wage_paisa)</td>
                                         <td class="px-4 py-2.5 text-right">
@@ -306,7 +308,7 @@
                             <tbody class="divide-y divide-gray-100">
                                 @forelse($projectWorkers as $row)
                                     @php $net = $row['earned'] - $row['paid'] - ($row['advnet'] ?? 0); @endphp
-                                    <tr><td class="px-4 py-2.5"><a href="{{ route('workers.show', $row['worker']) }}" class="font-medium text-emerald-700 hover:underline">{{ $row['worker']->name }}</a></td>
+                                    <tr><td class="px-4 py-2.5"><a href="{{ route('workers.show', $row['worker']) }}" class="font-medium text-emerald-700 hover:underline">{{ $row['worker']->name }}</a><span class="ml-1 text-xs text-gray-400">#{{ $row['worker']->id }} · {{ $row['worker']->role }}</span><a href="{{ route('vouchers.worker-statement', ['worker' => $row['worker'], 'project' => $project->id]) }}" target="_blank" class="ml-2 text-emerald-600 hover:text-emerald-800" title="Print statement">🖨</a></td>
                                     <td class="px-4 py-2.5 text-right">{{ rtrim(rtrim(number_format($row['days'],1),'0'),'.') }}</td>
                                     <td class="px-4 py-2.5 text-right font-medium">@money($row['earned'])</td>
                                     <td class="px-4 py-2.5 text-right text-emerald-600">@money($row['paid'])</td>
@@ -354,7 +356,7 @@
                             @csrf
                             <select name="worker_id" required class="block w-full rounded-md border-gray-300 text-sm shadow-sm focus:border-emerald-500 focus:ring-emerald-500">
                                 <option value="">— worker chuno —</option>
-                                @foreach($allWorkers as $w)<option value="{{ $w->id }}">{{ $w->name }}</option>@endforeach
+                                @foreach($allWorkers as $w)<option value="{{ $w->id }}">#{{ $w->id }} — {{ $w->name }} ({{ $w->role }})</option>@endforeach
                             </select>
                             <input type="date" name="date" value="{{ now()->format('Y-m-d') }}" required class="block w-full rounded-md border-gray-300 text-sm shadow-sm focus:border-emerald-500 focus:ring-emerald-500">
                             <x-money-input name="amount" label="Amount (رقم)" required />
@@ -482,7 +484,7 @@
                                     <td class="px-4 py-2.5"><x-badge :color="$isDed ? 'red' : 'emerald'">{{ $isDed ? 'Katauti' : 'Bonus' }}</x-badge></td>
                                     <td class="px-4 py-2.5 text-gray-500">{{ $a->notes }}</td>
                                     <td class="px-4 py-2.5 text-right font-medium {{ $isDed ? 'text-rose-600' : 'text-emerald-600' }}">{{ $isDed ? '−' : '+' }}@money($a->amount_paisa)</td>
-                                    <td class="px-4 py-2.5 text-right"><form method="POST" action="{{ route('worker-advances.destroy', $a) }}" onsubmit="return confirm('Delete?')">@csrf @method('DELETE')<button class="text-red-400 hover:text-red-600">✕</button></form></td>
+                                    <td class="px-4 py-2.5 text-right whitespace-nowrap"><a href="{{ route('vouchers.advance', $a) }}" target="_blank" class="text-emerald-600 hover:text-emerald-800" title="Print voucher">🖨</a><form method="POST" action="{{ route('worker-advances.destroy', $a) }}" class="ml-1 inline" onsubmit="return confirm('Delete?')">@csrf @method('DELETE')<button class="text-red-400 hover:text-red-600">✕</button></form></td>
                                 </tr>
                             @empty<tr><td colspan="6" class="px-4 py-6 text-center text-gray-400">Koi adjustment nahi.</td></tr>@endforelse
                         </tbody>
@@ -515,7 +517,7 @@
                         <tbody class="divide-y divide-gray-100">
                             @forelse($project->otherExpenses->sortByDesc('date') as $e)
                                 <tr><td class="px-4 py-2.5">{{ $e->date->format('d-m-Y') }}</td><td class="px-4 py-2.5 capitalize">{{ str_replace('_',' ',$e->category) }}</td><td class="px-4 py-2.5 text-gray-500">{{ $e->description }}</td><td class="px-4 py-2.5 text-right font-medium">@money($e->amount_paisa)</td>
-                                <td class="px-4 py-2.5 text-right"><form method="POST" action="{{ route('expenses.destroy', $e) }}" onsubmit="return confirm('Delete?')">@csrf @method('DELETE')<button class="text-red-400 hover:text-red-600">✕</button></form></td></tr>
+                                <td class="px-4 py-2.5 text-right whitespace-nowrap"><a href="{{ route('vouchers.expense', $e) }}" target="_blank" class="text-emerald-600 hover:text-emerald-800" title="Print voucher">🖨</a><form method="POST" action="{{ route('expenses.destroy', $e) }}" class="ml-1 inline" onsubmit="return confirm('Delete?')">@csrf @method('DELETE')<button class="text-red-400 hover:text-red-600">✕</button></form></td></tr>
                             @empty<tr><td colspan="5" class="px-4 py-6 text-center text-gray-400">Koi kharch nahi.</td></tr>@endforelse
                         </tbody>
                     </table>
@@ -583,7 +585,7 @@
                 <div x-show="open==='wrk'" class="border-t border-gray-100 p-4 space-y-2">
                     @forelse($workersDue as $row)
                         <div class="flex flex-wrap items-center justify-between gap-3 rounded-lg bg-gray-50 p-3">
-                            <div><div class="font-medium text-gray-800">{{ $row['w']->name }}</div><div class="text-xs text-gray-500">Dena: @money($row['net'])</div></div>
+                            <div><div class="font-medium text-gray-800">{{ $row['w']->name }} <span class="text-xs font-normal text-gray-400">#{{ $row['w']->id }} · {{ $row['w']->role }}</span></div><div class="text-xs text-gray-500">Dena: @money($row['net'])</div></div>
                             <form method="POST" action="{{ route('projects.wage-payments.store', $project) }}" class="flex items-center gap-2">
                                 @csrf
                                 <input type="hidden" name="worker_id" value="{{ $row['w']->id }}">

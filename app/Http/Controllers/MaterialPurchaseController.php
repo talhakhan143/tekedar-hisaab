@@ -35,9 +35,11 @@ class MaterialPurchaseController extends Controller
     public function store(Request $request)
     {
         $data = $this->validatedData($request);
-        MaterialPurchase::create($data);
+        $purchase = MaterialPurchase::create($data);
 
-        return redirect()->route('materials.index')->with('status', 'Purchase record ho gayi.');
+        return redirect()->route('materials.index')->with('status', 'Purchase record ho gayi.')
+            ->with('voucher_url', route('vouchers.material', $purchase))
+            ->with('voucher_label', '🖨 Invoice');
     }
 
     public function edit(MaterialPurchase $materialPurchase)
@@ -94,7 +96,9 @@ class MaterialPurchaseController extends Controller
             ? route('projects.show', ['project' => $materialPurchase->project_id, 'tab' => 'materials'])
             : url()->previous();
 
-        return redirect($back)->with('status', 'Vendor ko payment ho gayi (udhaar kam).');
+        return redirect($back)->with('status', 'Vendor ko payment ho gayi (udhaar kam).')
+            ->with('voucher_url', route('vouchers.material', $materialPurchase))
+            ->with('voucher_label', '🖨 Invoice');
     }
 
     private function validatedData(Request $request): array

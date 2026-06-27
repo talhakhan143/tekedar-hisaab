@@ -111,7 +111,7 @@
                                 <td class="px-3 py-2">{{ $a->date->format('d-m-y') }}</td>
                                 <td class="px-3 py-2"><x-badge :color="$a->type==='advance_given'?'amber':'emerald'">{{ $a->type==='advance_given'?'Given':'Recovery' }}</x-badge></td>
                                 <td class="px-3 py-2 text-right">@money($a->amount_paisa)</td>
-                                <td class="px-3 py-2 text-right"><form method="POST" action="{{ route('worker-advances.destroy', $a) }}" onsubmit="return confirm('Delete?')">@csrf @method('DELETE')<button class="text-red-400 hover:text-red-600">✕</button></form></td>
+                                <td class="px-3 py-2 text-right whitespace-nowrap"><a href="{{ route('vouchers.advance', $a) }}" target="_blank" class="text-emerald-600 hover:text-emerald-800" title="Print voucher">🖨</a><form method="POST" action="{{ route('worker-advances.destroy', $a) }}" class="ml-1 inline" onsubmit="return confirm('Delete?')">@csrf @method('DELETE')<button class="text-red-400 hover:text-red-600">✕</button></form></td>
                             </tr>
                         @empty<tr><td colspan="4" class="px-3 py-4 text-center text-gray-400">—</td></tr>@endforelse
                     </tbody>
@@ -129,7 +129,7 @@
                                 <td class="px-3 py-2">{{ $wp->date->format('d-m-y') }}</td>
                                 <td class="px-3 py-2 text-gray-500">{{ $wp->period_label }}</td>
                                 <td class="px-3 py-2 text-right text-emerald-600">@money($wp->amount_paisa)</td>
-                                <td class="px-3 py-2 text-right"><form method="POST" action="{{ route('wage-payments.destroy', $wp) }}" onsubmit="return confirm('Delete?')">@csrf @method('DELETE')<button class="text-red-400 hover:text-red-600">✕</button></form></td>
+                                <td class="px-3 py-2 text-right whitespace-nowrap"><a href="{{ route('vouchers.wage', $wp) }}" target="_blank" class="text-emerald-600 hover:text-emerald-800" title="Print voucher">🖨</a><form method="POST" action="{{ route('wage-payments.destroy', $wp) }}" class="ml-1 inline" onsubmit="return confirm('Delete?')">@csrf @method('DELETE')<button class="text-red-400 hover:text-red-600">✕</button></form></td>
                             </tr>
                         @empty<tr><td colspan="4" class="px-3 py-4 text-center text-gray-400">—</td></tr>@endforelse
                     </tbody>

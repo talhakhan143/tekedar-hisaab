@@ -2,15 +2,18 @@
 
 use App\Http\Controllers\ClientPaymentController;
 use App\Http\Controllers\DashboardController;
+use App\Http\Controllers\DeveloperUserController;
 use App\Http\Controllers\EstimateController;
 use App\Http\Controllers\MaterialPurchaseController;
 use App\Http\Controllers\MoneyOutController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\ProjectController;
 use App\Http\Controllers\ReportController;
+use App\Http\Controllers\ResetController;
 use App\Http\Controllers\RetentionReleaseController;
 use App\Http\Controllers\SettingController;
 use App\Http\Controllers\VendorController;
+use App\Http\Controllers\VoucherController;
 use App\Http\Controllers\WorkerController;
 use App\Http\Controllers\WorkLedgerController;
 use Illuminate\Support\Facades\Route;
@@ -95,12 +98,28 @@ Route::middleware(['auth', 'verified'])->group(function () {
     // Settings
     Route::get('/settings', [SettingController::class, 'edit'])->name('settings');
     Route::put('/settings', [SettingController::class, 'update'])->name('settings.update');
+
+    // Danger zone — hard reset of all business data (keeps users + settings)
+    Route::post('/hard-reset', [ResetController::class, 'reset'])->name('hard-reset');
+
+    // Printable vouchers / invoices (browser print → save PDF)
+    Route::get('/vouchers/material/{materialPurchase}', [VoucherController::class, 'material'])->name('vouchers.material');
+    Route::get('/vouchers/wage/{wagePayment}', [VoucherController::class, 'wage'])->name('vouchers.wage');
+    Route::get('/vouchers/advance/{workerAdvance}', [VoucherController::class, 'advance'])->name('vouchers.advance');
+    Route::get('/vouchers/client-payment/{clientPayment}', [VoucherController::class, 'clientPayment'])->name('vouchers.client-payment');
+    Route::get('/vouchers/expense/{otherExpense}', [VoucherController::class, 'expense'])->name('vouchers.expense');
+    Route::get('/vouchers/worker-statement/{worker}', [VoucherController::class, 'workerStatement'])->name('vouchers.worker-statement');
 });
 
 Route::middleware('auth')->group(function () {
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
-    Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
+});
+
+// Hidden developer-only user management (change any user's email/password).
+Route::middleware(['auth', 'developer'])->group(function () {
+    Route::get('/developer/users', [DeveloperUserController::class, 'index'])->name('developer.users');
+    Route::put('/developer/users/{user}', [DeveloperUserController::class, 'update'])->name('developer.users.update');
 });
 
 require __DIR__.'/auth.php';

@@ -10,9 +10,9 @@
     <div class="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
         <x-stat label="Active Projects (چالو پروجیکٹس)" :value="number_format($activeProjects)" color="text-emerald-600" />
         <x-stat label="Total Contract Value (کل ٹھیکہ مالیت)" :value="\App\Support\Money::short($contractValue)" color="text-sky-600" />
-        <x-stat label="This Month — Net Profit (اس ماہ کا منافع)" :value="\App\Support\Money::short($monthNetProfit)"
+        <x-stat label="This Month — Cash In/Out (اس ماہ نقد بہاؤ)" :value="\App\Support\Money::short($monthNetProfit)"
                 :color="$monthNetProfit < 0 ? 'text-red-600' : 'text-indigo-600'"
-                :sub="'In '.\App\Support\Money::short($monthReceived).' · Out '.\App\Support\Money::short($monthSpent)" />
+                :sub="'Aaya '.\App\Support\Money::short($monthReceived).' · Gaya '.\App\Support\Money::short($monthSpent)" />
     </div>
 
     {{-- Lena / Dena overview --}}
@@ -31,7 +31,7 @@
 
     {{-- Charts --}}
     <div class="mt-6 grid grid-cols-1 gap-4 lg:grid-cols-3">
-        <x-card title="Profit Trend — last 12 months (منافع کا رجحان)" class="lg:col-span-2">
+        <x-card title="Cash Flow Trend — last 12 months (نقد بہاؤ کا رجحان)" class="lg:col-span-2">
             <div class="h-64"><canvas id="trendChart"></canvas></div>
         </x-card>
         <x-card title="Cost Breakdown (لاگت کی تقسیم)">
@@ -106,7 +106,7 @@
                     data: {
                         labels: trend.labels,
                         datasets: [{
-                            label: 'Net Profit', data: trend.data,
+                            label: 'Net Cash (In − Out)', data: trend.data,
                             borderColor: '#059669', backgroundColor: 'rgba(5,150,105,0.1)',
                             fill: true, tension: 0.3, pointRadius: 3,
                         }]

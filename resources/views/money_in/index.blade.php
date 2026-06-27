@@ -37,8 +37,9 @@
                             <td class="px-4 py-2.5 text-right">@money($pay->gross_amount_paisa)</td>
                             <td class="px-4 py-2.5 text-right text-amber-600">@money($pay->retention_held_paisa)</td>
                             <td class="px-4 py-2.5 text-right font-medium text-emerald-600">@money($pay->net_received_paisa)</td>
-                            <td class="px-4 py-2.5 text-right">
-                                <form method="POST" action="{{ route('client-payments.destroy', $pay) }}" onsubmit="return confirm('Delete payment?')">
+                            <td class="px-4 py-2.5 text-right whitespace-nowrap">
+                                <a href="{{ route('vouchers.client-payment', $pay) }}" target="_blank" class="text-emerald-600 hover:text-emerald-800">🖨 Receipt</a>
+                                <form method="POST" action="{{ route('client-payments.destroy', $pay) }}" class="ml-2 inline" onsubmit="return confirm('Delete payment?')">
                                     @csrf @method('DELETE')
                                     <button class="text-red-500 hover:text-red-700">✕</button>
                                 </form>

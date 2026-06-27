@@ -84,7 +84,7 @@ class WorkLedgerController extends Controller
             ]);
         }
 
-        WagePayment::create([
+        $wp = WagePayment::create([
             'worker_id'    => $worker->id,
             'project_id'   => $project->id,
             'date'         => $v['date'],
@@ -93,7 +93,9 @@ class WorkLedgerController extends Controller
         ]);
 
         return redirect(route('projects.show', ['project' => $project, 'tab' => 'attendance']))
-            ->with('status', $worker->name . ' ko wage pay ho gayi.');
+            ->with('status', $worker->name . ' ko wage pay ho gayi.')
+            ->with('voucher_url', route('vouchers.wage', $wp))
+            ->with('voucher_label', '🖨 Wage Voucher');
     }
 
     public function storeWork(Request $request, Worker $worker)
@@ -140,7 +142,7 @@ class WorkLedgerController extends Controller
             'notes'      => ['nullable', 'string'],
         ]);
 
-        WorkerAdvance::create([
+        $advance = WorkerAdvance::create([
             'worker_id'   => $worker->id,
             'project_id'  => $v['project_id'] ?? null,
             'date'        => $v['date'],
@@ -149,7 +151,9 @@ class WorkLedgerController extends Controller
             'notes'       => $v['notes'] ?? null,
         ]);
 
-        return back()->with('status', 'Advance/recovery record ho gayi.');
+        return back()->with('status', 'Advance/recovery record ho gayi.')
+            ->with('voucher_url', route('vouchers.advance', $advance))
+            ->with('voucher_label', '🖨 Advance Voucher');
     }
 
     public function destroyAdvance(WorkerAdvance $workerAdvance)
@@ -180,7 +184,7 @@ class WorkLedgerController extends Controller
             ]);
         }
 
-        WagePayment::create([
+        $wp = WagePayment::create([
             'worker_id'   => $worker->id,
             'project_id'  => $v['project_id'] ?? null,
             'date'        => $v['date'],
@@ -189,7 +193,9 @@ class WorkLedgerController extends Controller
             'notes'       => $v['notes'] ?? null,
         ]);
 
-        return back()->with('status', 'Wage payment record ho gayi.');
+        return back()->with('status', 'Wage payment record ho gayi.')
+            ->with('voucher_url', route('vouchers.wage', $wp))
+            ->with('voucher_label', '🖨 Wage Voucher');
     }
 
     public function destroyPayment(WagePayment $wagePayment)

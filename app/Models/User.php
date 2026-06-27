@@ -10,7 +10,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 
-#[Fillable(['name', 'email', 'password'])]
+#[Fillable(['name', 'email', 'password', 'is_developer'])]
 #[Hidden(['password', 'remember_token'])]
 class User extends Authenticatable
 {
@@ -27,6 +27,16 @@ class User extends Authenticatable
         return [
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
+            'is_developer' => 'boolean',
         ];
+    }
+
+    /**
+     * Hidden developer account — may change its own email/password
+     * without the usual confirmation (current password / re-verification).
+     */
+    public function isDeveloper(): bool
+    {
+        return (bool) $this->is_developer;
     }
 }

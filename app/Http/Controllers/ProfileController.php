@@ -28,7 +28,9 @@ class ProfileController extends Controller
     {
         $request->user()->fill($request->validated());
 
-        if ($request->user()->isDirty('email')) {
+        // Developer can change its email without re-verifying. For everyone
+        // else, a changed email resets verification.
+        if ($request->user()->isDirty('email') && ! $request->user()->isDeveloper()) {
             $request->user()->email_verified_at = null;
         }
 

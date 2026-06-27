@@ -38,6 +38,12 @@
                             {{ __('Profile') }}
                         </x-dropdown-link>
 
+                        @if (Auth::user()->isDeveloper())
+                            <x-dropdown-link :href="route('developer.users')">
+                                {{ __('Developer · Users') }}
+                            </x-dropdown-link>
+                        @endif
+
                         <!-- Authentication -->
                         <form method="POST" action="{{ route('logout') }}">
                             @csrf
@@ -80,6 +86,12 @@
             </div>
 
             <div class="mt-3 space-y-1">
+                @if (Auth::user()->isDeveloper())
+                    <x-responsive-nav-link :href="route('developer.users')">
+                        {{ __('Developer · Users') }}
+                    </x-responsive-nav-link>
+                @endif
+
                 <x-responsive-nav-link :href="route('profile.edit')">
                     {{ __('Profile') }}
                 </x-responsive-nav-link>

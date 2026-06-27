@@ -16,7 +16,7 @@
 </head>
 <body>
     @php $rs = fn($p) => 'Rs ' . number_format(\App\Support\Money::toRupees($p), 2); @endphp
-    <h1>{{ \App\Models\Setting::get('company_name') }}</h1>
+    @include('reports._letterhead')
     <div class="muted">Outstanding Report · generated {{ now()->format('d-m-Y') }}</div>
 
     <h2>Receivables (from clients)</h2>

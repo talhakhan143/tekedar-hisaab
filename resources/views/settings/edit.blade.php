@@ -13,6 +13,16 @@
                     <x-input-error :messages="$errors->get('company_name')" class="mt-1" />
                 </div>
                 <div>
+                    <x-input-label for="company_address" value="Address (invoices/vouchers پر)" />
+                    <x-text-input id="company_address" name="company_address" class="mt-1 block w-full" :value="old('company_address', $settings['company_address'])" placeholder="Office address" />
+                    <x-input-error :messages="$errors->get('company_address')" class="mt-1" />
+                </div>
+                <div>
+                    <x-input-label for="company_phone" value="Phone (invoices/vouchers پر)" />
+                    <x-text-input id="company_phone" name="company_phone" class="mt-1 block w-full" :value="old('company_phone', $settings['company_phone'])" placeholder="03xx-xxxxxxx" />
+                    <x-input-error :messages="$errors->get('company_phone')" class="mt-1" />
+                </div>
+                <div>
                     <x-input-label for="logo" value="Logo (PNG/JPG, max 2MB)" />
                     @if(!empty($settings['company_logo']))
                         <img src="{{ $settings['company_logo'] }}" alt="logo" class="my-2 h-12">
@@ -65,4 +75,30 @@
 
         <button class="rounded-md bg-emerald-600 px-5 py-2.5 text-sm font-semibold text-white hover:bg-emerald-700">Save Settings</button>
     </form>
+
+    {{-- Danger Zone — hard reset of all business data (developer + owner only) --}}
+    <div class="mt-8 rounded-lg border-2 border-red-300 bg-red-50 p-6" x-data="{ confirm: '' }">
+        <h3 class="text-lg font-bold text-red-700">⚠️ Danger Zone — Hard Reset</h3>
+        <p class="mt-1 text-sm text-red-700">
+            Ye sara business data <span class="font-bold">permanently</span> mita dega — projects, vendors, mazdoor,
+            attendance, payments, materials, expenses, estimates — sab. <span class="font-bold">Users aur Settings
+            (company name, logo) safe rahenge.</span> Test ke baad fresh start ke liye use karo. Wapas nahi aa sakta.
+        </p>
+
+        <form method="POST" action="{{ route('hard-reset') }}" class="mt-4 flex flex-col gap-3 sm:flex-row sm:items-end"
+              onsubmit="return confirm('PAKKA? Sara data mit jayega aur wapas nahi aayega.')">
+            @csrf
+            <div>
+                <label for="reset_confirm" class="block text-xs font-medium text-red-700">Confirm karne ke liye "RESET" likho</label>
+                <input id="reset_confirm" name="confirm" type="text" autocomplete="off" placeholder="RESET"
+                       x-model="confirm"
+                       class="mt-1 block w-48 rounded-md border-red-300 text-sm shadow-sm focus:border-red-500 focus:ring-red-500">
+                <x-input-error :messages="$errors->get('confirm')" class="mt-1" />
+            </div>
+            <button type="submit" :disabled="confirm !== 'RESET'"
+                    class="rounded-md bg-red-600 px-5 py-2.5 text-sm font-semibold text-white hover:bg-red-700 disabled:cursor-not-allowed disabled:opacity-40">
+                Hard Reset — Sab Mita Do
+            </button>
+        </form>
+    </div>
 </x-app-layout>
