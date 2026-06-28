@@ -27,3 +27,6 @@ Homestead.yaml
 Thumbs.db
 # Added by code-review-graph
 .code-review-graph/
+
+# deploy artifacts
+/tekedar-deploy.zip

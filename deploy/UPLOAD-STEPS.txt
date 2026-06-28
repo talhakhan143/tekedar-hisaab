@@ -1,0 +1,69 @@
+============================================================
+  ALI BUILDING CONSTRUCTION GROUP — UPLOAD STEPS (super short)
+  Full details: see DEPLOYMENT.md
+============================================================
+
+EVERYTHING IS PRE-BUILT. You only UPLOAD + set DB + import SQL.
+
+------------------------------------------------------------
+1) MAKE THE DATABASE (Hostinger hPanel)
+------------------------------------------------------------
+   hPanel > Databases > MySQL Databases
+   - Create a database  (note the name, e.g. uXXXX_tekedar)
+   - Create a user + password, give ALL PRIVILEGES
+   - Write down: DB name, DB user, DB password
+
+------------------------------------------------------------
+2) IMPORT THE DATA
+------------------------------------------------------------
+   hPanel > Databases > phpMyAdmin > open your DB > Import tab
+   - Choose file:  database/production-seed.sql   (from this package)
+   - Click "Go".  Done — all tables + 2 login users are created.
+
+------------------------------------------------------------
+3) UPLOAD THE APP
+------------------------------------------------------------
+   File Manager > public_html
+   - Upload  tekedar-deploy.zip  and Extract it here.
+   - (Everything lands inside public_html — Layout C.)
+   - Rename  deploy/public_html-root.htaccess  to  .htaccess
+     and move it to the public_html ROOT.
+
+------------------------------------------------------------
+4) SET THE .env
+------------------------------------------------------------
+   - Rename  .env.production  to  .env
+   - Edit ONLY these lines:
+        APP_URL=https://your-real-domain.com
+        DB_DATABASE=uXXXX_tekedar
+        DB_USERNAME=uXXXX_user
+        DB_PASSWORD=your-db-password
+     (APP_KEY is already filled — don't change it.)
+
+------------------------------------------------------------
+5) PERMISSIONS
+------------------------------------------------------------
+   File Manager: set these folders to 775 (right-click > Permissions)
+        storage
+        bootstrap/cache
+
+------------------------------------------------------------
+6) SSL
+------------------------------------------------------------
+   hPanel > SSL > install the free certificate for your domain.
+   (Optional: in public/.htaccess uncomment the 2 HTTPS lines.)
+
+------------------------------------------------------------
+7) LOGIN  (change passwords immediately!)
+------------------------------------------------------------
+   Owner      : m_ali@aliconsgroup.pk   /  m_ali_owner@786
+   Developer  : mr.talha143@gmail.com   /  Spazio@786
+
+   Top-right avatar > Profile & Password > change it.
+   Settings > add company Address + Phone (prints on invoices).
+
+------------------------------------------------------------
+TEST: open  https://your-domain.com/.env  in a browser.
+It MUST show 403/404 (not the file). If you see the file,
+the .htaccess is wrong — fix before going live.
+============================================================

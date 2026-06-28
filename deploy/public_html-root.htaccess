@@ -1,0 +1,15 @@
+# ====================================================================
+# Rename this file to ".htaccess" and place it at the ROOT of public_html
+# (only needed for Layout C — whole app inside public_html).
+# It blocks private files and forwards traffic into Laravel's public/ folder.
+# ====================================================================
+<IfModule mod_rewrite.c>
+    RewriteEngine On
+
+    # Block direct access to private files/folders (returns 403)
+    RewriteRule ^(\.env|\.git|composer\.(json|lock)|artisan|storage|vendor|app|bootstrap|config|database|resources|routes|tests)(/|$) - [F,L]
+
+    # Forward everything else into the public/ folder
+    RewriteCond %{REQUEST_URI} !^/public/
+    RewriteRule ^(.*)$ public/$1 [L]
+</IfModule>
