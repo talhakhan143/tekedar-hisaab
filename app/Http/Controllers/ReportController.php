@@ -71,8 +71,8 @@ class ReportController extends Controller
     {
         $receivables = Project::orderBy('name')->get()->map(function (Project $p) {
             $f = ProjectFinance::for($p);
-            return ['name' => $p->name, 'retention' => $f->retentionOutstandingPaisa(), 'receivable' => $f->receivablePaisa()];
-        })->filter(fn ($r) => $r['receivable'] > 0 || $r['retention'] > 0)->values();
+            return ['name' => $p->name, 'receivable' => $f->receivablePaisa()];
+        })->filter(fn ($r) => $r['receivable'] > 0)->values();
 
         $payables = Vendor::orderBy('name')->get()->map(fn (Vendor $v) => ['name' => $v->name, 'amount' => $v->payablePaisa()])
             ->filter(fn ($r) => $r['amount'] > 0)->values();
@@ -83,8 +83,8 @@ class ReportController extends Controller
         $data = compact('receivables', 'payables', 'advances');
 
         if ($request->get('export') === 'csv') {
-            $lines = [['OUTSTANDING REPORT', now()->format('d-m-Y')], [], ['Receivables (client)', 'Retention', 'Total Receivable']];
-            foreach ($receivables as $r) $lines[] = [$r['name'], Money::toRupees($r['retention']), Money::toRupees($r['receivable'])];
+            $lines = [['OUTSTANDING REPORT', now()->format('d-m-Y')], [], ['Receivables (client)', 'Total Receivable']];
+            foreach ($receivables as $r) $lines[] = [$r['name'], Money::toRupees($r['receivable'])];
             $lines[] = []; $lines[] = ['Payables (vendor)', 'Amount'];
             foreach ($payables as $r) $lines[] = [$r['name'], Money::toRupees($r['amount'])];
             $lines[] = []; $lines[] = ['Worker Advances', 'Amount'];

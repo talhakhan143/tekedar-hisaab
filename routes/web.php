@@ -10,7 +10,6 @@ use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\ProjectController;
 use App\Http\Controllers\ReportController;
 use App\Http\Controllers\ResetController;
-use App\Http\Controllers\RetentionReleaseController;
 use App\Http\Controllers\SettingController;
 use App\Http\Controllers\VendorController;
 use App\Http\Controllers\VoucherController;
@@ -39,13 +38,11 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::put('estimates/{estimate}', [EstimateController::class, 'update'])->name('estimates.update');
     Route::delete('estimates/{estimate}', [EstimateController::class, 'destroy'])->name('estimates.destroy');
 
-    // Money In — client payments + retention releases
+    // Money In — client payments
     Route::get('/money-in', [ClientPaymentController::class, 'index'])->name('money-in');
     Route::get('/client-payments/create', [ClientPaymentController::class, 'create'])->name('client-payments.create');
     Route::post('/client-payments', [ClientPaymentController::class, 'store'])->name('client-payments.store');
     Route::delete('/client-payments/{clientPayment}', [ClientPaymentController::class, 'destroy'])->name('client-payments.destroy');
-    Route::post('/retention-releases', [RetentionReleaseController::class, 'store'])->name('retention-releases.store');
-    Route::delete('/retention-releases/{retentionRelease}', [RetentionReleaseController::class, 'destroy'])->name('retention-releases.destroy');
 
     // Vendors + material purchases (payables)
     Route::resource('vendors', VendorController::class);

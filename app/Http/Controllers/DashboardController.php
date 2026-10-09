@@ -20,8 +20,6 @@ class DashboardController extends Controller
             'totalCost'            => $d->totalProjectCostPaisa() + $d->overheadPaisa(),
             'accruedProfit'        => $d->accruedProfitPaisa(),
             'cashProfit'           => $d->cashProfitPaisa(),
-            'retentionOutstanding' => $d->retentionOutstandingPaisa(),
-            'retentionAging'       => $d->retentionAgingDays(),
             'totalReceivable'      => $d->totalReceivablePaisa(),
             'totalPayable'         => $d->totalPayablePaisa(),
             'vendorPayables'       => $d->vendorPayablePaisa(),

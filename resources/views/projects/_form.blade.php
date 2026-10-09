@@ -77,11 +77,6 @@
                 </div>
             </template>
 
-            <div>
-                <x-input-label for="retention_percent" value="Retention % (Peshgi rok)" />
-                <x-text-input id="retention_percent" name="retention_percent" type="number" step="0.01" class="mt-1 block w-full" :value="old('retention_percent', $project->retention_percent)" />
-                <x-input-error :messages="$errors->get('retention_percent')" class="mt-1" />
-            </div>
             @if (! $project->exists)
                 <div>
                     <x-money-input name="advance_amount" label="Advance / Peshgi"

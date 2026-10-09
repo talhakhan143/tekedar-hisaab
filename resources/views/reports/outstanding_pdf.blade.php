@@ -20,8 +20,8 @@
     <div class="muted">Outstanding Report · generated {{ now()->format('d-m-Y') }}</div>
 
     <h2>Receivables (from clients)</h2>
-    <table><thead><tr><th>Project</th><th class="r">Retention</th><th class="r">Receivable</th></tr></thead><tbody>
-        @forelse($receivables as $r)<tr><td>{{ $r['name'] }}</td><td class="r">{{ $rs($r['retention']) }}</td><td class="r">{{ $rs($r['receivable']) }}</td></tr>@empty<tr><td colspan="3">—</td></tr>@endforelse
+    <table><thead><tr><th>Project</th><th class="r">Receivable</th></tr></thead><tbody>
+        @forelse($receivables as $r)<tr><td>{{ $r['name'] }}</td><td class="r">{{ $rs($r['receivable']) }}</td></tr>@empty<tr><td colspan="2">—</td></tr>@endforelse
     </tbody></table>
 
     <h2>Payables (to vendors)</h2>

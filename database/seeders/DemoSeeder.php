@@ -8,7 +8,6 @@ use App\Models\GeneralOverhead;
 use App\Models\MaterialPurchase;
 use App\Models\OtherExpense;
 use App\Models\Project;
-use App\Models\RetentionRelease;
 use App\Models\Vendor;
 use App\Models\WagePayment;
 use App\Models\WorkEntry;
@@ -19,7 +18,7 @@ use Illuminate\Database\Seeder;
 
 /**
  * One full realistic theka, exactly per the acceptance test:
- * 1500 sqft full-finished @ ₨2,200/sqft, 7% retention.
+ * 1500 sqft full-finished @ ₨2,200/sqft.
  * 3 client payments, 10 material purchases (2 on udhaar),
  * 4 workers + attendance + 2 advances, 6 other expenses.
  */
@@ -56,7 +55,6 @@ class DemoSeeder extends Seeder
             'covered_area_sqft'    => $area,
             'rate_per_sqft_paisa'  => $rate,
             'contract_value_paisa' => $area * $rate, // 3,300,000
-            'retention_percent'    => 7,
             'completion_percent'   => 55,
             'start_date'           => $start,
             'expected_end_date'    => (clone $start)->addMonths(8),
@@ -96,19 +94,18 @@ class DemoSeeder extends Seeder
         // ---------- Client payments (3) ----------
         $payments = [
             // [date, gross, is_mobilization]
-            [(clone $start),                 500000, true],   // mobilization advance, no retention
+            [(clone $start),                 500000, true],   // peshgi / advance
             [(clone $start)->addMonths(2),  1000000, false],
             [(clone $start)->addMonths(3),  1200000, false],
         ];
         foreach ($payments as [$date, $grossR, $isMob]) {
             $gross = $this->p($grossR);
-            $retention = $isMob ? 0 : (int) round($gross * 7 / 100);
             ClientPayment::create([
                 'project_id'           => $project->id,
                 'date'                 => $date,
                 'gross_amount_paisa'   => $gross,
-                'retention_held_paisa' => $retention,
-                'net_received_paisa'   => $gross - $retention,
+                'retention_held_paisa' => 0,
+                'net_received_paisa'   => $gross,
                 'payment_method'       => $isMob ? 'bank' : 'cheque',
                 'reference'            => $isMob ? 'MOB-ADV' : 'RB-' . $date->format('mY'),
                 'is_mobilization'      => $isMob,
@@ -213,8 +210,6 @@ class DemoSeeder extends Seeder
             ]);
         }
 
-        // A retention release (client released part of held retention)
-        RetentionRelease::create(['project_id' => $project->id, 'date' => (clone $start)->addMonths(4), 'amount_paisa' => $this->p(50000), 'notes' => 'Partial retention release']);
 
         // ---------- General overheads (monthly, not per-project) ----------
         GeneralOverhead::create(['month' => '2026-05', 'category' => 'office_rent', 'amount_paisa' => $this->p(45000)]);

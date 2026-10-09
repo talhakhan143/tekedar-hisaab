@@ -15,9 +15,7 @@
     @if ($payment->is_mobilization)<div class="center" style="margin:4px 0"><span class="pill">MOBILIZATION</span></div>@endif
     <hr class="hr">
 
-    <div class="tot"><span>Gross</span><span>{{ Money::format($payment->gross_amount_paisa) }}</span></div>
-    <div class="tot"><span>Retention</span><span>{{ Money::format($payment->retention_held_paisa) }}</span></div>
-    <div class="tot grand"><span>Net Received</span><span>{{ Money::format($payment->net_received_paisa) }}</span></div>
+    <div class="tot grand"><span>Received</span><span>{{ Money::format($payment->net_received_paisa) }}</span></div>
 
     <div class="words"><b>In words:</b> {{ NumberToWords::rupees($payment->net_received_paisa) }}</div>
     @if ($payment->notes)<div class="notes"><b>Notes:</b> {{ $payment->notes }}</div>@endif
