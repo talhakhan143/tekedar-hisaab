@@ -30,3 +30,7 @@ Thumbs.db
 
 # deploy artifacts
 /tekedar-deploy.zip
+
+# local sqlite test scratch
+/database/*.sqlite
+/.env.sqlitetest

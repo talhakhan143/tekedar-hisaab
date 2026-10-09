@@ -1,0 +1,37 @@
+---
+deployment:
+  tasks:
+    # Saari paths $HOME se nikalti hain, hardcoded /home2/... kahin nahi.
+    # App web root se bahar rehti hai, sirf public/ subdomain ka docroot hai.
+    - export DP=$HOME/tekedar-app
+    - export DATA=$HOME/tekedar-data
+    - export LOG=$HOME/tekedar-deploy.log
+    - export PHP=/opt/cpanel/ea-php85/root/usr/bin/php
+    - 'date > $LOG'
+    - 'echo "[env] user=$(whoami) pwd=$(pwd)" >> $LOG 2>&1'
+    - 'echo "[php] $($PHP -v 2>&1 | head -1)" >> $LOG 2>&1'
+    - 'echo "[tools] $(command -v composer || echo no-composer) | $(command -v curl || echo no-curl) | $(command -v rsync || echo no-rsync) | $(command -v tar || echo no-tar)" >> $LOG 2>&1'
+    - 'echo "[composer-alt] $(ls /opt/cpanel/composer/bin/composer 2>/dev/null || echo none)" >> $LOG 2>&1'
+    - mkdir -p $DP
+    - mkdir -p $DATA
+    # Code copy karo. .git aur .env kabhi nahi chhuna.
+    - 'echo "[copy] start" >> $LOG'
+    - 'rsync -a --exclude ".git" --exclude ".env" --exclude "storage/logs" ./ $DP/ >> $LOG 2>&1 || cp -R ./ $DP/ >> $LOG 2>&1'
+    - 'rm -rf $DP/.git $DP/node_modules $DP/tests'
+    - 'echo "[copy] done" >> $LOG'
+    # Writable dirs
+    - 'mkdir -p $DP/storage/framework/cache/data $DP/storage/framework/sessions $DP/storage/framework/views $DP/storage/logs $DP/bootstrap/cache'
+    - 'chmod -R 775 $DP/storage $DP/bootstrap/cache >> $LOG 2>&1'
+    # Dev ke artifacts jo galti se aa jayein
+    - 'rm -f $DP/public/hot $DP/bootstrap/cache/config.php $DP/bootstrap/cache/routes-v7.php $DP/bootstrap/cache/packages.php $DP/bootstrap/cache/services.php'
+    # Vendor. Pehle server ka composer, warna /opt/cpanel wala, warna loudly fail.
+    - 'echo "[composer] start" >> $LOG'
+    - 'if command -v composer >/dev/null 2>&1; then cd $DP && composer install --no-dev --optimize-autoloader --no-interaction --no-progress >> $LOG 2>&1 && echo "[composer] ok via PATH" >> $LOG; elif [ -f /opt/cpanel/composer/bin/composer ]; then cd $DP && $PHP /opt/cpanel/composer/bin/composer install --no-dev --optimize-autoloader --no-interaction --no-progress >> $LOG 2>&1 && echo "[composer] ok via opt" >> $LOG; else echo "[composer] NOT FOUND" >> $LOG; fi'
+    # SQLite file. Web root se bahar, is liye browser se download nahi ho sakti.
+    - 'touch $DATA/database.sqlite && chmod 664 $DATA/database.sqlite'
+    # Migrate aur seed sirf tab jab .env mojood ho aur vendor bana ho.
+    - 'if [ -f $DP/.env ] && [ -f $DP/vendor/autoload.php ]; then cd $DP && $PHP artisan migrate --force --seed >> $LOG 2>&1 && echo "[migrate] ok" >> $LOG; else echo "[migrate] skipped, env or vendor missing" >> $LOG; fi'
+    - 'if [ -f $DP/.env ] && [ -f $DP/vendor/autoload.php ]; then cd $DP && $PHP artisan storage:link >> $LOG 2>&1; $PHP artisan config:cache >> $LOG 2>&1; $PHP artisan route:cache >> $LOG 2>&1; $PHP artisan view:cache >> $LOG 2>&1; echo "[optimize] ok" >> $LOG; fi'
+    - 'echo "[disk] $(du -sh $HOME 2>/dev/null | cut -f1) used in home" >> $LOG 2>&1'
+    - 'echo "[disk-app] $(du -sh $DP 2>/dev/null | cut -f1)" >> $LOG 2>&1'
+    - 'echo "DEPLOY-FINISHED" >> $LOG'
