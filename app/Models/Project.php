@@ -11,6 +11,20 @@ class Project extends Model
 {
     use SoftDeletes;
 
+    /**
+     * Contract types, keyed by the value stored in the column.
+     * This is the single source of truth: validation and the project form
+     * both read it, so adding a type here is the only edit needed.
+     */
+    public const CONTRACT_TYPES = [
+        'structure'      => 'Structure',
+        'grey_structure' => 'Gray Structure',
+        'full_finished'  => 'Full Furnish',
+        'interior'       => 'Interior',
+        'exterior'       => 'Exterior',
+        'other'          => 'Other',
+    ];
+
     protected $guarded = [];
 
     protected $casts = [
@@ -37,12 +51,7 @@ class Project extends Model
     // ---- Labels ----
     public function contractTypeLabel(): string
     {
-        return match ($this->contract_type) {
-            'structure'     => 'Structure',
-            'grey_structure' => 'Gray Structure',
-            'full_finished' => 'Full Furnish',
-            default         => 'Full Furnish',
-        };
+        return self::CONTRACT_TYPES[$this->contract_type] ?? 'Full Furnish';
     }
 
     public function statusColor(): string
