@@ -33,6 +33,14 @@ class DemoSeeder extends Seeder
 
     public function run(): void
     {
+        // Everything below uses plain create(), so running this twice would
+        // duplicate the whole demo set. Bail out if a project already exists.
+        if (Project::query()->exists()) {
+            $this->command?->warn('DemoSeeder skipped: demo data already present.');
+
+            return;
+        }
+
         $start = Carbon::create(2026, 3, 1);
 
         // ---------- Project ----------

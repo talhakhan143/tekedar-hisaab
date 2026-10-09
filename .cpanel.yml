@@ -14,7 +14,9 @@ deployment:
     # Code copy karo. .git aur .env kabhi nahi chhuna.
     - 'rsync -a --exclude ".git" --exclude ".env" --exclude "storage/logs" --exclude "tests" --exclude "node_modules" ./ $DP/ >> $LOG 2>&1 || cp -R ./ $DP/ >> $LOG 2>&1'
     - 'rm -rf $DP/.git $DP/node_modules $DP/tests'
-    - 'echo "[copy] done" >> $LOG'
+    # Apache ko $DP ke andar jaana hota hai. 700 reh gaya to poori site 403 degi.
+    - 'chmod 755 $DP $DATA'
+    - 'echo "[copy] done perms=$(stat -c %a $DP 2>/dev/null || stat -f %Lp $DP)" >> $LOG'
     # Writable dirs
     - 'mkdir -p $DP/storage/framework/cache/data $DP/storage/framework/sessions $DP/storage/framework/views $DP/storage/logs $DP/bootstrap/cache'
     - 'chmod -R 775 $DP/storage $DP/bootstrap/cache'
@@ -26,7 +28,7 @@ deployment:
     # SQLite file. Web root se bahar, is liye browser se download nahi ho sakti.
     - 'touch $DATA/database.sqlite && chmod 664 $DATA/database.sqlite'
     # Schema aur demo data. Sirf tab jab .env aur vendor dono mojood hon.
-    - 'if [ -f $DP/.env ] && [ -f $DP/vendor/autoload.php ]; then cd $DP && $PHP artisan package:discover --ansi >> $LOG 2>&1; $PHP artisan migrate --force --seed >> $LOG 2>&1 && echo "[migrate] ok" >> $LOG || echo "[migrate] FAIL" >> $LOG; else echo "[migrate] skipped" >> $LOG; fi'
+    - 'if [ -f $DP/.env ] && [ -f $DP/vendor/autoload.php ]; then cd $DP && $PHP artisan package:discover --ansi >> $LOG 2>&1; $PHP artisan migrate --force >> $LOG 2>&1 && echo "[migrate] ok" >> $LOG || echo "[migrate] FAIL" >> $LOG; if [ ! -f $DATA/.seeded ]; then $PHP artisan db:seed --force >> $LOG 2>&1 && touch $DATA/.seeded && echo "[seed] ok" >> $LOG || echo "[seed] FAIL" >> $LOG; else echo "[seed] skipped, pehle ho chuka" >> $LOG; fi; else echo "[migrate] skipped" >> $LOG; fi'
     - 'if [ -f $DP/vendor/autoload.php ]; then cd $DP && $PHP artisan storage:link >> $LOG 2>&1; $PHP artisan config:cache >> $LOG 2>&1; $PHP artisan route:cache >> $LOG 2>&1; $PHP artisan view:cache >> $LOG 2>&1; echo "[optimize] ok" >> $LOG; fi'
     - 'echo "[disk] home=$(du -sh $HOME 2>/dev/null | cut -f1) app=$(du -sh $DP 2>/dev/null | cut -f1) db=$(du -h $DATA/database.sqlite 2>/dev/null | cut -f1)" >> $LOG 2>&1'
     - 'echo "DEPLOY-FINISHED" >> $LOG'
