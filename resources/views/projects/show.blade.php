@@ -352,47 +352,84 @@
                     </x-card>
                     <x-card title="Mazdoori do (ادائیگی)">
                         @php
-                            // Wahi payable jo WorkLedgerController submit par check karta hai,
-                            // warna screen par kuch aur dikhta aur form kuch aur reject karta.
-                            $wagePayables = $allWorkers->mapWithKeys(fn ($w) => [$w->id => (int) $w->payable_paisa]);
+                            // Wahi hisaab jo WorkLedgerController save karte waqt lagata hai.
+                            $wageDuesJson = collect($wageDues)->map(fn ($d) => [
+                                'here'        => $d['here'],
+                                'othersTotal' => $d['others_total'],
+                                'total'       => $d['total'],
+                                'others'      => $d['others'],
+                            ])->toJson();
                         @endphp
                         <form method="POST" action="{{ route('projects.wage-payments.store', $project) }}" class="space-y-3"
                               x-data="{
-                                payables: {{ $wagePayables->toJson() }},
+                                dues: {{ $wageDuesJson }},
                                 worker: '{{ old('worker_id') }}',
                                 amount: '{{ old('amount') }}',
-                                get baqi() { return this.worker === '' ? null : (this.payables[this.worker] ?? 0); },
+                                allProjects: {{ old('all_projects') ? 'true' : 'false' }},
+                                get d() { return this.worker === '' ? null : (this.dues[this.worker] ?? {here: 0, othersTotal: 0, total: 0, others: []}); },
+                                get target() { return this.d === null ? 0 : (this.allProjects ? this.d.total : this.d.here); },
                                 fmt(paisa) { return '₨ ' + Number(Math.abs(paisa) / 100).toLocaleString('en-PK', {minimumFractionDigits: 2, maximumFractionDigits: 2}); },
-                                payAll() { if (this.baqi > 0) { this.amount = (this.baqi / 100).toFixed(2); } }
+                                payAll() { if (this.target > 0) { this.amount = (this.target / 100).toFixed(2); } }
                               }"
                               x-init="$watch('worker', () => { amount = '' })">
                             @csrf
                             <select name="worker_id" x-model="worker" required class="block w-full rounded-md border-gray-300 text-sm shadow-sm focus:border-emerald-500 focus:ring-emerald-500">
                                 <option value="">— worker chuno —</option>
                                 @foreach($allWorkers as $w)
+                                    @php $d = $wageDues[$w->id]; @endphp
                                     <option value="{{ $w->id }}">#{{ $w->id }} — {{ $w->name }} ({{ $w->role }}) ·
-                                        @if($w->payable_paisa > 0) baqi {{ \App\Support\Money::format($w->payable_paisa, true, false) }}
-                                        @elseif($w->payable_paisa < 0) advance {{ \App\Support\Money::format(-$w->payable_paisa, true, false) }}
+                                        @if($d['here'] > 0) is project {{ \App\Support\Money::format($d['here'], true, false) }}
+                                        @elseif($d['total'] > 0) is project saaf
+                                        @elseif($d['total'] < 0) advance {{ \App\Support\Money::format(-$d['total'], true, false) }}
                                         @else hisaab saaf @endif
+                                        @if($d['others_total'] > 0) · baqi projects {{ \App\Support\Money::format($d['others_total'], true, false) }} @endif
                                     </option>
                                 @endforeach
                             </select>
 
-                            {{-- Chunte hi saaf saaf dikh jaye ke kitna banta hai, dobara dekhne na jana pare. --}}
+                            {{-- Chunte hi saaf dikh jaye ke kahan kitna banta hai. --}}
                             <template x-if="worker !== ''">
-                                <div class="rounded-lg px-3 py-2 text-sm"
-                                     :class="baqi > 0 ? 'bg-red-50 ring-1 ring-red-100' : (baqi < 0 ? 'bg-amber-50 ring-1 ring-amber-100' : 'bg-gray-50 ring-1 ring-gray-100')">
+                                <div class="space-y-2 rounded-lg px-3 py-2 text-sm"
+                                     :class="target > 0 ? 'bg-red-50 ring-1 ring-red-100' : 'bg-gray-50 ring-1 ring-gray-100'">
                                     <div class="flex items-center justify-between gap-2">
-                                        <span class="text-xs"
-                                              :class="baqi > 0 ? 'text-red-700' : (baqi < 0 ? 'text-amber-700' : 'text-gray-500')"
-                                              x-text="baqi > 0 ? 'Abhi dena hai (باقی)' : (baqi < 0 ? 'Advance de chuke ho (پیشگی)' : 'Hisaab saaf hai')"></span>
-                                        <span class="font-bold"
-                                              :class="baqi > 0 ? 'text-red-700' : (baqi < 0 ? 'text-amber-700' : 'text-gray-400')"
-                                              x-text="baqi === 0 ? '—' : fmt(baqi)"></span>
+                                        <span class="text-xs" :class="d.here > 0 ? 'text-red-700' : 'text-gray-500'">Is project ka (اس پروجیکٹ کا)</span>
+                                        <span class="font-bold" :class="d.here > 0 ? 'text-red-700' : 'text-gray-400'" x-text="d.here > 0 ? fmt(d.here) : '—'"></span>
                                     </div>
-                                    <template x-if="baqi > 0">
+
+                                    <template x-if="d.othersTotal > 0">
+                                        <div class="space-y-1 border-t border-red-100 pt-2">
+                                            <div class="flex items-center justify-between gap-2">
+                                                <span class="text-xs text-amber-700">Doosre projects ka (دوسرے پروجیکٹ)</span>
+                                                <span class="font-bold text-amber-700" x-text="fmt(d.othersTotal)"></span>
+                                            </div>
+                                            <template x-for="row in d.others" :key="row.name">
+                                                <div class="flex items-center justify-between gap-2 pl-2 text-[11px] text-gray-500">
+                                                    <span x-text="row.name"></span>
+                                                    <span x-text="fmt(row.due)"></span>
+                                                </div>
+                                            </template>
+                                            <label class="mt-1 flex items-start gap-2 rounded-md bg-white/70 px-2 py-1.5 text-xs text-gray-700">
+                                                <input type="hidden" name="all_projects" value="0">
+                                                <input type="checkbox" name="all_projects" value="1" x-model="allProjects" @change="amount = ''"
+                                                       class="mt-0.5 rounded border-gray-300 text-emerald-600">
+                                                <span>Sab projects ke dues ek sath bhar do.
+                                                    <span class="text-gray-400">Paisa phir bhi har project me alag alag record hoga.</span>
+                                                </span>
+                                            </label>
+                                        </div>
+                                    </template>
+
+                                    <div class="flex items-center justify-between gap-2 border-t pt-2"
+                                         :class="target > 0 ? 'border-red-100' : 'border-gray-200'">
+                                        <span class="text-xs font-medium" :class="target > 0 ? 'text-red-800' : 'text-gray-500'"
+                                              x-text="allProjects ? 'Ab dena hai, sab projects' : 'Ab dena hai, sirf ye project'"></span>
+                                        <span class="font-bold" :class="target > 0 ? 'text-red-800' : 'text-gray-400'"
+                                              x-text="target > 0 ? fmt(target) : 'Hisaab saaf'"></span>
+                                    </div>
+
+                                    <template x-if="target > 0">
                                         <button type="button" @click="payAll()"
-                                                class="mt-1.5 text-xs font-semibold text-red-700 underline hover:text-red-900">Poora dedo</button>
+                                                class="text-xs font-semibold text-red-700 underline hover:text-red-900">Poora dedo</button>
                                     </template>
                                 </div>
                             </template>

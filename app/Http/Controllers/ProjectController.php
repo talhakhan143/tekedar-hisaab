@@ -113,23 +113,36 @@ class ProjectController extends Controller
             'paid'   => (int) ($paid[$w->id] ?? 0),
             'advnet' => (int) ($advGiven[$w->id] ?? 0) - (int) ($advRecov[$w->id] ?? 0), // deduction − bonus
         ]);
-        // Har worker ka payable, saare projects mila kar. Ye jaan bujh kar wahi
-        // hisaab hai jo WorkLedgerController payment par validate karta hai
-        // (earned − paid − advances), warna form par aur number dikhta aur
-        // submit par aur number reject karta. Worker::payablePaisa() har banday
-        // par 4 queries maarta hai, is liye yahan 4 aggregate queries se kaam
-        // chala rahe hain. Models ke zariye query ho rahi hai to soft deletes
-        // ka scope bhi wahi lagta hai jo relation par lagta.
-        $wEarned = \App\Models\WorkEntry::selectRaw('worker_id, SUM(computed_wage_paisa) as t')->groupBy('worker_id')->pluck('t', 'worker_id');
-        $wPaid   = \App\Models\WagePayment::selectRaw('worker_id, SUM(amount_paisa) as t')->groupBy('worker_id')->pluck('t', 'worker_id');
-        $wAdvGiven = \App\Models\WorkerAdvance::where('type', 'advance_given')->selectRaw('worker_id, SUM(amount_paisa) as t')->groupBy('worker_id')->pluck('t', 'worker_id');
-        $wAdvRecov = \App\Models\WorkerAdvance::where('type', 'recovery')->selectRaw('worker_id, SUM(amount_paisa) as t')->groupBy('worker_id')->pluck('t', 'worker_id');
+        // Har worker ka baqi, project ke hisaab se alag alag. Wahi hisaab jo
+        // WorkLedgerController payment par lagata hai, is liye model se liya
+        // ja raha hai aur yahan dobara nahi likha, warna screen aur validation
+        // alag alag numbers dikhane lagte.
+        $duesByWorker = \App\Models\Worker::duesByProjectFor();
+        $projectNames = \App\Models\Project::orderBy('name')->pluck('name', 'id');
 
-        $allWorkers = \App\Models\Worker::orderBy('name')->get(['id', 'name', 'role', 'wage_type'])
-            ->each(function ($w) use ($wEarned, $wPaid, $wAdvGiven, $wAdvRecov) {
-                $advancesOut = (int) ($wAdvGiven[$w->id] ?? 0) - (int) ($wAdvRecov[$w->id] ?? 0);
-                $w->payable_paisa = (int) ($wEarned[$w->id] ?? 0) - (int) ($wPaid[$w->id] ?? 0) - $advancesOut;
-            });
+        $allWorkers = \App\Models\Worker::orderBy('name')->get(['id', 'name', 'role', 'wage_type']);
+
+        $wageDues = [];
+        foreach ($allWorkers as $w) {
+            $buckets = $duesByWorker[$w->id] ?? [];
+
+            $others = [];
+            foreach ($buckets as $pid => $due) {
+                if ($due > 0 && (int) $pid !== $project->id) {
+                    $others[] = [
+                        'name' => (int) $pid === 0 ? 'Bina project' : ($projectNames[$pid] ?? 'Project #' . $pid),
+                        'due'  => $due,
+                    ];
+                }
+            }
+
+            $wageDues[$w->id] = [
+                'here'         => max(0, $buckets[$project->id] ?? 0),
+                'others'       => $others,
+                'others_total' => array_sum(array_column($others, 'due')),
+                'total'        => array_sum($buckets), // == payablePaisa()
+            ];
+        }
 
         // ---- Attendance: per-worker calendar modal. Load ALL marked days (value = days_present) ----
         $attWorkers = \App\Models\Worker::where('wage_type', '!=', 'contract_piece')->orderBy('name')->get();
@@ -158,7 +171,7 @@ class ProjectController extends Controller
 
         return view('projects.show', compact(
             'project', 'f', 'variance', 'projectWorkers', 'allWorkers',
-            'vendors', 'defaultWastage', 'estimateCategories', 'expenseCategories',
+            'vendors', 'defaultWastage', 'estimateCategories', 'expenseCategories', 'wageDues',
             'attWorkers', 'attMarked', 'attYears', 'attMonthNames', 'attToday', 'attCurYear', 'attCurMon',
             'adjustments', 'workerRoles'
         ));
