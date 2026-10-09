@@ -17,6 +17,12 @@ deployment:
     # Apache ko $DP ke andar jaana hota hai. 700 reh gaya to poori site 403 degi.
     - 'chmod 755 $DP $DATA'
     - 'echo "[copy] done perms=$(stat -c %a $DP 2>/dev/null || stat -f %Lp $DP)" >> $LOG'
+    # cPanel PHP version ko docroot ki .htaccess me likhta hai. Upar wali rsync
+    # us file ko repo wali se badal deti hai, handler ur jata hai, site system
+    # default PHP 8.3 par gir jati hai aur composer ka platform_check (8.4.1
+    # chahiye) poori site ko 500 kar deta hai. Is liye handler har deploy par
+    # wapas laga do.
+    - 'if ! grep -q "ea-php85" $DP/public/.htaccess 2>/dev/null; then printf "\n# php -- BEGIN cPanel-generated handler, do not edit\n<IfModule mime_module>\n  AddHandler application/x-httpd-ea-php85___lsphp .php .php8 .phtml\n</IfModule>\n# php -- END cPanel-generated handler, do not edit\n" >> $DP/public/.htaccess; echo "[php-handler] dobara lagaya" >> $LOG; else echo "[php-handler] pehle se mojood" >> $LOG; fi'
     # Writable dirs
     - 'mkdir -p $DP/storage/framework/cache/data $DP/storage/framework/sessions $DP/storage/framework/views $DP/storage/logs $DP/bootstrap/cache'
     - 'chmod -R 775 $DP/storage $DP/bootstrap/cache'
@@ -31,4 +37,7 @@ deployment:
     - 'if [ -f $DP/.env ] && [ -f $DP/vendor/autoload.php ]; then cd $DP && $PHP artisan package:discover --ansi >> $LOG 2>&1; $PHP artisan migrate --force >> $LOG 2>&1 && echo "[migrate] ok" >> $LOG || echo "[migrate] FAIL" >> $LOG; if [ ! -f $DATA/.seeded ]; then $PHP artisan db:seed --force >> $LOG 2>&1 && touch $DATA/.seeded && echo "[seed] ok" >> $LOG || echo "[seed] FAIL" >> $LOG; else echo "[seed] skipped, pehle ho chuka" >> $LOG; fi; else echo "[migrate] skipped" >> $LOG; fi'
     - 'if [ -f $DP/vendor/autoload.php ]; then cd $DP && $PHP artisan storage:link >> $LOG 2>&1; $PHP artisan config:cache >> $LOG 2>&1; $PHP artisan route:cache >> $LOG 2>&1; $PHP artisan view:cache >> $LOG 2>&1; echo "[optimize] ok" >> $LOG; fi'
     - 'echo "[disk] home=$(du -sh $HOME 2>/dev/null | cut -f1) app=$(du -sh $DP 2>/dev/null | cut -f1) db=$(du -h $DATA/database.sqlite 2>/dev/null | cut -f1)" >> $LOG 2>&1'
+    # Deploy khud apna smoke test kare, taake log dekh kar pata chale site zinda hai.
+    - 'echo "[smoke] login_http=$(curl -sS -o /dev/null -w %{http_code} --max-time 30 https://hisaab.baryal.com.pk/login)" >> $LOG 2>&1'
+    - 'echo "[smoke] php_runtime=$(curl -sS --max-time 30 -o /dev/null -w %{http_code} https://hisaab.baryal.com.pk/)" >> $LOG 2>&1'
     - 'echo "DEPLOY-FINISHED" >> $LOG'
