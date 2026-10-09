@@ -72,6 +72,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
     // Workers + sub-ledgers (attendance, advances, wage payments)
     Route::resource('workers', WorkerController::class);
+    Route::patch('/workers/{worker}/wage', [WorkerController::class, 'updateWage'])->name('workers.wage.update');
     Route::post('/workers/{worker}/work-entries', [WorkLedgerController::class, 'storeWork'])->name('work-entries.store');
     Route::delete('/work-entries/{workEntry}', [WorkLedgerController::class, 'destroyWork'])->name('work-entries.destroy');
     Route::post('/workers/{worker}/advances', [WorkLedgerController::class, 'storeAdvance'])->name('worker-advances.store');

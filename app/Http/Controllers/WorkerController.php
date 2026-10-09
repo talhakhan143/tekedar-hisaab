@@ -72,6 +72,24 @@ class WorkerController extends Controller
         return redirect()->route('workers.show', $worker)->with('status', 'Worker update ho gaya.');
     }
 
+    /**
+     * Sirf dihaadi badalne ke liye, taake project page chhorna na pare.
+     *
+     * Ye sirf aage ki haazri par lagti hai. Purani entries ka wage us waqt
+     * hi work_entries.computed_wage_paisa me likh dia gaya tha, is liye
+     * purana hisaab apni jagah rehta hai aur kisi ka kamaya hua nahi badalta.
+     */
+    public function updateWage(Request $request, Worker $worker)
+    {
+        $v = $request->validate([
+            'default_wage' => ['required', 'numeric', 'min:0'],
+        ]);
+
+        $worker->update(['default_wage_paisa' => Money::toPaisa($v['default_wage'])]);
+
+        return back()->with('status', $worker->name . ' ki dihaadi ab ' . Money::format($worker->default_wage_paisa) . ' hai. Purani haazri waise hi rahegi.');
+    }
+
     public function destroy(Worker $worker)
     {
         $worker->delete();
