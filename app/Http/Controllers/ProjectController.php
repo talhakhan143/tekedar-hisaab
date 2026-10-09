@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\ClientPayment;
 use App\Models\Project;
 use App\Models\Setting;
 use App\Services\ProjectFinance;
@@ -46,6 +47,26 @@ class ProjectController extends Controller
     {
         $data = $this->validated($request);
         $project = Project::create($data);
+
+        // Peshgi ko alag column me rakhne ka faida nahi: tab wo Money In,
+        // Lena/Dena aur cash profit kisi me count nahi hoti. Is liye isay
+        // wahi mobilization advance bana dete hain jo app pehle se samajhti hai.
+        if ($request->filled('advance_amount')) {
+            $advance = \App\Support\Money::toPaisa($request->input('advance_amount'));
+
+            if ($advance > 0) {
+                ClientPayment::create([
+                    'project_id'           => $project->id,
+                    'date'                 => $project->start_date ?? now()->startOfDay(),
+                    'gross_amount_paisa'   => $advance,
+                    'retention_held_paisa' => 0, // advance par retention nahi katti
+                    'net_received_paisa'   => $advance,
+                    'payment_method'       => 'cash',
+                    'is_mobilization'      => true,
+                    'notes'                => 'Project banate waqt li gayi peshgi.',
+                ]);
+            }
+        }
 
         return redirect()->route('projects.show', $project)->with('status', 'Project ban gaya.');
     }
@@ -333,7 +354,7 @@ class ProjectController extends Controller
             'rate_per_sqft'     => ['nullable', 'numeric', 'min:0', 'required_if:pricing_mode,per_sqft'],
             'contract_value'    => ['nullable', 'numeric', 'min:0', 'required_if:pricing_mode,lump_sum'],
             'retention_percent' => ['nullable', 'numeric', 'min:0', 'max:100'],
-            'completion_percent'=> ['nullable', 'numeric', 'min:0', 'max:100'],
+            'advance_amount'    => ['nullable', 'numeric', 'min:0'],
             'start_date'        => ['nullable', 'date'],
             'expected_end_date' => ['nullable', 'date'],
             'actual_end_date'   => ['nullable', 'date'],
@@ -360,7 +381,6 @@ class ProjectController extends Controller
             'rate_per_sqft_paisa'  => $ratePaisa,
             'contract_value_paisa' => $contractValue,
             'retention_percent'    => $v['retention_percent'] ?? 0,
-            'completion_percent'   => $v['completion_percent'] ?? 0,
             'start_date'           => $v['start_date'] ?? null,
             'expected_end_date'    => $v['expected_end_date'] ?? null,
             'actual_end_date'      => $v['actual_end_date'] ?? null,

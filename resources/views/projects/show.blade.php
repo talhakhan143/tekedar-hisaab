@@ -47,13 +47,12 @@
 
         {{-- ================= OVERVIEW ================= --}}
         <div x-show="tab==='overview'" x-cloak>
-            <div class="grid grid-cols-2 gap-4 lg:grid-cols-3 xl:grid-cols-6">
+            <div class="grid grid-cols-2 gap-4 lg:grid-cols-3 xl:grid-cols-5">
                 <x-stat label="Contract (ٹھیکہ)" :value="\App\Support\Money::short($contract)" color="text-sky-600" />
                 <x-stat label="Received (مل گیا)" :value="\App\Support\Money::short($received)" color="text-emerald-600" />
                 <x-stat label="Balance (باقی)" :value="\App\Support\Money::short($balance)" color="text-amber-600" sub="client se lena" />
                 <x-stat label="Expense (خرچ)" :value="\App\Support\Money::short($expense)" color="text-rose-600" />
                 <x-stat label="Profit (منافع)" :value="\App\Support\Money::short($profit)" :color="$profit < 0 ? 'text-red-600' : 'text-indigo-600'" sub="contract − kharch" />
-                <x-stat label="Completion" :value="rtrim(rtrim($project->completion_percent,'0'),'.').'%'" color="text-gray-700" />
             </div>
 
             {{-- Lena / Dena quick cards (click -> ledger tab) --}}
