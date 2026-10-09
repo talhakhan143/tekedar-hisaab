@@ -12,9 +12,9 @@
     <div class="grid grid-cols-1 gap-6 lg:grid-cols-3">
         <x-card title="Receivables (from clients)" class="!p-0">
             <table class="min-w-full divide-y divide-gray-200 text-sm">
-                <thead class="bg-gray-50 text-left text-xs uppercase text-gray-500"><tr><th class="px-4 py-3">Project</th><th class="px-4 py-3 text-right">Retention</th><th class="px-4 py-3 text-right">Receivable</th></tr></thead>
+                <thead class="bg-gray-50 text-left text-xs uppercase text-gray-500"><tr><th class="px-4 py-3">Project</th><th class="px-4 py-3 text-right">Receivable</th></tr></thead>
                 <tbody class="divide-y divide-gray-100">
-                    @forelse($receivables as $r)<tr><td class="px-4 py-2.5">{{ $r['name'] }}</td><td class="px-4 py-2.5 text-right text-amber-600">@money($r['retention'])</td><td class="px-4 py-2.5 text-right font-medium">@money($r['receivable'])</td></tr>
+                    @forelse($receivables as $r)<tr><td class="px-4 py-2.5">{{ $r['name'] }}</td><td class="px-4 py-2.5 text-right font-medium">@money($r['receivable'])</td></tr>
                     @empty<tr><td colspan="3" class="px-4 py-6 text-center text-gray-400">—</td></tr>@endforelse
                 </tbody>
             </table>

@@ -43,13 +43,13 @@
     <div class="mt-6 grid grid-cols-1 gap-4 lg:grid-cols-2">
         <x-card title="Overall Profit — all-time (مجموعی منافع)">
             <dl class="space-y-3 text-sm">
-                <div class="flex justify-between"><dt class="text-gray-500">Total Billed, incl. retention (کل بل)</dt><dd class="font-semibold">@money($totalBilled)</dd></div>
+                <div class="flex justify-between"><dt class="text-gray-500">Total Billed (کل بل)</dt><dd class="font-semibold">@money($totalBilled)</dd></div>
                 <div class="flex justify-between"><dt class="text-gray-500">Total Cost, incl. overheads (کل لاگت)</dt><dd class="font-semibold">@money($totalCost)</dd></div>
                 <div class="flex justify-between border-t pt-3"><dt class="font-medium text-gray-700">Accrued Profit (کھاتہ منافع)</dt><dd class="font-bold {{ $accruedProfit < 0 ? 'text-red-600' : 'text-emerald-600' }}">@money($accruedProfit)</dd></div>
                 <div class="flex justify-between"><dt class="font-medium text-gray-700">Cash-in-hand Profit (نقد منافع)</dt><dd class="font-bold {{ $cashProfit < 0 ? 'text-red-600' : 'text-indigo-600' }}">@money($cashProfit)</dd></div>
                 <div class="mt-2 space-y-1 rounded-lg bg-gray-50 p-3 text-xs text-gray-500">
                     <p><span class="font-semibold text-emerald-700">Accrued (کھاتہ)</span> = kaagaz pe munafa (bill − lagat), chahe paisa abhi aaya ho ya nahi.</p>
-                    <p><span class="font-semibold text-indigo-700">Cash (نقد)</span> = jeb wala munafa — jo paisa asal me aaya minus jo asal me diya. Roki gayi retention (₨{{ number_format($retentionOutstanding/100) }}) isme shaamil nahi.</p>
+                    <p><span class="font-semibold text-indigo-700">Cash (نقد)</span> = jeb wala munafa — jo paisa asal me aaya minus jo asal me diya.</p>
                 </div>
             </dl>
         </x-card>
@@ -57,7 +57,6 @@
             <dl class="space-y-3 text-sm">
                 <div class="flex justify-between"><dt class="text-gray-500">Vendor Payables — udhaar (سپلائر کا اُدھار)</dt><dd class="font-semibold text-red-600">@money($vendorPayables)</dd></div>
                 <div class="flex justify-between"><dt class="text-gray-500">Worker Advances (مزدور پیشگی)</dt><dd class="font-semibold text-amber-600">@money($workerAdvances)</dd></div>
-                <div class="flex justify-between"><dt class="text-gray-500">Retention Held by Client (کلائنٹ کے پاس روکی رقم)</dt><dd class="font-semibold text-amber-600">@money($retentionOutstanding)</dd></div>
             </dl>
         </x-card>
     </div>

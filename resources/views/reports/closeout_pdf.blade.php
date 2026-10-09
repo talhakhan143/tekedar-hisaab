@@ -39,7 +39,6 @@
     <table><tbody>
         <tr><td>Gross Billed</td><td class="r">{{ $rs($f->grossBilledPaisa()) }}</td></tr>
         <tr><td>Net Received</td><td class="r">{{ $rs($f->netReceivedPaisa()) }}</td></tr>
-        <tr><td>Retention Outstanding</td><td class="r">{{ $rs($f->retentionOutstandingPaisa()) }}</td></tr>
         <tr><td>Accrued Profit</td><td class="r">{{ $rs($f->accruedProfitPaisa()) }}</td></tr>
         <tr><td>Cash Profit</td><td class="r">{{ $rs($f->cashProfitPaisa()) }}</td></tr>
     </tbody></table>

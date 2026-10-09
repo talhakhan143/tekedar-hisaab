@@ -38,8 +38,7 @@ class ProjectController extends Controller
     public function create()
     {
         return view('projects.create', [
-            'project'          => new Project(['retention_percent' => Setting::get('default_retention'), 'status' => 'quoted', 'contract_type' => 'full_finished', 'pricing_mode' => 'per_sqft']),
-            'defaultRetention' => Setting::get('default_retention'),
+            'project' => new Project(['status' => 'quoted', 'contract_type' => 'full_finished', 'pricing_mode' => 'per_sqft']),
         ]);
     }
 
@@ -59,7 +58,7 @@ class ProjectController extends Controller
                     'project_id'           => $project->id,
                     'date'                 => $project->start_date ?? now()->startOfDay(),
                     'gross_amount_paisa'   => $advance,
-                    'retention_held_paisa' => 0, // advance par retention nahi katti
+                    'retention_held_paisa' => 0,
                     'net_received_paisa'   => $advance,
                     'payment_method'       => 'cash',
                     'is_mobilization'      => true,
@@ -74,7 +73,6 @@ class ProjectController extends Controller
     public function show(Project $project)
     {
         $project->load(['estimates', 'clientPayments' => fn ($q) => $q->orderBy('date'),
-            'retentionReleases' => fn ($q) => $q->orderBy('date'),
             'materialPurchases.vendor', 'otherExpenses']);
 
         $f = ProjectFinance::for($project);
@@ -135,7 +133,6 @@ class ProjectController extends Controller
         // Data for the in-project tabs.
         $estimatesGrouped = $project->estimates;
         $vendors = \App\Models\Vendor::orderBy('name')->get(['id', 'name', 'type']);
-        $defaultRetention = Setting::get('default_retention');
         $defaultWastage = Setting::get('default_wastage');
         $estimateCategories = \App\Http\Controllers\EstimateController::CATEGORIES;
         $expenseCategories = \App\Http\Controllers\MoneyOutController::EXPENSE_CATEGORIES;
@@ -145,7 +142,7 @@ class ProjectController extends Controller
 
         return view('projects.show', compact(
             'project', 'f', 'variance', 'projectWorkers', 'allWorkers',
-            'vendors', 'defaultRetention', 'defaultWastage', 'estimateCategories', 'expenseCategories',
+            'vendors', 'defaultWastage', 'estimateCategories', 'expenseCategories',
             'attWorkers', 'attMarked', 'attYears', 'attMonthNames', 'attToday', 'attCurYear', 'attCurMon',
             'adjustments', 'workerRoles'
         ));
@@ -237,16 +234,6 @@ class ProjectController extends Controller
         ]);
 
         return $this->backToTab($project, 'money-in', 'Payment record ho gayi.');
-    }
-
-    public function storeRelease(Request $request, Project $project)
-    {
-        $v = $request->validate(['date' => ['required', 'date'], 'amount' => ['required', 'numeric', 'min:0'], 'notes' => ['nullable', 'string']]);
-        $project->retentionReleases()->create([
-            'date' => $v['date'], 'amount_paisa' => \App\Support\Money::toPaisa($v['amount']), 'notes' => $v['notes'] ?? null,
-        ]);
-
-        return $this->backToTab($project, 'money-in', 'Retention release record ho gayi.');
     }
 
     public function storeMaterial(Request $request, Project $project)
@@ -353,7 +340,6 @@ class ProjectController extends Controller
             'covered_area_sqft' => ['nullable', 'numeric', 'min:0', 'required_if:pricing_mode,per_sqft'],
             'rate_per_sqft'     => ['nullable', 'numeric', 'min:0', 'required_if:pricing_mode,per_sqft'],
             'contract_value'    => ['nullable', 'numeric', 'min:0', 'required_if:pricing_mode,lump_sum'],
-            'retention_percent' => ['nullable', 'numeric', 'min:0', 'max:100'],
             'advance_amount'    => ['nullable', 'numeric', 'min:0'],
             'start_date'        => ['nullable', 'date'],
             'expected_end_date' => ['nullable', 'date'],
@@ -380,7 +366,6 @@ class ProjectController extends Controller
             'covered_area_sqft'    => $area,
             'rate_per_sqft_paisa'  => $ratePaisa,
             'contract_value_paisa' => $contractValue,
-            'retention_percent'    => $v['retention_percent'] ?? 0,
             'start_date'           => $v['start_date'] ?? null,
             'expected_end_date'    => $v['expected_end_date'] ?? null,
             'actual_end_date'      => $v['actual_end_date'] ?? null,

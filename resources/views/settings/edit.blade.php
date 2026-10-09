@@ -36,10 +36,6 @@
         <x-card title="Defaults (طے شدہ اقدار)">
             <div class="grid grid-cols-1 gap-5 sm:grid-cols-2">
                 <div>
-                    <x-input-label for="default_retention" value="Default Retention % *" />
-                    <x-text-input id="default_retention" name="default_retention" type="number" step="0.01" class="mt-1 block w-full" :value="old('default_retention', $settings['default_retention'])" required />
-                </div>
-                <div>
                     <x-input-label for="default_wastage" value="Default Wastage % *" />
                     <x-text-input id="default_wastage" name="default_wastage" type="number" step="0.01" class="mt-1 block w-full" :value="old('default_wastage', $settings['default_wastage'])" required />
                 </div>

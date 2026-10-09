@@ -4,7 +4,6 @@ namespace App\Http\Controllers;
 
 use App\Models\ClientPayment;
 use App\Models\Project;
-use App\Models\RetentionRelease;
 use App\Support\Money;
 use Illuminate\Http\Request;
 
@@ -14,22 +13,17 @@ class ClientPaymentController extends Controller
     {
         $payments = ClientPayment::with('project')->orderByDesc('date')->orderByDesc('id')
             ->paginate(20, ['*'], 'page')->withQueryString();
-        $releases = RetentionRelease::with('project')->orderByDesc('date')->orderByDesc('id')
-            ->paginate(10, ['*'], 'rpage')->withQueryString();
-
         return view('money_in.index', [
-            'payments'         => $payments,
-            'releases'         => $releases,
-            'totalReceived'    => (int) ClientPayment::sum('net_received_paisa'),
-            'totalRetention'   => (int) ClientPayment::sum('retention_held_paisa') - (int) RetentionRelease::sum('amount_paisa'),
-            'projects'         => Project::orderBy('name')->get(['id', 'name', 'retention_percent']),
+            'payments'      => $payments,
+            'totalReceived' => (int) ClientPayment::sum('net_received_paisa'),
+            'projects'      => Project::orderBy('name')->get(['id', 'name']),
         ]);
     }
 
     public function create(Request $request)
     {
         return view('money_in.create', [
-            'projects'        => Project::orderBy('name')->get(['id', 'name', 'retention_percent']),
+            'projects'        => Project::orderBy('name')->get(['id', 'name']),
             'selectedProject' => $request->integer('project'),
         ]);
     }
@@ -40,7 +34,6 @@ class ClientPaymentController extends Controller
             'project_id'      => ['required', 'exists:projects,id'],
             'date'            => ['required', 'date'],
             'gross_amount'    => ['required', 'numeric', 'min:0'],
-            'retention_held'  => ['nullable', 'numeric', 'min:0'],
             'payment_method'  => ['required', 'in:cash,bank,cheque,online'],
             'reference'       => ['nullable', 'string', 'max:100'],
             'is_mobilization' => ['nullable', 'boolean'],
@@ -50,23 +43,14 @@ class ClientPaymentController extends Controller
         $gross = Money::toPaisa($v['gross_amount']);
         $isMob = (bool) ($v['is_mobilization'] ?? false);
 
-        // Retention: explicit value if given, else project% (0 for mobilization).
-        if ($request->filled('retention_held')) {
-            $retention = Money::toPaisa($v['retention_held']);
-        } elseif ($isMob) {
-            $retention = 0;
-        } else {
-            $pct = (float) Project::find($v['project_id'])->retention_percent;
-            $retention = (int) round($gross * $pct / 100);
-        }
-        $retention = min($retention, $gross); // never exceed gross
-
+        // Client jitna de, utna hi mila. Retention ka concept hata dia gaya hai,
+        // is liye held hamesha 0 aur net hamesha gross ke barabar.
         $cp = ClientPayment::create([
             'project_id'           => $v['project_id'],
             'date'                 => $v['date'],
             'gross_amount_paisa'   => $gross,
-            'retention_held_paisa' => $retention,
-            'net_received_paisa'   => $gross - $retention,
+            'retention_held_paisa' => 0,
+            'net_received_paisa'   => $gross,
             'payment_method'       => $v['payment_method'],
             'reference'            => $v['reference'] ?? null,
             'is_mobilization'      => $isMob,
