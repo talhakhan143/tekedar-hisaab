@@ -7,31 +7,26 @@ deployment:
     - export DATA=$HOME/tekedar-data
     - export LOG=$HOME/tekedar-deploy.log
     - export PHP=/opt/cpanel/ea-php85/root/usr/bin/php
+    - export VENDOR_URL=https://github.com/talhakhan143/tekedar-hisaab/releases/download/vendor-1/vendor.tar.gz
     - 'date > $LOG'
-    - 'echo "[env] user=$(whoami) pwd=$(pwd)" >> $LOG 2>&1'
-    - 'echo "[php] $($PHP -v 2>&1 | head -1)" >> $LOG 2>&1'
-    - 'echo "[tools] $(command -v composer || echo no-composer) | $(command -v curl || echo no-curl) | $(command -v rsync || echo no-rsync) | $(command -v tar || echo no-tar)" >> $LOG 2>&1'
-    - 'echo "[composer-alt] $(ls /opt/cpanel/composer/bin/composer 2>/dev/null || echo none)" >> $LOG 2>&1'
-    - mkdir -p $DP
-    - mkdir -p $DATA
+    - 'echo "[env] user=$(whoami) php=$($PHP -v 2>&1 | head -1)" >> $LOG 2>&1'
+    - mkdir -p $DP $DATA $HOME/tmp
     # Code copy karo. .git aur .env kabhi nahi chhuna.
-    - 'echo "[copy] start" >> $LOG'
-    - 'rsync -a --exclude ".git" --exclude ".env" --exclude "storage/logs" ./ $DP/ >> $LOG 2>&1 || cp -R ./ $DP/ >> $LOG 2>&1'
+    - 'rsync -a --exclude ".git" --exclude ".env" --exclude "storage/logs" --exclude "tests" --exclude "node_modules" ./ $DP/ >> $LOG 2>&1 || cp -R ./ $DP/ >> $LOG 2>&1'
     - 'rm -rf $DP/.git $DP/node_modules $DP/tests'
     - 'echo "[copy] done" >> $LOG'
     # Writable dirs
     - 'mkdir -p $DP/storage/framework/cache/data $DP/storage/framework/sessions $DP/storage/framework/views $DP/storage/logs $DP/bootstrap/cache'
-    - 'chmod -R 775 $DP/storage $DP/bootstrap/cache >> $LOG 2>&1'
-    # Dev ke artifacts jo galti se aa jayein
+    - 'chmod -R 775 $DP/storage $DP/bootstrap/cache'
+    # Dev ke artifacts aur purane caches
     - 'rm -f $DP/public/hot $DP/bootstrap/cache/config.php $DP/bootstrap/cache/routes-v7.php $DP/bootstrap/cache/packages.php $DP/bootstrap/cache/services.php'
-    # Vendor. Pehle server ka composer, warna /opt/cpanel wala, warna loudly fail.
-    - 'echo "[composer] start" >> $LOG'
-    - 'if command -v composer >/dev/null 2>&1; then cd $DP && composer install --no-dev --optimize-autoloader --no-interaction --no-progress >> $LOG 2>&1 && echo "[composer] ok via PATH" >> $LOG; elif [ -f /opt/cpanel/composer/bin/composer ]; then cd $DP && $PHP /opt/cpanel/composer/bin/composer install --no-dev --optimize-autoloader --no-interaction --no-progress >> $LOG 2>&1 && echo "[composer] ok via opt" >> $LOG; else echo "[composer] NOT FOUND" >> $LOG; fi'
+    # Vendor. Pehle server ka composer, nahi mila to release wala tarball.
+    - 'if command -v composer >/dev/null 2>&1; then cd $DP && composer install --no-dev --optimize-autoloader --no-interaction --no-progress >> $LOG 2>&1 && echo "[vendor] composer ok" >> $LOG; elif [ -f /opt/cpanel/composer/bin/composer ]; then cd $DP && $PHP /opt/cpanel/composer/bin/composer install --no-dev --optimize-autoloader --no-interaction --no-progress >> $LOG 2>&1 && echo "[vendor] composer-opt ok" >> $LOG; else echo "[vendor] composer nahi hai, tarball se lagate hain" >> $LOG; curl -sSL --retry 3 -o $HOME/tmp/tk-vendor.tgz "$VENDOR_URL" >> $LOG 2>&1 && rm -rf $DP/vendor && tar -xzf $HOME/tmp/tk-vendor.tgz -C $DP >> $LOG 2>&1 && rm -f $HOME/tmp/tk-vendor.tgz && echo "[vendor] tarball ok" >> $LOG || echo "[vendor] tarball FAIL" >> $LOG; fi'
+    - 'echo "[vendor] autoload present=$([ -f $DP/vendor/autoload.php ] && echo yes || echo no)" >> $LOG'
     # SQLite file. Web root se bahar, is liye browser se download nahi ho sakti.
     - 'touch $DATA/database.sqlite && chmod 664 $DATA/database.sqlite'
-    # Migrate aur seed sirf tab jab .env mojood ho aur vendor bana ho.
-    - 'if [ -f $DP/.env ] && [ -f $DP/vendor/autoload.php ]; then cd $DP && $PHP artisan migrate --force --seed >> $LOG 2>&1 && echo "[migrate] ok" >> $LOG; else echo "[migrate] skipped, env or vendor missing" >> $LOG; fi'
-    - 'if [ -f $DP/.env ] && [ -f $DP/vendor/autoload.php ]; then cd $DP && $PHP artisan storage:link >> $LOG 2>&1; $PHP artisan config:cache >> $LOG 2>&1; $PHP artisan route:cache >> $LOG 2>&1; $PHP artisan view:cache >> $LOG 2>&1; echo "[optimize] ok" >> $LOG; fi'
-    - 'echo "[disk] $(du -sh $HOME 2>/dev/null | cut -f1) used in home" >> $LOG 2>&1'
-    - 'echo "[disk-app] $(du -sh $DP 2>/dev/null | cut -f1)" >> $LOG 2>&1'
+    # Schema aur demo data. Sirf tab jab .env aur vendor dono mojood hon.
+    - 'if [ -f $DP/.env ] && [ -f $DP/vendor/autoload.php ]; then cd $DP && $PHP artisan package:discover --ansi >> $LOG 2>&1; $PHP artisan migrate --force --seed >> $LOG 2>&1 && echo "[migrate] ok" >> $LOG || echo "[migrate] FAIL" >> $LOG; else echo "[migrate] skipped" >> $LOG; fi'
+    - 'if [ -f $DP/vendor/autoload.php ]; then cd $DP && $PHP artisan storage:link >> $LOG 2>&1; $PHP artisan config:cache >> $LOG 2>&1; $PHP artisan route:cache >> $LOG 2>&1; $PHP artisan view:cache >> $LOG 2>&1; echo "[optimize] ok" >> $LOG; fi'
+    - 'echo "[disk] home=$(du -sh $HOME 2>/dev/null | cut -f1) app=$(du -sh $DP 2>/dev/null | cut -f1) db=$(du -h $DATA/database.sqlite 2>/dev/null | cut -f1)" >> $LOG 2>&1'
     - 'echo "DEPLOY-FINISHED" >> $LOG'
