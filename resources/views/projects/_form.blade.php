@@ -39,9 +39,9 @@
             <div>
                 <x-input-label for="contract_type" value="Contract Type *" />
                 <select id="contract_type" name="contract_type" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-emerald-500 focus:ring-emerald-500">
-                    <option value="structure" @selected(old('contract_type',$project->contract_type)==='structure')>Structure</option>
-                    <option value="grey_structure" @selected(old('contract_type',$project->contract_type)==='grey_structure')>Gray Structure</option>
-                    <option value="full_finished" @selected(old('contract_type',$project->contract_type)==='full_finished')>Full Furnish</option>
+                    @foreach (\App\Models\Project::CONTRACT_TYPES as $ctValue => $ctLabel)
+                        <option value="{{ $ctValue }}" @selected(old('contract_type',$project->contract_type)===$ctValue)>{{ $ctLabel }}</option>
+                    @endforeach
                 </select>
             </div>
             <div>

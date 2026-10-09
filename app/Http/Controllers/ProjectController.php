@@ -7,6 +7,7 @@ use App\Models\Setting;
 use App\Services\ProjectFinance;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Validation\Rule;
 
 class ProjectController extends Controller
 {
@@ -326,7 +327,7 @@ class ProjectController extends Controller
             'client_name'       => ['nullable', 'string', 'max:255'],
             'client_phone'      => ['nullable', 'string', 'max:50'],
             'client_address'    => ['nullable', 'string', 'max:500'],
-            'contract_type'     => ['required', 'in:structure,grey_structure,full_finished'],
+            'contract_type'     => ['required', Rule::in(array_keys(Project::CONTRACT_TYPES))],
             'pricing_mode'      => ['required', 'in:per_sqft,lump_sum'],
             'covered_area_sqft' => ['nullable', 'numeric', 'min:0', 'required_if:pricing_mode,per_sqft'],
             'rate_per_sqft'     => ['nullable', 'numeric', 'min:0', 'required_if:pricing_mode,per_sqft'],
