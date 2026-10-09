@@ -288,7 +288,23 @@
                                     <tr>
                                         <td class="px-4 py-2.5 font-medium text-gray-700">{{ $w->name }} <span class="text-xs font-normal text-gray-400">#{{ $w->id }}</span></td>
                                         <td class="px-4 py-2.5 capitalize text-gray-500">{{ $w->role }}</td>
-                                        <td class="px-4 py-2.5 text-right">@money($w->default_wage_paisa)</td>
+                                        <td class="px-4 py-2.5 text-right" x-data="{ editing: false }">
+                                            <div x-show="!editing" class="flex items-center justify-end gap-2">
+                                                <span>@money($w->default_wage_paisa)</span>
+                                                <button type="button" @click="editing = true; $nextTick(() => $refs.wage{{ $w->id }}.select())"
+                                                        class="text-xs text-gray-400 hover:text-emerald-600" title="Dihaadi badlo">✏️</button>
+                                            </div>
+                                            <form x-show="editing" x-cloak method="POST" action="{{ route('workers.wage.update', $w) }}"
+                                                  class="flex items-center justify-end gap-1">
+                                                @csrf @method('PATCH')
+                                                <input type="number" step="0.01" min="0" name="default_wage" x-ref="wage{{ $w->id }}"
+                                                       value="{{ \App\Support\Money::toRupees($w->default_wage_paisa) }}"
+                                                       @keydown.escape="editing = false"
+                                                       class="w-24 rounded-md border-gray-300 px-2 py-1 text-right text-xs focus:border-emerald-500 focus:ring-emerald-500">
+                                                <button class="rounded-md bg-emerald-600 px-2 py-1 text-xs font-semibold text-white hover:bg-emerald-700" title="Save">✓</button>
+                                                <button type="button" @click="editing = false" class="px-1 text-xs text-gray-400 hover:text-gray-600" title="Cancel">✕</button>
+                                            </form>
+                                        </td>
                                         <td class="px-4 py-2.5 text-right">
                                             <button type="button" @click="openModal({{ $w->id }}, @js($w->name))"
                                                 class="rounded-md bg-emerald-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-emerald-700">📅 Haazri lagao</button>
@@ -299,6 +315,7 @@
                                 @endforelse
                             </tbody>
                         </table>
+                        <p class="border-t border-gray-100 px-4 py-2 text-[11px] text-gray-400">Dihaadi par ✏️ dabao to wahin badal sakte ho. Nayi dihaadi sirf aage ki haazri par lagegi, purana hisaab waise ka waisa rehta hai.</p>
                     </x-card>
 
                     <x-card title="Is project ke mazdoor — hisaab (لیبر)" class="!p-0">
