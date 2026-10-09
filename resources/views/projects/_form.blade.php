@@ -82,10 +82,12 @@
                 <x-text-input id="retention_percent" name="retention_percent" type="number" step="0.01" class="mt-1 block w-full" :value="old('retention_percent', $project->retention_percent)" />
                 <x-input-error :messages="$errors->get('retention_percent')" class="mt-1" />
             </div>
-            <div>
-                <x-input-label for="completion_percent" value="Completion %" />
-                <x-text-input id="completion_percent" name="completion_percent" type="number" step="0.01" class="mt-1 block w-full" :value="old('completion_percent', $project->completion_percent)" />
-            </div>
+            @if (! $project->exists)
+                <div>
+                    <x-money-input name="advance_amount" label="Advance / Peshgi"
+                        help="Client ne shuru me jo peshgi di. Ye Money In me mobilization advance ban kar khud chali jayegi, is par retention nahi katti." />
+                </div>
+            @endif
         </div>
     </x-card>
 
