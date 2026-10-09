@@ -80,7 +80,7 @@
             @if (! $project->exists)
                 <div>
                     <x-money-input name="advance_amount" label="Advance / Peshgi"
-                        help="Client ne shuru me jo peshgi di. Ye Money In me mobilization advance ban kar khud chali jayegi, is par retention nahi katti." />
+                        help="Client ne shuru me jo peshgi di. Ye Money In me khud chali jayegi, alag se entry karne ki zaroorat nahi." />
                 </div>
             @endif
         </div>
