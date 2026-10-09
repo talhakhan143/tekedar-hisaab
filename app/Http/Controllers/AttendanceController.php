@@ -24,7 +24,7 @@ class AttendanceController extends Controller
         return view('attendance.index', [
             'workers'      => $workers,
             'pieceWorkers' => $pieceWorkers,
-            'projects'     => Project::orderByRaw("FIELD(status,'active') DESC")->orderBy('name')->get(['id', 'name', 'status']),
+            'projects'     => Project::orderByRaw("CASE WHEN status = 'active' THEN 0 ELSE 1 END")->orderBy('name')->get(['id', 'name', 'status']),
             'today'        => now()->format('Y-m-d'),
             'monthStart'   => now()->startOfMonth()->format('Y-m-d'),
         ]);
@@ -126,7 +126,7 @@ class AttendanceController extends Controller
 
         return view('attendance.register', [
             'workers'    => $workers,
-            'projects'   => Project::orderByRaw("FIELD(status,'active') DESC")->orderBy('name')->get(['id', 'name', 'status']),
+            'projects'   => Project::orderByRaw("CASE WHEN status = 'active' THEN 0 ELSE 1 END")->orderBy('name')->get(['id', 'name', 'status']),
             'days'       => $days,
             'existing'   => $existing,
             'month'      => $month,

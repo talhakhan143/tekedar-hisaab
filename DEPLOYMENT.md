@@ -298,7 +298,7 @@ After seeding, two accounts exist (change passwords immediately via the in-app m
 | Role | Email | Password |
 |------|-------|----------|
 | Developer (hidden) | mr.talha143@gmail.com | `Spazio@786` |
-| Owner | m_ali@aliconsgroup.pk | `m_ali_owner@786` |
+| Owner | mali@baryal.com.pk | `Ali@786` |
 
 - Owner: top-right avatar → **Profile & Password**
 - Developer-only panel: top-right → **Developer · Users** (404 for everyone else)

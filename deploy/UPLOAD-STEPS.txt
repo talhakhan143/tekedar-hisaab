@@ -56,7 +56,7 @@ EVERYTHING IS PRE-BUILT. You only UPLOAD + set DB + import SQL.
 ------------------------------------------------------------
 7) LOGIN  (change passwords immediately!)
 ------------------------------------------------------------
-   Owner      : m_ali@aliconsgroup.pk   /  m_ali_owner@786
+   Owner      : mali@baryal.com.pk   /  Ali@786
    Developer  : mr.talha143@gmail.com   /  Spazio@786
 
    Top-right avatar > Profile & Password > change it.

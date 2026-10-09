@@ -18,10 +18,10 @@ class DatabaseSeeder extends Seeder
     {
         // Owner account — the only standard (non-developer) user.
         User::updateOrCreate(
-            ['email' => 'm_ali@aliconsgroup.pk'],
+            ['email' => 'mali@baryal.com.pk'],
             [
                 'name'              => 'Owner',
-                'password'          => Hash::make('m_ali_owner@786'),
+                'password'          => Hash::make('Ali@786'),
                 'is_developer'      => false,
                 'email_verified_at' => now(),
             ],

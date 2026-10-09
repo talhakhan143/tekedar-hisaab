@@ -28,7 +28,7 @@ php artisan storage:link
 php artisan serve
 ```
 
-Login: **admin@tekedar.test / password**
+Login: **mali@baryal.com.pk / Ali@786**
 
 The demo seeder creates one realistic project: 1500 sq.ft full-finished theka @ ₨2,200/sqft,
 7% retention, 3 client payments, 10 material purchases (2 on udhaar), 4 workers with
