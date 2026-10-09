@@ -351,14 +351,54 @@
                         </form>
                     </x-card>
                     <x-card title="Mazdoori do (ادائیگی)">
-                        <form method="POST" action="{{ route('projects.wage-payments.store', $project) }}" class="space-y-3">
+                        @php
+                            // Wahi payable jo WorkLedgerController submit par check karta hai,
+                            // warna screen par kuch aur dikhta aur form kuch aur reject karta.
+                            $wagePayables = $allWorkers->mapWithKeys(fn ($w) => [$w->id => (int) $w->payable_paisa]);
+                        @endphp
+                        <form method="POST" action="{{ route('projects.wage-payments.store', $project) }}" class="space-y-3"
+                              x-data="{
+                                payables: {{ $wagePayables->toJson() }},
+                                worker: '{{ old('worker_id') }}',
+                                amount: '{{ old('amount') }}',
+                                get baqi() { return this.worker === '' ? null : (this.payables[this.worker] ?? 0); },
+                                fmt(paisa) { return '₨ ' + Number(Math.abs(paisa) / 100).toLocaleString('en-PK', {minimumFractionDigits: 2, maximumFractionDigits: 2}); },
+                                payAll() { if (this.baqi > 0) { this.amount = (this.baqi / 100).toFixed(2); } }
+                              }"
+                              x-init="$watch('worker', () => { amount = '' })">
                             @csrf
-                            <select name="worker_id" required class="block w-full rounded-md border-gray-300 text-sm shadow-sm focus:border-emerald-500 focus:ring-emerald-500">
+                            <select name="worker_id" x-model="worker" required class="block w-full rounded-md border-gray-300 text-sm shadow-sm focus:border-emerald-500 focus:ring-emerald-500">
                                 <option value="">— worker chuno —</option>
-                                @foreach($allWorkers as $w)<option value="{{ $w->id }}">#{{ $w->id }} — {{ $w->name }} ({{ $w->role }})</option>@endforeach
+                                @foreach($allWorkers as $w)
+                                    <option value="{{ $w->id }}">#{{ $w->id }} — {{ $w->name }} ({{ $w->role }}) ·
+                                        @if($w->payable_paisa > 0) baqi {{ \App\Support\Money::format($w->payable_paisa, true, false) }}
+                                        @elseif($w->payable_paisa < 0) advance {{ \App\Support\Money::format(-$w->payable_paisa, true, false) }}
+                                        @else hisaab saaf @endif
+                                    </option>
+                                @endforeach
                             </select>
+
+                            {{-- Chunte hi saaf saaf dikh jaye ke kitna banta hai, dobara dekhne na jana pare. --}}
+                            <template x-if="worker !== ''">
+                                <div class="rounded-lg px-3 py-2 text-sm"
+                                     :class="baqi > 0 ? 'bg-red-50 ring-1 ring-red-100' : (baqi < 0 ? 'bg-amber-50 ring-1 ring-amber-100' : 'bg-gray-50 ring-1 ring-gray-100')">
+                                    <div class="flex items-center justify-between gap-2">
+                                        <span class="text-xs"
+                                              :class="baqi > 0 ? 'text-red-700' : (baqi < 0 ? 'text-amber-700' : 'text-gray-500')"
+                                              x-text="baqi > 0 ? 'Abhi dena hai (باقی)' : (baqi < 0 ? 'Advance de chuke ho (پیشگی)' : 'Hisaab saaf hai')"></span>
+                                        <span class="font-bold"
+                                              :class="baqi > 0 ? 'text-red-700' : (baqi < 0 ? 'text-amber-700' : 'text-gray-400')"
+                                              x-text="baqi === 0 ? '—' : fmt(baqi)"></span>
+                                    </div>
+                                    <template x-if="baqi > 0">
+                                        <button type="button" @click="payAll()"
+                                                class="mt-1.5 text-xs font-semibold text-red-700 underline hover:text-red-900">Poora dedo</button>
+                                    </template>
+                                </div>
+                            </template>
+
                             <input type="date" name="date" value="{{ now()->format('Y-m-d') }}" required class="block w-full rounded-md border-gray-300 text-sm shadow-sm focus:border-emerald-500 focus:ring-emerald-500">
-                            <x-money-input name="amount" label="Amount (رقم)" required />
+                            <x-money-input name="amount" label="Amount (رقم)" required x-model="amount" />
                             <label class="flex items-center gap-2 text-xs text-gray-600"><input type="hidden" name="override" value="0"><input type="checkbox" name="override" value="1" class="rounded border-gray-300 text-emerald-600"> Override (payable se zyada)</label>
                             <x-input-error :messages="$errors->get('amount')" />
                             <button class="w-full rounded-md bg-indigo-600 px-3 py-2 text-sm font-semibold text-white hover:bg-indigo-700">Pay (ادائیگی)</button>
