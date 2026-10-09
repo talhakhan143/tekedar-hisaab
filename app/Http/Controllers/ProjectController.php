@@ -113,7 +113,23 @@ class ProjectController extends Controller
             'paid'   => (int) ($paid[$w->id] ?? 0),
             'advnet' => (int) ($advGiven[$w->id] ?? 0) - (int) ($advRecov[$w->id] ?? 0), // deduction − bonus
         ]);
-        $allWorkers = \App\Models\Worker::orderBy('name')->get(['id', 'name', 'role', 'wage_type']);
+        // Har worker ka payable, saare projects mila kar. Ye jaan bujh kar wahi
+        // hisaab hai jo WorkLedgerController payment par validate karta hai
+        // (earned − paid − advances), warna form par aur number dikhta aur
+        // submit par aur number reject karta. Worker::payablePaisa() har banday
+        // par 4 queries maarta hai, is liye yahan 4 aggregate queries se kaam
+        // chala rahe hain. Models ke zariye query ho rahi hai to soft deletes
+        // ka scope bhi wahi lagta hai jo relation par lagta.
+        $wEarned = \App\Models\WorkEntry::selectRaw('worker_id, SUM(computed_wage_paisa) as t')->groupBy('worker_id')->pluck('t', 'worker_id');
+        $wPaid   = \App\Models\WagePayment::selectRaw('worker_id, SUM(amount_paisa) as t')->groupBy('worker_id')->pluck('t', 'worker_id');
+        $wAdvGiven = \App\Models\WorkerAdvance::where('type', 'advance_given')->selectRaw('worker_id, SUM(amount_paisa) as t')->groupBy('worker_id')->pluck('t', 'worker_id');
+        $wAdvRecov = \App\Models\WorkerAdvance::where('type', 'recovery')->selectRaw('worker_id, SUM(amount_paisa) as t')->groupBy('worker_id')->pluck('t', 'worker_id');
+
+        $allWorkers = \App\Models\Worker::orderBy('name')->get(['id', 'name', 'role', 'wage_type'])
+            ->each(function ($w) use ($wEarned, $wPaid, $wAdvGiven, $wAdvRecov) {
+                $advancesOut = (int) ($wAdvGiven[$w->id] ?? 0) - (int) ($wAdvRecov[$w->id] ?? 0);
+                $w->payable_paisa = (int) ($wEarned[$w->id] ?? 0) - (int) ($wPaid[$w->id] ?? 0) - $advancesOut;
+            });
 
         // ---- Attendance: per-worker calendar modal. Load ALL marked days (value = days_present) ----
         $attWorkers = \App\Models\Worker::where('wage_type', '!=', 'contract_piece')->orderBy('name')->get();
