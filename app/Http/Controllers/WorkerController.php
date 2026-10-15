@@ -3,13 +3,32 @@
 namespace App\Http\Controllers;
 
 use App\Models\Project;
+use App\Models\Setting;
 use App\Models\Worker;
 use App\Support\Money;
 use Illuminate\Http\Request;
 
 class WorkerController extends Controller
 {
-    public const ROLES = ['mistri', 'mazdoor', 'electrician', 'plumber', 'painter', 'foreman', 'other'];
+    /**
+     * Role ki list ab sirf Settings me rehti hai. Ye hardcoded constant usi
+     * se alag ho gayi thi, jis ki wajah se Settings me role badalte hi worker
+     * add karna band ho jata tha.
+     *
+     * Update karte waqt bande ka mojooda role bhi allow karte hain, warna
+     * Settings se koi role nikaalne par us role wale purane workers kabhi
+     * save hi na ho paate.
+     */
+    private function allowedRoles(?Worker $worker = null): array
+    {
+        $roles = Setting::workerRoles();
+
+        if ($worker && $worker->role && ! in_array($worker->role, $roles, true)) {
+            $roles[] = $worker->role;
+        }
+
+        return $roles;
+    }
     public const WAGE_TYPES = ['daily', 'monthly', 'contract_piece'];
 
     public function index()
@@ -67,7 +86,7 @@ class WorkerController extends Controller
 
     public function update(Request $request, Worker $worker)
     {
-        $worker->update($this->validated($request));
+        $worker->update($this->validated($request, $worker));
 
         return redirect()->route('workers.show', $worker)->with('status', 'Worker update ho gaya.');
     }
@@ -97,11 +116,11 @@ class WorkerController extends Controller
         return redirect()->route('workers.index')->with('status', 'Worker hata diya.');
     }
 
-    private function validated(Request $request): array
+    private function validated(Request $request, ?Worker $worker = null): array
     {
         $v = $request->validate([
             'name'         => ['required', 'string', 'max:255'],
-            'role'         => ['required', 'in:' . implode(',', self::ROLES)],
+            'role'         => ['required', \Illuminate\Validation\Rule::in($this->allowedRoles($worker))],
             'wage_type'    => ['required', 'in:' . implode(',', self::WAGE_TYPES)],
             'default_wage' => ['required', 'numeric', 'min:0'],
             'phone'        => ['nullable', 'string', 'max:50'],

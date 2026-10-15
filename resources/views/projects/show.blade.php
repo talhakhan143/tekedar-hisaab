@@ -364,6 +364,10 @@
                             </select>
                             <p class="text-[11px] text-gray-400">Role list <a href="{{ route('settings') }}" class="text-emerald-600 hover:underline">Settings</a> se edit hoti.</p>
                             <x-money-input name="default_wage" label="Dihaadi (روزانہ)" required />
+                            {{-- Pehle ye form chupchap fail ho jata tha, koi wajah nahi dikhti thi. --}}
+                            <x-input-error :messages="$errors->get('name')" />
+                            <x-input-error :messages="$errors->get('role')" />
+                            <x-input-error :messages="$errors->get('default_wage')" />
                             <button class="w-full rounded-md bg-gray-800 px-3 py-2 text-sm font-semibold text-white hover:bg-gray-700">Add Worker (شامل)</button>
                         </form>
                     </x-card>

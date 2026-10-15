@@ -12,8 +12,18 @@
         <div>
             <x-input-label for="role" value="Role *" />
             <select id="role" name="role" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-emerald-500 focus:ring-emerald-500">
-                @foreach(['mistri','mazdoor','electrician','plumber','painter','foreman','other'] as $r)
-                    <option value="{{ $r }}" @selected(old('role',$worker->role)===$r)>{{ ucfirst($r) }}</option>
+                @php
+                    // Settings wali list, aur sath me bande ka mojooda role bhi,
+                    // warna Settings se role hatne par save karte hi us ka role
+                    // chupke se badal jata.
+                    $roleOptions = \App\Models\Setting::workerRoles();
+                    $currentRole = old('role', $worker->role);
+                    if ($currentRole && ! in_array($currentRole, $roleOptions, true)) {
+                        $roleOptions[] = $currentRole;
+                    }
+                @endphp
+                @foreach($roleOptions as $r)
+                    <option value="{{ $r }}" @selected($currentRole === $r)>{{ ucfirst(str_replace('_', ' ', $r)) }}</option>
                 @endforeach
             </select>
         </div>
