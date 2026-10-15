@@ -45,6 +45,9 @@ deployment:
     - 'if [ -f $DP/.env ] && [ -f $DP/vendor/autoload.php ]; then cd $DP && $PHP artisan package:discover --ansi >> $LOG 2>&1; $PHP artisan migrate --force >> $LOG 2>&1 && echo "[migrate] ok" >> $LOG || echo "[migrate] FAIL" >> $LOG; if [ ! -f $DATA/.seeded ]; then $PHP artisan db:seed --force >> $LOG 2>&1 && touch $DATA/.seeded && echo "[seed] ok" >> $LOG || echo "[seed] FAIL" >> $LOG; else echo "[seed] skipped, pehle ho chuka" >> $LOG; fi; else echo "[migrate] skipped" >> $LOG; fi'
     - 'if [ -f $DP/vendor/autoload.php ]; then cd $DP && $PHP artisan storage:link >> $LOG 2>&1; $PHP artisan config:cache >> $LOG 2>&1; $PHP artisan route:cache >> $LOG 2>&1; $PHP artisan view:cache >> $LOG 2>&1; echo "[optimize] ok" >> $LOG; fi'
     - 'echo "[disk] home=$(du -sh $HOME 2>/dev/null | cut -f1) app=$(du -sh $DP 2>/dev/null | cut -f1) db=$(du -h $DATA/database.sqlite 2>/dev/null | cut -f1)" >> $LOG 2>&1'
+    # Quota sirf 500 MB hai, is liye har deploy bata de ke jagah kahan ja rahi hai.
+    - 'echo "[disk-detail] $(du -sh $DP/* $DP/.[!.]* 2>/dev/null | sort -rh | head -8 | tr "\n" " " | tr "\t" ":")" >> $LOG 2>&1'
+    - 'echo "[disk-home] $(du -sh $HOME/* 2>/dev/null | sort -rh | head -6 | tr "\n" " " | tr "\t" ":")" >> $LOG 2>&1'
     # Deploy khud apna smoke test kare, taake log dekh kar pata chale site zinda hai.
     - 'echo "[smoke] login_http=$(curl -sS -o /dev/null -w %{http_code} --max-time 30 https://hisaab.baryal.com.pk/login)" >> $LOG 2>&1'
     - 'echo "[smoke] php_runtime=$(curl -sS --max-time 30 -o /dev/null -w %{http_code} https://hisaab.baryal.com.pk/)" >> $LOG 2>&1'
