@@ -8,9 +8,12 @@
     # If the app is served from a subfolder, uncomment and set the base:
     # RewriteBase /
 
-    # Force HTTPS — uncomment AFTER your SSL certificate is active in hPanel:
-    # RewriteCond %{HTTPS} !=on
-    # RewriteRule ^ https://%{HTTP_HOST}%{REQUEST_URI} [L,R=301]
+    # Force HTTPS. Session cookie "secure" hai, is liye http par browser usay
+    # save hi nahi karta aur login karte hi "Page Expired" (419) aata hai.
+    # Doosri shart proxy ke peeche redirect loop se bachati hai.
+    RewriteCond %{HTTPS} !=on
+    RewriteCond %{HTTP:X-Forwarded-Proto} !=https
+    RewriteRule ^ https://%{HTTP_HOST}%{REQUEST_URI} [L,R=301]
 
     # Handle Authorization Header
     RewriteCond %{HTTP:Authorization} .
