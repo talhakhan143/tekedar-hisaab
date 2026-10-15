@@ -29,7 +29,15 @@ deployment:
     # Dev ke artifacts aur purane caches
     - 'rm -f $DP/public/hot $DP/bootstrap/cache/config.php $DP/bootstrap/cache/routes-v7.php $DP/bootstrap/cache/packages.php $DP/bootstrap/cache/services.php'
     # Vendor. Pehle server ka composer, nahi mila to release wala tarball.
-    - 'if command -v composer >/dev/null 2>&1; then cd $DP && composer install --no-dev --optimize-autoloader --no-interaction --no-progress >> $LOG 2>&1 && echo "[vendor] composer ok" >> $LOG; elif [ -f /opt/cpanel/composer/bin/composer ]; then cd $DP && $PHP /opt/cpanel/composer/bin/composer install --no-dev --optimize-autoloader --no-interaction --no-progress >> $LOG 2>&1 && echo "[vendor] composer-opt ok" >> $LOG; else echo "[vendor] composer nahi hai, tarball se lagate hain" >> $LOG; curl -sSL --retry 3 -o $HOME/tmp/tk-vendor.tgz "$VENDOR_URL" >> $LOG 2>&1 && rm -rf $DP/vendor && tar -xzf $HOME/tmp/tk-vendor.tgz -C $DP >> $LOG 2>&1 && rm -f $HOME/tmp/tk-vendor.tgz && echo "[vendor] tarball ok" >> $LOG || echo "[vendor] tarball FAIL" >> $LOG; fi'
+    # composer.lock ka nishan, taake har deploy par 54 MB dobara na utre.
+    - 'export LOCKSIG=$(md5sum $DP/composer.lock 2>/dev/null | cut -d" " -f1)'
+    - '[ -n "$LOCKSIG" ] || export LOCKSIG=$(cksum $DP/composer.lock | cut -d" " -f1)'
+    # Pehle se laga hua vendor chalta rahe to haath hi mat lagao. Is tarah
+    # repo private ho jaye aur tarball na mile tab bhi deploy site nahi marta.
+    # Jab tarball lana pare to pehle -f se poochho ke sahi mila bhi (bina -f
+    # curl 404 ka HTML bhi khushi khushi file me likh deta hai), phir tar se
+    # tasdeeq karo, aur purana vendor SIRF tab mitao jab naya tayar ho.
+    - 'if [ -f $DP/vendor/autoload.php ] && [ "$(cat $DATA/vendor.sig 2>/dev/null)" = "$LOCKSIG" ]; then echo "[vendor] pehle se laga hai, composer.lock badli nahi" >> $LOG; elif command -v composer >/dev/null 2>&1; then cd $DP && composer install --no-dev --optimize-autoloader --no-interaction --no-progress >> $LOG 2>&1 && echo "$LOCKSIG" > $DATA/vendor.sig && echo "[vendor] composer ok" >> $LOG; elif [ -f /opt/cpanel/composer/bin/composer ]; then cd $DP && $PHP /opt/cpanel/composer/bin/composer install --no-dev --optimize-autoloader --no-interaction --no-progress >> $LOG 2>&1 && echo "$LOCKSIG" > $DATA/vendor.sig && echo "[vendor] composer-opt ok" >> $LOG; else echo "[vendor] composer nahi hai, tarball se lagate hain" >> $LOG; if curl -fsSL --retry 3 -o $HOME/tmp/tk-vendor.tgz "$VENDOR_URL" 2>> $LOG && tar -tzf $HOME/tmp/tk-vendor.tgz > /dev/null 2>&1; then rm -rf $DP/vendor && tar -xzf $HOME/tmp/tk-vendor.tgz -C $DP >> $LOG 2>&1 && echo "$LOCKSIG" > $DATA/vendor.sig && echo "[vendor] tarball ok" >> $LOG; else echo "[vendor] tarball NAHI MILA. Purana vendor jyun ka tyun chhod dia, site chalti rahegi." >> $LOG; fi; rm -f $HOME/tmp/tk-vendor.tgz; fi'
     - 'echo "[vendor] autoload present=$([ -f $DP/vendor/autoload.php ] && echo yes || echo no)" >> $LOG'
     # SQLite file. Web root se bahar, is liye browser se download nahi ho sakti.
     - 'touch $DATA/database.sqlite && chmod 664 $DATA/database.sqlite'
