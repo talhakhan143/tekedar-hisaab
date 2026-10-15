@@ -51,4 +51,10 @@ deployment:
     # Deploy khud apna smoke test kare, taake log dekh kar pata chale site zinda hai.
     - 'echo "[smoke] login_http=$(curl -sS -o /dev/null -w %{http_code} --max-time 30 https://hisaab.baryal.com.pk/login)" >> $LOG 2>&1'
     - 'echo "[smoke] php_runtime=$(curl -sS --max-time 30 -o /dev/null -w %{http_code} https://hisaab.baryal.com.pk/)" >> $LOG 2>&1'
+    # Har pull loose git objects chhorta hai. Is server ka filesystem bade
+    # blocks use karta hai, is liye har chhoti object poora block kha jati hai
+    # aur clone phool kar 135 MB ho chuka tha jab ke asli data 10 MB bhi nahi.
+    # Pack kar dene se wahi data chand files me simat jata hai.
+    - 'GITBIN=/usr/local/cpanel/3rdparty/bin/git; command -v git > /dev/null 2>&1 && GITBIN=git; cd $HOME/repositories/tekedar-hisaab && $GITBIN gc --quiet --prune=now >> $LOG 2>&1 && echo "[gc] repo pack ho gaya" >> $LOG || echo "[gc] gc nahi chala" >> $LOG'
+    - 'echo "[disk-after-gc] home=$(du -sh $HOME 2>/dev/null | cut -f1) repo=$(du -sh $HOME/repositories 2>/dev/null | cut -f1)" >> $LOG 2>&1'
     - 'echo "DEPLOY-FINISHED" >> $LOG'
