@@ -121,11 +121,14 @@
                     <div>
                         <label class="block text-sm font-medium text-gray-700">Role (کام)</label>
                         <select name="role" class="mt-1 block w-full rounded-md border-gray-300 text-sm shadow-sm focus:border-emerald-500 focus:ring-emerald-500">
-                            @foreach(['mistri','mazdoor','electrician','plumber','painter','foreman','other'] as $r)<option value="{{ $r }}">{{ ucfirst($r) }}</option>@endforeach
+                            @foreach(\App\Models\Setting::workerRoles() as $r)<option value="{{ $r }}">{{ ucfirst(str_replace('_', ' ', $r)) }}</option>@endforeach
                         </select>
                     </div>
                     <x-money-input name="default_wage" label="Daily Wage (دیہاڑی) *" required />
                     <div class="sm:col-span-4">
+                        <x-input-error :messages="$errors->get('name')" class="mb-2" />
+                        <x-input-error :messages="$errors->get('role')" class="mb-2" />
+                        <x-input-error :messages="$errors->get('default_wage')" class="mb-2" />
                         <button class="rounded-md bg-gray-800 px-5 py-2 text-sm font-semibold text-white hover:bg-gray-700">Add Worker (شامل کریں)</button>
                     </div>
                 </form>

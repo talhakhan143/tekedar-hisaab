@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Project;
+use App\Models\Setting;
 use App\Models\WorkEntry;
 use App\Models\Worker;
 use App\Support\Money;
@@ -194,7 +195,7 @@ class AttendanceController extends Controller
     {
         $v = $request->validate([
             'name'         => ['required', 'string', 'max:255'],
-            'role'         => ['required', 'in:mistri,mazdoor,electrician,plumber,painter,foreman,other'],
+            'role'         => ['required', \Illuminate\Validation\Rule::in(Setting::workerRoles())],
             'default_wage' => ['required', 'numeric', 'min:0'],
         ]);
 
