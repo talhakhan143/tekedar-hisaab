@@ -96,7 +96,7 @@
     @push('head')
         <script>
             document.addEventListener('DOMContentLoaded', () => {
-                const pkr = (v) => '₨ ' + Number(v).toLocaleString('en-PK');
+                const pkr = (v) => '₨ ' + Number(v).toLocaleString('en-IN');
                 const trend = @json($profitTrend);
                 const cost  = @json($costPie);
 

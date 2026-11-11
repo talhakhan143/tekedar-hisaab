@@ -1,14 +1,35 @@
 @php
     $rateR = old('rate_per_unit', $purchase->rate_per_unit_paisa ? \App\Support\Money::toRupees($purchase->rate_per_unit_paisa) : '');
     $paidR = old('amount_paid', $purchase->amount_paid_paisa ? \App\Support\Money::toRupees($purchase->amount_paid_paisa) : '');
+
+    /*
+     * Maal par laga kiraya / mazdoori / deegar kharcha. Ye teen khane EDIT form me
+     * bhi laazmi render hone chahiye: edit poori row wapis isi validation se
+     * guzarti hai, to agar khane gayab hon to har edit in charges ko khamoshi se
+     * zero kar dega aur bill chhota ho jayega. Is liye prefill bhi rupees me hai,
+     * paisa me nahi (jaise rate/paid hote hain).
+     *
+     * Khali value '' hi rehti hai, 0 nahi, warna teen optional khane bila wajah
+     * "0" likhe nazar aate hain.
+     */
+    $freightR = old('freight',       $purchase->freight_paisa       ? \App\Support\Money::toRupees($purchase->freight_paisa) : '');
+    $labourR  = old('labour_charge', $purchase->labour_paisa        ? \App\Support\Money::toRupees($purchase->labour_paisa) : '');
+    $otherR   = old('other_charges', $purchase->other_charges_paisa ? \App\Support\Money::toRupees($purchase->other_charges_paisa) : '');
 @endphp
 <div x-data="{
         qty: {{ (float) old('qty', $purchase->qty ?? 1) }},
         rate: {{ (float) ($rateR ?: 0) }},
         paid: {{ (float) ($paidR ?: 0) }},
-        get amount(){ return (this.qty * this.rate) || 0; },
-        get balance(){ return Math.max(0, this.amount - this.paid); },
-        fmt(n){ return '₨ ' + Number(n||0).toLocaleString('en-PK',{minimumFractionDigits:2,maximumFractionDigits:2}); }
+        freight: @js($freightR === '' ? '' : (float) $freightR),
+        labour: @js($labourR === '' ? '' : (float) $labourR),
+        other: @js($otherR === '' ? '' : (float) $otherR),
+        num(v){ const n = Number(v); return isFinite(n) ? n : 0; },
+        get goods(){ return (this.qty * this.rate) || 0; },
+        get extras(){ return this.num(this.freight) + this.num(this.labour) + this.num(this.other); },
+        get total(){ return this.goods + this.extras; },
+        get balance(){ return Math.max(0, this.total - this.paid); },
+        fmt(n){ return '₨ ' + Number(n||0).toLocaleString('en-IN',{minimumFractionDigits:2,maximumFractionDigits:2}); },
+        qtyText(){ return Number(this.qty||0).toLocaleString('en-IN',{maximumFractionDigits:3}); }
      }">
     <x-card title="Purchase Details">
         <div class="grid grid-cols-1 gap-5 sm:grid-cols-2">
@@ -50,6 +71,22 @@
                 </div>
             </div>
             <x-money-input name="rate_per_unit" label="Rate / unit *" :value="$rateR" required x-model.number="rate" />
+
+            <div class="sm:col-span-2">
+                <div class="rounded-lg border border-dashed border-gray-300 bg-amber-50 p-4">
+                    <div class="text-sm font-semibold text-gray-700">Maal ke saath lage charges (optional)</div>
+                    <p class="mt-0.5 text-xs text-gray-500">Jo kharcha isi bill par laga ho sirf wahi likho. Khali chhor do to bill sirf maal ka banega.</p>
+                    <div class="mt-3 grid grid-cols-1 gap-4 sm:grid-cols-3">
+                        <x-money-input name="freight" label="Kiraya (کرایہ)" :value="$freightR"
+                                       help="Truck ya dala ka kiraya. Na laga ho to khali chhor do." x-model.number="freight" />
+                        <x-money-input name="labour_charge" label="Mazdoori (مزدوری)" :value="$labourR"
+                                       help="Maal utarne charhane ki mazdoori. Na di ho to khali chhor do." x-model.number="labour" />
+                        <x-money-input name="other_charges" label="Deegar charges (دیگر)" :value="$otherR"
+                                       help="Koi aur kharcha, jaise tolai ya tax. Na ho to khali chhor do." x-model.number="other" />
+                    </div>
+                </div>
+            </div>
+
             <x-money-input name="amount_paid" label="Amount Paid (rest = udhaar)" :value="$paidR" x-model.number="paid" />
             <div>
                 <x-input-label for="wastage_qty" value="Wastage Qty (optional)" />
@@ -61,10 +98,34 @@
             </div>
         </div>
 
-        <div class="mt-5 grid grid-cols-3 gap-3 rounded-lg bg-gray-50 p-4 text-center text-sm">
-            <div><div class="text-gray-500">Amount</div><div class="font-bold text-gray-900" x-text="fmt(amount)"></div></div>
-            <div><div class="text-gray-500">Paid</div><div class="font-bold text-emerald-600" x-text="fmt(paid)"></div></div>
-            <div><div class="text-gray-500">Balance (udhaar)</div><div class="font-bold text-red-600" x-text="fmt(balance)"></div></div>
+        {{-- Save se pehle poora hisaab samne: maal, phir upar lage charges, phir kul bill. --}}
+        <div class="mt-5 rounded-lg bg-gray-50 p-4 text-sm">
+            <div class="space-y-1">
+                <div class="flex justify-between">
+                    <span class="text-gray-500">Maal (<span x-text="qtyText()"></span> × <span x-text="fmt(rate)"></span>)</span>
+                    <span class="font-semibold text-gray-900" x-text="fmt(goods)"></span>
+                </div>
+                <div class="flex justify-between" x-show="num(freight) > 0" x-cloak>
+                    <span class="text-gray-500">+ Kiraya (کرایہ)</span>
+                    <span class="font-semibold text-gray-900" x-text="fmt(num(freight))"></span>
+                </div>
+                <div class="flex justify-between" x-show="num(labour) > 0" x-cloak>
+                    <span class="text-gray-500">+ Mazdoori (مزدوری)</span>
+                    <span class="font-semibold text-gray-900" x-text="fmt(num(labour))"></span>
+                </div>
+                <div class="flex justify-between" x-show="num(other) > 0" x-cloak>
+                    <span class="text-gray-500">+ Deegar (دیگر)</span>
+                    <span class="font-semibold text-gray-900" x-text="fmt(num(other))"></span>
+                </div>
+                <div class="flex justify-between border-t border-gray-300 pt-2 text-base">
+                    <span class="font-bold text-gray-900">Kul bill (کل بل)</span>
+                    <span class="font-bold text-gray-900" x-text="fmt(total)"></span>
+                </div>
+            </div>
+            <div class="mt-3 grid grid-cols-2 gap-3 border-t border-dashed border-gray-300 pt-3 text-center">
+                <div><div class="text-gray-500">Paid (دیا)</div><div class="font-bold text-emerald-600" x-text="fmt(paid)"></div></div>
+                <div><div class="text-gray-500">Balance (udhaar)</div><div class="font-bold text-red-600" x-text="fmt(balance)"></div></div>
+            </div>
         </div>
     </x-card>
 

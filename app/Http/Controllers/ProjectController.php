@@ -230,10 +230,22 @@ class ProjectController extends Controller
         }
 
         $agreed = \App\Support\Money::toPaisa($v['agreed']);
-        $paid   = min(\App\Support\Money::toPaisa($v['paid'] ?? 0), $agreed);
+        $paid   = \App\Support\Money::toPaisa($v['paid'] ?? 0);
+
+        if ($paid > $agreed) {
+            throw \Illuminate\Validation\ValidationException::withMessages([
+                'paid' => 'Advance ' . \App\Support\Money::format($paid) . ' theke ki raqam '
+                    . \App\Support\Money::format($agreed) . ' se zyada hai.',
+            ]);
+        }
         $project->materialPurchases()->create([
             'vendor_id' => $vendorId, 'date' => $v['date'], 'item_name' => $v['work'],
             'qty' => 1, 'unit' => 'theka', 'rate_per_unit_paisa' => $agreed,
+            // goods_amount_paisa zaroor set karna hai: lagat ka hisaab ab isi
+            // column se banta hai, is liye khaali chhod dene par poora theka
+            // accrued cost se ghaayab ho jata aur munafa jhoota dikhta.
+            'goods_amount_paisa' => $agreed, 'freight_paisa' => 0,
+            'labour_paisa' => 0, 'other_charges_paisa' => 0,
             'amount_paisa' => $agreed, 'amount_paid_paisa' => $paid, 'balance_due_paisa' => $agreed - $paid,
         ]);
 
@@ -275,15 +287,40 @@ class ProjectController extends Controller
             'unit'          => ['nullable', 'string', 'max:50'],
             'rate_per_unit' => ['required', 'numeric', 'min:0'],
             'amount_paid'   => ['nullable', 'numeric', 'min:0'],
+            'freight'       => ['nullable', 'numeric', 'min:0'],
+            'labour_charge' => ['nullable', 'numeric', 'min:0'],
+            'other_charges' => ['nullable', 'numeric', 'min:0'],
             'notes'         => ['nullable', 'string'],
         ]);
-        $amount = (int) round((float) $v['qty'] * \App\Support\Money::toPaisa($v['rate_per_unit']));
-        $paid = min(\App\Support\Money::toPaisa($v['amount_paid'] ?? 0), $amount);
+
+        // Maal ki qeemat alag, aur us par laga kiraya/mazdoori alag. Bill (grand
+        // total) in sab ka jor hai, is liye vendor ka udhaar bhi poora nikalta
+        // hai, magar lagat ki taqseem me kiraya transport aur mazdoori labour me
+        // jati hai, material me nahi.
+        $goods   = (int) round((float) $v['qty'] * \App\Support\Money::toPaisa($v['rate_per_unit']));
+        $freight = \App\Support\Money::toPaisa($v['freight'] ?? 0);
+        $labour  = \App\Support\Money::toPaisa($v['labour_charge'] ?? 0);
+        $other   = \App\Support\Money::toPaisa($v['other_charges'] ?? 0);
+        $amount  = $goods + $freight + $labour + $other;
+        $paid    = \App\Support\Money::toPaisa($v['amount_paid'] ?? 0);
+
+        // Yahan pehle min($paid, $amount) tha, jo diye hue paise ko chup chaap
+        // ghata deta tha. MaterialPurchaseController me bhi ab saaf mana hai,
+        // dono raaston ka behaviour ek jaisa rakhna zaroori hai warna ek hi
+        // ghalti ek form me pakdi jati aur doosre me nahi.
+        if ($paid > $amount) {
+            throw \Illuminate\Validation\ValidationException::withMessages([
+                'amount_paid' => 'Diya hua paisa ' . \App\Support\Money::format($paid)
+                    . ' bill ' . \App\Support\Money::format($amount) . ' se zyada hai. Pehle rate/qty ya kiraya-mazdoori theek karo.',
+            ]);
+        }
 
         $project->materialPurchases()->create([
             'vendor_id' => $v['vendor_id'] ?? null, 'date' => $v['date'], 'item_name' => $v['item_name'],
             'qty' => $v['qty'], 'unit' => $v['unit'] ?? null,
             'rate_per_unit_paisa' => \App\Support\Money::toPaisa($v['rate_per_unit']),
+            'goods_amount_paisa' => $goods, 'freight_paisa' => $freight,
+            'labour_paisa' => $labour, 'other_charges_paisa' => $other,
             'amount_paisa' => $amount, 'amount_paid_paisa' => $paid, 'balance_due_paisa' => $amount - $paid,
             'notes' => $v['notes'] ?? null,
         ]);
@@ -351,9 +388,29 @@ class ProjectController extends Controller
 
     public function destroy(Project $project)
     {
-        $project->delete(); // soft delete
+        // Project ke saath us ka paisa bhi hatana laazmi hai. Pehle sirf project
+        // soft delete hota tha aur us ki payments, purchases, kharche, haazri,
+        // mazdoori aur peshgi apni jagah zinda reh jate the, is liye hataye
+        // gaye project ka paisa dashboard ke totals me ginta rehta tha.
+        //
+        // Dono cheezein soft delete hain, yani kuch mitta nahi, sirf chhup jata
+        // hai. LiveProjectScope isi masle ki doosri layer hai: wo parhne ke
+        // waqt bhi aise rows ko bahar rakhta hai, chahe cascade kisi wajah se
+        // na chala ho.
+        DB::transaction(function () use ($project) {
+            $project->clientPayments()->delete();
+            $project->materialPurchases()->delete();
+            $project->otherExpenses()->delete();
+            $project->workEntries()->delete();
+            $project->estimates()->delete();
+            \App\Models\WagePayment::where('project_id', $project->id)->delete();
+            \App\Models\WorkerAdvance::where('project_id', $project->id)->delete();
 
-        return redirect()->route('projects.index')->with('status', 'Project hata diya (soft delete).');
+            $project->delete();
+        });
+
+        return redirect()->route('projects.index')
+            ->with('status', 'Project aur us ka saara hisaab hata diya (soft delete — mita nahi, chhupa hai).');
     }
 
     /** Validate + normalise (rupees -> paisa, compute contract value). */

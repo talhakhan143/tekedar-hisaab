@@ -129,7 +129,7 @@
                 material: [{name:'Cement', qty:600, unit:'bag', rate:1300},{name:'Sarya / Steel', qty:6000, unit:'kg', rate:290},{name:'Bricks', qty:40000, unit:'nos', rate:22}],
                 labour: [{name:'Mistri', count:2, days:120, wage:1800},{name:'Mazdoor', count:4, days:120, wage:1100}],
                 other: [{name:'Diesel / Generator', qty:1, rate:60000},{name:'Transport', qty:1, rate:80000}],
-                fmt(n){ return '₨ ' + Math.round(Number(n)||0).toLocaleString('en-PK'); },
+                fmt(n){ return '₨ ' + Math.round(Number(n)||0).toLocaleString('en-IN'); },
                 get materialTotal(){ return this.material.reduce((s,r)=>s+(r.qty||0)*(r.rate||0),0) * (1 + (this.wastage||0)/100); },
                 get labourTotal(){ return this.labour.reduce((s,r)=>s+(r.count||0)*(r.days||0)*(r.wage||0),0); },
                 get otherTotal(){ return this.other.reduce((s,r)=>s+(r.qty||0)*(r.rate||0),0); },

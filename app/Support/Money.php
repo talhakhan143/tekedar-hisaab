@@ -37,13 +37,44 @@ class Money
     }
 
     /**
-     * Format paisa as a display string with thousands separators.
-     * e.g. 220000000 -> "2,200,000.00" ; with symbol -> "₨ 2,200,000.00"
+     * Group digits the Pakistani way: last three, then pairs.
+     * 3000000 -> "30,00,000" (NOT the western "3,000,000").
+     *
+     * Ye zaroori hai. Pehle yahan number_format() tha jo western grouping deta
+     * hai, aur tees lakh "3,000,000" ban kar chhapta tha. Thekedaar pehla group
+     * "3" dekh kar usay teen lakh parh leta hai, yani app sahi raqam rakh kar
+     * bhi ghalat raqam dikhati thi. JS ka toLocaleString('en-PK') bhi western
+     * grouping deta hai (test kiya), is liye wahan 'en-IN' use hota hai, jiski
+     * grouping Pakistani convention se bilkul milti hai.
+     */
+    public static function groupDesi(string $digits): string
+    {
+        if (strlen($digits) <= 3) {
+            return $digits;
+        }
+
+        $last3 = substr($digits, -3);
+        $rest  = substr($digits, 0, -3);
+
+        return preg_replace('/\B(?=(\d{2})+(?!\d))/', ',', $rest) . ',' . $last3;
+    }
+
+    /**
+     * Format paisa as a display string with Pakistani thousands separators.
+     * e.g. 220000000 -> "22,00,000.00" ; with symbol -> "₨ 22,00,000.00"
      */
     public static function format(int|null $paisa, bool $symbol = true, bool $decimals = true): string
     {
-        $value = self::toRupees($paisa);
-        $formatted = number_format($value, $decimals ? 2 : 0);
+        $paisa = (int) ($paisa ?? 0);
+        $sign  = $paisa < 0 ? '-' : '';
+        $abs   = abs($paisa);
+
+        $rupees = intdiv($abs, self::PAISA_PER_RUPEE);
+        $formatted = $sign . self::groupDesi((string) $rupees);
+
+        if ($decimals) {
+            $formatted .= '.' . str_pad((string) ($abs % self::PAISA_PER_RUPEE), 2, '0', STR_PAD_LEFT);
+        }
 
         return $symbol ? '₨ ' . $formatted : $formatted;
     }

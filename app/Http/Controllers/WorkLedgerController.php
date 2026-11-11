@@ -35,6 +35,59 @@ class WorkLedgerController extends Controller
         return (int) round((float) ($days ?? 0) * $worker->default_wage_paisa);
     }
 
+    /**
+     * Kitne din/unit par ye entry ka hisaab laga tha (quantity).
+     *
+     * Piece wale bande ke liye units, baqi sab ke liye din.
+     */
+    private function wageQty(Worker $worker, ?float $days, ?float $units): float
+    {
+        return $worker->wage_type === 'contract_piece'
+            ? (float) ($units ?? 0)
+            : (float) ($days ?? 0);
+    }
+
+    /**
+     * Is purani entry ke andar jo dihaadi chhupi hui hai, wahi nikaal kar do.
+     *
+     * computed_wage_paisa jaan boojh kar us waqt ka snapshot hai (dekho
+     * WorkerController::updateWage ka docblock). Edit par naye default rate se
+     * dobara hisaab lagana purana itihaas badal dega, is liye edit form me wahi
+     * rate bhara jata hai jo is row ke andar se nikalta hai: wage ÷ din (ya ÷
+     * units). Din/units sifar ya khaali hon to bande ka aaj ka rate dikha dete
+     * hain, kyunki us row se koi rate nikalta hi nahi.
+     */
+    private function impliedRatePaisa(Worker $worker, WorkEntry $entry): int
+    {
+        $qty = $this->wageQty(
+            $worker,
+            $entry->days_present === null ? null : (float) $entry->days_present,
+            $entry->units_done === null ? null : (float) $entry->units_done,
+        );
+
+        if ($qty <= 0) {
+            return (int) $worker->default_wage_paisa;
+        }
+
+        return (int) round(((int) $entry->computed_wage_paisa) / $qty);
+    }
+
+    /**
+     * Wage = (din ya units) x diya gaya rate. Rate paisa me aata hai, is liye
+     * natija bhi paisa me. wageFor() se farq sirf itna hai ke rate bahar se
+     * aata hai, bande ke mojooda default se nahi.
+     */
+    private function wageAtRate(Worker $worker, ?float $days, ?float $units, int $ratePaisa): int
+    {
+        return (int) round($this->wageQty($worker, $days, $units) * $ratePaisa);
+    }
+
+    /** Edit form ke liye wahi project list jo worker page par hai. */
+    private function projectOptions()
+    {
+        return Project::orderBy('name')->get(['id', 'name']);
+    }
+
     // ---------- Project-scoped quick entry (from the project page) ----------
     public function storeProjectWork(Request $request, Project $project)
     {
@@ -213,6 +266,56 @@ class WorkLedgerController extends Controller
         return back()->with('status', 'Attendance/work entry add ho gayi.');
     }
 
+    public function editWork(WorkEntry $workEntry)
+    {
+        $worker = $workEntry->worker()->withTrashed()->firstOrFail();
+
+        return view('labour.edit-work', [
+            'entry'     => $workEntry,
+            'worker'    => $worker,
+            'projects'  => $this->projectOptions(),
+            'ratePaisa' => $this->impliedRatePaisa($worker, $workEntry),
+        ]);
+    }
+
+    public function updateWork(Request $request, WorkEntry $workEntry)
+    {
+        $worker = $workEntry->worker()->withTrashed()->firstOrFail();
+
+        $v = $request->validate([
+            'project_id'   => ['nullable', 'exists:projects,id'],
+            'date'         => ['required', 'date'],
+            'days_present' => ['nullable', 'numeric', 'min:0', 'max:31'],
+            'units_done'   => ['nullable', 'numeric', 'min:0'],
+            'dihaadi_rate' => ['required', 'numeric', 'min:0'],
+            'notes'        => ['nullable', 'string'],
+        ]);
+
+        // Apni hi haazri se takkar nahi honi chahiye. attendanceExists() ka
+        // teesra argument isi kaam ke liye hai: apni id chhor kar dekho. Warna
+        // tareekh badle bina save karna bhi "haazri pehle lag chuki hai" keh
+        // kar reject ho jata, yani entry kabhi edit hi na ho paati.
+        if ($this->attendanceExists($worker->id, $v['date'], $workEntry->id)) {
+            return back()->with('error', $worker->name . ' ki ' . \Carbon\Carbon::parse($v['date'])->format('d-m-Y') . ' ki haazri pehle lag chuki hai. Do haazri ek din me nahi lag sakti.');
+        }
+
+        // Rupay se paisa sirf yahan, aik dafa. Phir wage usi rate se banta hai
+        // jo malik ne screen par dekha, bande ke aaj ke default se nahi.
+        $ratePaisa = Money::toPaisa($v['dihaadi_rate']);
+
+        $workEntry->update([
+            'project_id'          => $v['project_id'] ?? null,
+            'date'                => $v['date'],
+            'days_present'        => $v['days_present'] ?? null,
+            'units_done'          => $v['units_done'] ?? null,
+            'computed_wage_paisa' => $this->wageAtRate($worker, $v['days_present'] ?? null, $v['units_done'] ?? null, $ratePaisa),
+            'notes'               => $v['notes'] ?? null,
+        ]);
+
+        return redirect()->route('workers.show', $worker)
+            ->with('status', $worker->name . ' ki ' . \Carbon\Carbon::parse($v['date'])->format('d-m-Y') . ' wali haazri update ho gayi. Nayi wage ' . Money::format($workEntry->computed_wage_paisa) . ' hai.');
+    }
+
     public function destroyWork(WorkEntry $workEntry)
     {
         $workEntry->delete();
@@ -241,6 +344,43 @@ class WorkLedgerController extends Controller
 
         return back()->with('status', 'Advance/recovery record ho gayi.')
             ->with('voucher_url', route('vouchers.advance', $advance))
+            ->with('voucher_label', '🖨 Advance Voucher');
+    }
+
+    public function editAdvance(WorkerAdvance $workerAdvance)
+    {
+        $worker = $workerAdvance->worker()->withTrashed()->firstOrFail();
+
+        return view('labour.edit-advance', [
+            'advance'  => $workerAdvance,
+            'worker'   => $worker,
+            'projects' => $this->projectOptions(),
+        ]);
+    }
+
+    public function updateAdvance(Request $request, WorkerAdvance $workerAdvance)
+    {
+        $worker = $workerAdvance->worker()->withTrashed()->firstOrFail();
+
+        $v = $request->validate([
+            'project_id' => ['nullable', 'exists:projects,id'],
+            'date'       => ['required', 'date'],
+            'type'       => ['required', 'in:advance_given,recovery'],
+            'amount'     => ['required', 'numeric', 'min:0'],
+            'notes'      => ['nullable', 'string'],
+        ]);
+
+        $workerAdvance->update([
+            'project_id'  => $v['project_id'] ?? null,
+            'date'        => $v['date'],
+            'type'        => $v['type'],
+            'amount_paisa'=> Money::toPaisa($v['amount']),
+            'notes'       => $v['notes'] ?? null,
+        ]);
+
+        return redirect()->route('workers.show', $worker)
+            ->with('status', ($v['type'] === 'advance_given' ? 'Peshgi' : 'Wasooli') . ' update ho gayi, ab ' . Money::format($workerAdvance->amount_paisa) . '.')
+            ->with('voucher_url', route('vouchers.advance', $workerAdvance))
             ->with('voucher_label', '🖨 Advance Voucher');
     }
 
@@ -283,6 +423,74 @@ class WorkLedgerController extends Controller
 
         return back()->with('status', 'Wage payment record ho gayi.')
             ->with('voucher_url', route('vouchers.wage', $wp))
+            ->with('voucher_label', '🖨 Wage Voucher');
+    }
+
+    public function editPayment(WagePayment $wagePayment)
+    {
+        $worker = $wagePayment->worker()->withTrashed()->firstOrFail();
+
+        return view('labour.edit-payment', [
+            'payment'  => $wagePayment,
+            'worker'   => $worker,
+            'projects' => $this->projectOptions(),
+            // Wahi ceiling jo update par lagti hai, taake screen par dikha
+            // number aur submit par chalne wala check aik hi hon.
+            'capPaisa' => $this->paymentCapPaisa($worker, $wagePayment),
+        ]);
+    }
+
+    /**
+     * Is row ko badal kar zyada se zyada kitni rakam di ja sakti hai.
+     *
+     * payablePaisa() me ye payment pehle se minus ho chuki hai, is liye cap
+     * nikalne se pehle usay wapis jama karna parta hai. Store wala check
+     * jaisa ka waisa chipka dete to wahi rakam dobara save karna bhi
+     * "overpayment" ban jata aur har edit reject hota.
+     */
+    private function paymentCapPaisa(Worker $worker, WagePayment $wagePayment): int
+    {
+        return $worker->payablePaisa() + (int) $wagePayment->amount_paisa;
+    }
+
+    public function updatePayment(Request $request, WagePayment $wagePayment)
+    {
+        $worker = $wagePayment->worker()->withTrashed()->firstOrFail();
+
+        $v = $request->validate([
+            'project_id'   => ['nullable', 'exists:projects,id'],
+            'date'         => ['required', 'date'],
+            'amount'       => ['required', 'numeric', 'min:0'],
+            'period_label' => ['nullable', 'string', 'max:100'],
+            'override'     => ['nullable', 'boolean'],
+            'notes'        => ['nullable', 'string'],
+        ]);
+
+        $amount = Money::toPaisa($v['amount']);
+        $cap    = $this->paymentCapPaisa($worker, $wagePayment);
+
+        // Block paying more than payable unless override flag is set.
+        if ($amount > $cap && ! ($v['override'] ?? false)) {
+            throw ValidationException::withMessages([
+                'amount' => 'Payable sirf ' . Money::format($cap) . ' hai (is payment ko wapis jama kar ke). Zyada dena hai to "override" check karo.',
+            ]);
+        }
+
+        // project_id jo malik ne chuna hai wahi lagta hai, koi khamosh baant
+        // nahi. Aik payment aik hi project ka khaata hai (null = bina
+        // project), is liye edit se doosre project ka paisa idhar udhar nahi
+        // hona chahiye.
+        $wagePayment->update([
+            'project_id'  => $v['project_id'] ?? null,
+            'date'        => $v['date'],
+            'amount_paisa'=> $amount,
+            'period_label'=> $v['period_label'] ?? null,
+            'notes'       => $v['notes'] ?? null,
+        ]);
+
+        return redirect()->route('workers.show', $worker)
+            ->with('status', $worker->name . ' ki wage payment update ho gayi, ab ' . Money::format($wagePayment->amount_paisa) . '.')
+            ->with('voucher_url', route('vouchers.wage', $wagePayment))
             ->with('voucher_label', '🖨 Wage Voucher');
     }
 

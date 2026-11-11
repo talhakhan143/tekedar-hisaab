@@ -7,6 +7,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
+#[\Illuminate\Database\Eloquent\Attributes\ScopedBy(\App\Models\Scopes\LiveProjectScope::class)]
 class WorkEntry extends Model
 {
     use SoftDeletes;
