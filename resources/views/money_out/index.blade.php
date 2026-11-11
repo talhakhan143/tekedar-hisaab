@@ -51,7 +51,7 @@
                                     <td class="px-4 py-2.5 text-gray-600">{{ $e->description }}</td>
                                     <td class="px-4 py-2.5 text-gray-500">{{ $e->project->name ?? 'General' }}</td>
                                     <td class="px-4 py-2.5 text-right font-medium">@money($e->amount_paisa)</td>
-                                    <td class="px-4 py-2.5 text-right whitespace-nowrap"><a href="{{ route('vouchers.expense', $e) }}" target="_blank" class="text-emerald-600 hover:text-emerald-800" title="Print voucher">🖨</a><form method="POST" action="{{ route('expenses.destroy', $e) }}" class="ml-1 inline" onsubmit="return confirm('Delete?')">@csrf @method('DELETE')<button class="text-red-400 hover:text-red-600">✕</button></form></td>
+                                    <td class="px-4 py-2.5 text-right whitespace-nowrap"><a href="{{ route('vouchers.expense', $e) }}" target="_blank" class="text-emerald-600 hover:text-emerald-800" title="Print voucher">🖨</a><a href="{{ route('expenses.edit', $e) }}" class="ml-1 text-emerald-600 hover:text-emerald-800" title="Edit">✏️</a><form method="POST" action="{{ route('expenses.destroy', $e) }}" class="ml-1 inline" onsubmit="return confirm('Delete?')">@csrf @method('DELETE')<button class="text-red-400 hover:text-red-600">✕</button></form></td>
                                 </tr>
                             @empty<tr><td colspan="6" class="px-4 py-6 text-center text-gray-400">Koi expense nahi.</td></tr>@endforelse
                         </tbody>
@@ -87,7 +87,7 @@
                                     <td class="px-4 py-2.5">{{ $o->month }}</td>
                                     <td class="px-4 py-2.5 capitalize">{{ str_replace('_',' ',$o->category) }}</td>
                                     <td class="px-4 py-2.5 text-right font-medium">@money($o->amount_paisa)</td>
-                                    <td class="px-4 py-2.5 text-right"><form method="POST" action="{{ route('overheads.destroy', $o) }}" onsubmit="return confirm('Delete?')">@csrf @method('DELETE')<button class="text-red-400 hover:text-red-600">✕</button></form></td>
+                                    <td class="px-4 py-2.5 text-right whitespace-nowrap"><a href="{{ route('overheads.edit', $o) }}" class="text-emerald-600 hover:text-emerald-800" title="Edit">✏️</a><form method="POST" action="{{ route('overheads.destroy', $o) }}" class="ml-1 inline" onsubmit="return confirm('Delete?')">@csrf @method('DELETE')<button class="text-red-400 hover:text-red-600">✕</button></form></td>
                                 </tr>
                             @empty<tr><td colspan="4" class="px-4 py-6 text-center text-gray-400">Koi overhead nahi.</td></tr>@endforelse
                         </tbody>

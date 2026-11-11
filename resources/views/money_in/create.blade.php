@@ -6,7 +6,7 @@
           x-data="{
             project: '{{ $selectedProject ?? '' }}',
             gross: 0,
-            fmt(n){ return '₨ ' + Number(n||0).toLocaleString('en-PK',{minimumFractionDigits:2, maximumFractionDigits:2}); }
+            fmt(n){ return '₨ ' + Number(n||0).toLocaleString('en-IN',{minimumFractionDigits:2, maximumFractionDigits:2}); }
           }">
         @csrf
         <x-card title="Payment Details">

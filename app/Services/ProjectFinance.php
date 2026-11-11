@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Models\Project;
+use Illuminate\Support\Facades\DB;
 
 /**
  * Single source of P&L truth for one project. All values are integer paisa.
@@ -30,6 +31,16 @@ class ProjectFinance
         'misc'             => 'misc',
         'food_chai'        => 'misc',
     ];
+
+    /**
+     * Bill me se sirf maal ki qeemat. Seedha goods_amount_paisa parhna kaafi
+     * hota, magar jaan boojh kar COALESCE lagaya hai: agar kisi row me goods
+     * NULL reh jaye (migration ka backfill na chala ho, ya kisi ne raw SQL se
+     * row daal di ho) to SUM() usay chup chaap chhod deti aur us purchase ki
+     * poori lagat ghayab ho kar munafa jhoota barha deti. Aise waqt bill me se
+     * charges nikal kar maal ki qeemat khud bana lete hain.
+     */
+    private const GOODS_EXPR = 'COALESCE(goods_amount_paisa, amount_paisa - COALESCE(freight_paisa,0) - COALESCE(labour_paisa,0) - COALESCE(other_charges_paisa,0))';
 
     public function __construct(public Project $project)
     {
@@ -74,22 +85,52 @@ class ProjectFinance
     }
 
     // ---------- Costs (ACCRUED) ----------
+    /**
+     * Material = har wo purchase jo sub-contractor ki nahi. Filter jaan boojh
+     * kar sub-contractor wale filter ka theek ulta hai.
+     *
+     * Pehle yahan "vendor_id NULL ya vendor type=supplier" likha tha. Vendor
+     * SoftDeletes istemal karta hai, is liye jis purchase ka vendor delete kar
+     * diya gaya ho wo na material me aati thi na sub-contractor me: us ki lagat
+     * chup chaap gum ho jati thi jab ke us ka udhaar poora ginta rehta tha.
+     * Ab material ∪ subcontractor = saari purchases, har ek theek ek dafa.
+     *
+     * Jor sirf maal ka hai, kiraya/mazdoori/deegar actualByCategory() me apne
+     * apne khanon me jate hain, warna dohra ginti ho jati.
+     */
     public function materialCostPaisa(): int
     {
-        // Material = purchases with no vendor OR a supplier vendor (subcontractor handled separately).
         return (int) $this->project->materialPurchases()
-            ->where(function ($q) {
-                $q->whereNull('vendor_id')
-                  ->orWhereHas('vendor', fn ($v) => $v->where('type', 'supplier'));
-            })
-            ->sum('amount_paisa');
+            ->whereDoesntHave('vendor', fn ($q) => $q->where('type', 'subcontractor'))
+            ->sum(DB::raw(self::GOODS_EXPR));
     }
 
     public function subcontractorCostPaisa(): int
     {
         return (int) $this->project->materialPurchases()
             ->whereHas('vendor', fn ($q) => $q->where('type', 'subcontractor'))
-            ->sum('amount_paisa');
+            ->sum(DB::raw(self::GOODS_EXPR));
+    }
+
+    /**
+     * Purchases par laga kiraya / mazdoori / deegar, ek hi query me.
+     *
+     * Yahan vendor ki qism ka koi filter nahi, aur ye jaan boojh kar hai:
+     * material aur subcontractor ki taqseem sirf maal par lagti hai. Agar
+     * charges par bhi wahi filter laga dete to taqseem toot jati aur kuch
+     * charges kisi khane me na aate.
+     */
+    public function purchaseChargesPaisa(): array
+    {
+        $row = $this->project->materialPurchases()
+            ->selectRaw('COALESCE(SUM(freight_paisa),0) as freight_total, COALESCE(SUM(labour_paisa),0) as labour_total, COALESCE(SUM(other_charges_paisa),0) as other_total')
+            ->first();
+
+        return [
+            'freight' => (int) ($row->freight_total ?? 0),
+            'labour'  => (int) ($row->labour_total ?? 0),
+            'other'   => (int) ($row->other_total ?? 0),
+        ];
     }
 
     public function labourCostPaisa(): int
@@ -112,19 +153,28 @@ class ProjectFinance
         return $buckets;
     }
 
-    /** Actual spend per estimate category. */
+    /**
+     * Actual spend per estimate category.
+     *
+     * Purchase ke charges yahan apne apne khanon me ghulte hain: kiraya
+     * transport me, mazdoori labour me, deegar misc me. Jor ab bhi bilkul
+     * utna hi hai jitna pehle tha, yani Σ amount_paisa, bas taqseem sach bolti
+     * hai: material me sirf maal ki qeemat aati hai.
+     */
     public function actualByCategory(): array
     {
-        $other = $this->otherExpenseBuckets();
+        $other   = $this->otherExpenseBuckets();
+        $charges = $this->purchaseChargesPaisa();
+
         return [
             'material'      => $this->materialCostPaisa(),
-            'labour'        => $this->labourCostPaisa(),
+            'labour'        => $this->labourCostPaisa() + $charges['labour'],
             'subcontractor' => $this->subcontractorCostPaisa(),
-            'transport'     => $other['transport'],
+            'transport'     => $other['transport'] + $charges['freight'],
             'equipment'     => $other['equipment'],
             'utility'       => $other['utility'],
             'overhead'      => $other['overhead'],
-            'misc'          => $other['misc'],
+            'misc'          => $other['misc'] + $charges['other'],
         ];
     }
 

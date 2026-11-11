@@ -30,6 +30,10 @@
                 ['overview',   'Overview (خلاصہ)'],
                 ['money-in',   'Client Payments (وصولی)'],
                 ['materials',  'Materials (مٹیریل)'],
+                // Ye tab pehle se maujood tha magar is list me nahi tha, is liye
+                // isay kholne ka koi button hi nahi banta tha. Theka ka poora
+                // section app me chhupa hua pada tha.
+                ['subcontractor', 'Theka (ٹھیکہ)'],
                 ['attendance', 'Labour / Attendance (مزدوری)'],
                 ['adjustment', 'Adjustment (کٹوتی/بونس)'],
                 ['expenses',   'Other Expenses (اخراجات)'],
@@ -136,7 +140,7 @@
                                     <td class="px-4 py-2.5 capitalize">{{ $pay->payment_method }} @if($pay->is_mobilization)<x-badge color="sky">Advance</x-badge>@endif</td>
                                     <td class="px-4 py-2.5 text-gray-500">{{ $pay->notes }}</td>
                                     <td class="px-4 py-2.5 text-right font-medium text-emerald-600">@money($pay->gross_amount_paisa)</td>
-                                    <td class="px-4 py-2.5 text-right whitespace-nowrap"><a href="{{ route('vouchers.client-payment', $pay) }}" target="_blank" class="text-emerald-600 hover:text-emerald-800" title="Print receipt">🖨</a><form method="POST" action="{{ route('client-payments.destroy', $pay) }}" class="ml-1 inline" onsubmit="return confirm('Delete?')">@csrf @method('DELETE')<button class="text-red-400 hover:text-red-600">✕</button></form></td>
+                                    <td class="px-4 py-2.5 text-right whitespace-nowrap"><a href="{{ route('vouchers.client-payment', $pay) }}" target="_blank" class="text-emerald-600 hover:text-emerald-800" title="Print receipt">🖨</a><a href="{{ route('client-payments.edit', $pay) }}" class="ml-1 text-sky-600 hover:text-sky-800" title="Edit">&#9999;&#65039;</a><form method="POST" action="{{ route('client-payments.destroy', $pay) }}" class="ml-1 inline" onsubmit="return confirm('Delete?')">@csrf @method('DELETE')<button class="text-red-400 hover:text-red-600">✕</button></form></td>
                                 </tr>
                             @empty<tr><td colspan="5" class="px-4 py-6 text-center text-gray-400">Koi payment nahi.</td></tr>@endforelse
                         </tbody>
@@ -150,7 +154,10 @@
             <div>
                 <x-card title="Maal khareeda (مٹیریل شامل کریں)">
                     <form method="POST" action="{{ route('projects.materials.store', $project) }}" class="space-y-3"
-                          x-data="{ qty:1, rate:0, paid:0, get amt(){return (this.qty*this.rate)||0}, fmt(n){return '₨ '+Math.round(n||0).toLocaleString('en-PK')} }">
+                          x-data="{ qty:1, rate:0, paid:0, kiraya:0, mazdoori:0, deegar:0,
+                                    get goods(){ return (this.qty*this.rate)||0 },
+                                    get amt(){ return this.goods + (+this.kiraya||0) + (+this.mazdoori||0) + (+this.deegar||0) },
+                                    fmt(n){return '₨ '+Math.round(n||0).toLocaleString('en-IN')} }">
                         @csrf
                         <input type="date" name="date" value="{{ now()->format('Y-m-d') }}" required class="block w-full rounded-md border-gray-300 text-sm shadow-sm focus:border-emerald-500 focus:ring-emerald-500">
                         <input type="text" name="item_name" placeholder="Item (cement, sarya…)" required class="block w-full rounded-md border-gray-300 text-sm shadow-sm focus:border-emerald-500 focus:ring-emerald-500">
@@ -163,8 +170,24 @@
                             <option value="">— supplier (optional) —</option>
                             @foreach($vendors->where('type','supplier') as $vd)<option value="{{ $vd->id }}">{{ $vd->name }}</option>@endforeach
                         </select>
+                        {{-- Maal ke sath laga kiraya/mazdoori. Teeno optional hain. --}}
+                        <div class="rounded-md border border-dashed border-gray-300 p-2.5">
+                            <p class="mb-2 text-xs font-semibold text-gray-500">Sath ka kharcha (optional)</p>
+                            <div class="space-y-2">
+                                <x-money-input name="freight" label="Kiraya (کرایہ)" x-model.number="kiraya" />
+                                <x-money-input name="labour_charge" label="Mazdoori (مزدوری)" x-model.number="mazdoori" />
+                                <x-money-input name="other_charges" label="Deegar (دیگر)" x-model.number="deegar" />
+                            </div>
+                        </div>
                         <x-money-input name="amount_paid" label="Paid (jo diya — baqi udhaar)" x-model.number="paid" />
-                        <div class="rounded bg-gray-50 p-2 text-center text-xs text-gray-500">Amount: <span class="font-bold text-gray-800" x-text="fmt(amt)"></span> · Udhaar: <span class="font-bold text-red-600" x-text="fmt(Math.max(0,amt-paid))"></span></div>
+                        <div class="space-y-1 rounded bg-gray-50 p-2 text-xs text-gray-500">
+                            <div class="flex justify-between"><span>Maal</span><span class="font-medium text-gray-700" x-text="fmt(goods)"></span></div>
+                            <template x-if="(+kiraya||0) > 0"><div class="flex justify-between"><span>+ Kiraya</span><span class="font-medium text-gray-700" x-text="fmt(kiraya)"></span></div></template>
+                            <template x-if="(+mazdoori||0) > 0"><div class="flex justify-between"><span>+ Mazdoori</span><span class="font-medium text-gray-700" x-text="fmt(mazdoori)"></span></div></template>
+                            <template x-if="(+deegar||0) > 0"><div class="flex justify-between"><span>+ Deegar</span><span class="font-medium text-gray-700" x-text="fmt(deegar)"></span></div></template>
+                            <div class="flex justify-between border-t border-gray-200 pt-1"><span class="font-semibold text-gray-700">Kul bill</span><span class="font-bold text-gray-900" x-text="fmt(amt)"></span></div>
+                            <div class="flex justify-between"><span>Udhaar</span><span class="font-bold text-red-600" x-text="fmt(Math.max(0,amt-paid))"></span></div>
+                        </div>
                         <button class="w-full rounded-md bg-emerald-600 px-3 py-2 text-sm font-semibold text-white hover:bg-emerald-700">Add (شامل کریں)</button>
                     </form>
                 </x-card>
@@ -179,7 +202,22 @@
                                     <td class="px-4 py-2.5">{{ $pur->date->format('d-m-Y') }}</td>
                                     <td class="px-4 py-2.5 font-medium text-gray-700">{{ $pur->item_name }}<div class="text-xs text-gray-400">{{ rtrim(rtrim($pur->qty,'0'),'.') }} {{ $pur->unit }}</div></td>
                                     <td class="px-4 py-2.5 text-gray-500">{{ $pur->vendor->name ?? '—' }}</td>
-                                    <td class="px-4 py-2.5 text-right">@money($pur->amount_paisa)</td>
+                                    <td class="px-4 py-2.5 text-right">
+                                        @money($pur->amount_paisa)
+                                        @php
+                                            $extras = collect([
+                                                'Kiraya'   => (int) $pur->freight_paisa,
+                                                'Mazdoori' => (int) $pur->labour_paisa,
+                                                'Deegar'   => (int) $pur->other_charges_paisa,
+                                            ])->filter();
+                                        @endphp
+                                        @if($extras->isNotEmpty())
+                                            <div class="text-xs font-normal text-gray-400">
+                                                maal @money($pur->goods_amount_paisa)
+                                                @foreach($extras as $label => $amt) · {{ $label }} @money($amt) @endforeach
+                                            </div>
+                                        @endif
+                                    </td>
                                     <td class="px-4 py-2.5 text-right {{ $pur->balance_due_paisa>0?'text-red-600':'text-gray-400' }}">@money($pur->balance_due_paisa)</td>
                                     <td class="px-4 py-2.5 text-right whitespace-nowrap">
                                         @if($pur->balance_due_paisa > 0)
@@ -190,6 +228,7 @@
                                             </form>
                                         @endif
                                         <a href="{{ route('vouchers.material', $pur) }}" target="_blank" class="ml-1 text-emerald-600 hover:text-emerald-800" title="Print invoice">🖨</a>
+                                        <a href="{{ route('materials.edit', $pur) }}" class="ml-1 text-sky-600 hover:text-sky-800" title="Edit">✏️</a>
                                         <form method="POST" action="{{ route('materials.destroy', $pur) }}" class="ml-1 inline" onsubmit="return confirm('Delete?')">@csrf @method('DELETE')<button class="text-red-400 hover:text-red-600">✕</button></form>
                                     </td>
                                 </tr>
@@ -257,6 +296,7 @@
                                             </form>
                                         @endif
                                         <a href="{{ route('vouchers.material', $sd) }}" target="_blank" class="ml-1 text-emerald-600 hover:text-emerald-800" title="Print invoice">🖨</a>
+                                        <a href="{{ route('materials.edit', $sd) }}" class="ml-1 text-sky-600 hover:text-sky-800" title="Edit">✏️</a>
                                         <form method="POST" action="{{ route('materials.destroy', $sd) }}" class="ml-1 inline" onsubmit="return confirm('Delete?')">@csrf @method('DELETE')<button class="text-red-400 hover:text-red-600">✕</button></form>
                                     </td>
                                 </tr>
@@ -389,7 +429,7 @@
                                 allProjects: {{ old('all_projects') ? 'true' : 'false' }},
                                 get d() { return this.worker === '' ? null : (this.dues[this.worker] ?? {here: 0, othersTotal: 0, total: 0, others: []}); },
                                 get target() { return this.d === null ? 0 : (this.allProjects ? this.d.total : this.d.here); },
-                                fmt(paisa) { return '₨ ' + Number(Math.abs(paisa) / 100).toLocaleString('en-PK', {minimumFractionDigits: 2, maximumFractionDigits: 2}); },
+                                fmt(paisa) { return '₨ ' + Number(Math.abs(paisa) / 100).toLocaleString('en-IN', {minimumFractionDigits: 2, maximumFractionDigits: 2}); },
                                 payAll() { if (this.target > 0) { this.amount = (this.target / 100).toFixed(2); } }
                               }"
                               x-init="$watch('worker', () => { amount = '' })">
@@ -581,7 +621,7 @@
                                     <td class="px-4 py-2.5"><x-badge :color="$isDed ? 'red' : 'emerald'">{{ $isDed ? 'Katauti' : 'Bonus' }}</x-badge></td>
                                     <td class="px-4 py-2.5 text-gray-500">{{ $a->notes }}</td>
                                     <td class="px-4 py-2.5 text-right font-medium {{ $isDed ? 'text-rose-600' : 'text-emerald-600' }}">{{ $isDed ? '−' : '+' }}@money($a->amount_paisa)</td>
-                                    <td class="px-4 py-2.5 text-right whitespace-nowrap"><a href="{{ route('vouchers.advance', $a) }}" target="_blank" class="text-emerald-600 hover:text-emerald-800" title="Print voucher">🖨</a><form method="POST" action="{{ route('worker-advances.destroy', $a) }}" class="ml-1 inline" onsubmit="return confirm('Delete?')">@csrf @method('DELETE')<button class="text-red-400 hover:text-red-600">✕</button></form></td>
+                                    <td class="px-4 py-2.5 text-right whitespace-nowrap"><a href="{{ route('vouchers.advance', $a) }}" target="_blank" class="text-emerald-600 hover:text-emerald-800" title="Print voucher">🖨</a><a href="{{ route('worker-advances.edit', $a) }}" class="ml-1 text-sky-600 hover:text-sky-800" title="Edit">&#9999;&#65039;</a><form method="POST" action="{{ route('worker-advances.destroy', $a) }}" class="ml-1 inline" onsubmit="return confirm('Delete?')">@csrf @method('DELETE')<button class="text-red-400 hover:text-red-600">✕</button></form></td>
                                 </tr>
                             @empty<tr><td colspan="6" class="px-4 py-6 text-center text-gray-400">Koi adjustment nahi.</td></tr>@endforelse
                         </tbody>
@@ -614,7 +654,7 @@
                         <tbody class="divide-y divide-gray-100">
                             @forelse($project->otherExpenses->sortByDesc('date') as $e)
                                 <tr><td class="px-4 py-2.5">{{ $e->date->format('d-m-Y') }}</td><td class="px-4 py-2.5 capitalize">{{ str_replace('_',' ',$e->category) }}</td><td class="px-4 py-2.5 text-gray-500">{{ $e->description }}</td><td class="px-4 py-2.5 text-right font-medium">@money($e->amount_paisa)</td>
-                                <td class="px-4 py-2.5 text-right whitespace-nowrap"><a href="{{ route('vouchers.expense', $e) }}" target="_blank" class="text-emerald-600 hover:text-emerald-800" title="Print voucher">🖨</a><form method="POST" action="{{ route('expenses.destroy', $e) }}" class="ml-1 inline" onsubmit="return confirm('Delete?')">@csrf @method('DELETE')<button class="text-red-400 hover:text-red-600">✕</button></form></td></tr>
+                                <td class="px-4 py-2.5 text-right whitespace-nowrap"><a href="{{ route('vouchers.expense', $e) }}" target="_blank" class="text-emerald-600 hover:text-emerald-800" title="Print voucher">🖨</a><a href="{{ route('expenses.edit', $e) }}" class="ml-1 text-sky-600 hover:text-sky-800" title="Edit">&#9999;&#65039;</a><form method="POST" action="{{ route('expenses.destroy', $e) }}" class="ml-1 inline" onsubmit="return confirm('Delete?')">@csrf @method('DELETE')<button class="text-red-400 hover:text-red-600">✕</button></form></td></tr>
                             @empty<tr><td colspan="5" class="px-4 py-6 text-center text-gray-400">Koi kharch nahi.</td></tr>@endforelse
                         </tbody>
                     </table>

@@ -21,6 +21,15 @@ use Illuminate\Support\Facades\DB;
  */
 class DashboardData
 {
+    /**
+     * Bill me se sirf maal ki qeemat. Bilkul wahi defensive expression jo
+     * ProjectFinance me hai (wahan private hai), aur jaan boojh kar wahi:
+     * dashboard ka pie aur project ka pie ek hi tareeqe se banna chahiye,
+     * warna dono alag kahani sunate hain. COALESCE is liye ke NULL goods wali
+     * row SUM() se gir kar apni poori lagat gum na kar de.
+     */
+    private const GOODS_EXPR = 'COALESCE(goods_amount_paisa, amount_paisa - COALESCE(freight_paisa,0) - COALESCE(labour_paisa,0) - COALESCE(other_charges_paisa,0))';
+
     // ---------- Totals ----------
     public function totalBilledPaisa(): int { return (int) ClientPayment::sum('gross_amount_paisa'); }
     public function netReceivedPaisa(): int { return (int) ClientPayment::sum('net_received_paisa'); }
@@ -28,9 +37,46 @@ class DashboardData
     public function retentionReleasedPaisa(): int { return (int) RetentionRelease::sum('amount_paisa'); }
     public function retentionOutstandingPaisa(): int { return $this->retentionHeldPaisa() - $this->retentionReleasedPaisa(); }
 
-    public function materialCostPaisa(): int { return (int) MaterialPurchase::sum('amount_paisa'); }
-    public function labourCostPaisa(): int { return (int) WorkEntry::sum('computed_wage_paisa'); }
-    public function otherCostPaisa(): int { return (int) OtherExpense::sum('amount_paisa'); }
+    /**
+     * Saari purchases par laga kiraya / mazdoori / deegar, ek hi query me.
+     * Vendor ki qism ka filter jaan boojh kar nahi hai, warna kuch charges
+     * kisi khane me hi na aate.
+     */
+    public function purchaseChargesPaisa(): array
+    {
+        $row = MaterialPurchase::selectRaw('COALESCE(SUM(freight_paisa),0) as freight_total, COALESCE(SUM(labour_paisa),0) as labour_total, COALESCE(SUM(other_charges_paisa),0) as other_total')
+            ->first();
+
+        return [
+            'freight' => (int) ($row->freight_total ?? 0),
+            'labour'  => (int) ($row->labour_total ?? 0),
+            'other'   => (int) ($row->other_total ?? 0),
+        ];
+    }
+
+    /**
+     * Global taqseem bhi per-project taqseem jaisi hi hai: material me sirf
+     * maal, purchase ki mazdoori labour me, aur kiraya + deegar "Other" me.
+     *
+     * Khayal rahe: material ko goods par le aana aur charges ko kisi khane me
+     * wapas na daalna = totalProjectCostPaisa() utna hi ghat jata jitne saare
+     * charges hain, aur accrued profit usi raqam se jhoota barh jata. Is liye
+     * teenon charges neeche labour aur other me wapas ginay jate hain, aur jor
+     * bilkul wahi rehta hai: Σ amount_paisa + wages + other expenses.
+     */
+    public function materialCostPaisa(): int { return (int) MaterialPurchase::sum(DB::raw(self::GOODS_EXPR)); }
+
+    public function labourCostPaisa(): int
+    {
+        return (int) WorkEntry::sum('computed_wage_paisa') + $this->purchaseChargesPaisa()['labour'];
+    }
+
+    public function otherCostPaisa(): int
+    {
+        $charges = $this->purchaseChargesPaisa();
+        return (int) OtherExpense::sum('amount_paisa') + $charges['freight'] + $charges['other'];
+    }
+
     public function overheadPaisa(): int { return (int) GeneralOverhead::sum('amount_paisa'); }
 
     public function totalProjectCostPaisa(): int

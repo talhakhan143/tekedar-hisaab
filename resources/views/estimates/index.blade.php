@@ -81,7 +81,10 @@
             </x-card>
 
             <x-card title="Line Items" class="!p-0">
-                <div class="overflow-x-auto">
+                {{-- editingId table ke bahar rakhi hai: display row aur edit row
+                     ko ek hi state share karni hai, aur table ke andar nested
+                     tbody ya template daalna invalid HTML hota hai. --}}
+                <div class="overflow-x-auto" x-data="{ editingId: null }">
                     <table class="min-w-full divide-y divide-gray-200 text-sm">
                         <thead class="bg-gray-50 text-left text-xs uppercase tracking-wide text-gray-500">
                             <tr>
@@ -95,7 +98,12 @@
                         </thead>
                         <tbody class="divide-y divide-gray-100">
                             @forelse($estimates->flatten() as $e)
-                                <tr>
+                                {{--
+                                    Edit ka route (estimates.update) app me pehle se tha magar usay
+                                    chalane wala koi button kahin nahi tha, is liye estimate line
+                                    sirf delete ho sakti thi. Ab har line inline edit hoti hai.
+                                --}}
+                                <tr x-show="editingId !== {{ $e->id }}">
                                     <td class="px-4 py-2.5 font-medium text-gray-700">{{ $e->item_name }}
                                         @if($e->wastage_percent > 0)<span class="ml-1 text-xs text-amber-600">+{{ rtrim(rtrim($e->wastage_percent,'0'),'.') }}% wastage</span>@endif
                                     </td>
@@ -103,10 +111,50 @@
                                     <td class="px-4 py-2.5 text-right">{{ rtrim(rtrim($e->qty_estimated,'0'),'.') }} {{ $e->unit }}</td>
                                     <td class="px-4 py-2.5 text-right">@money($e->rate_per_unit_paisa)</td>
                                     <td class="px-4 py-2.5 text-right font-medium">@money($e->amount_paisa)</td>
-                                    <td class="px-4 py-2.5 text-right">
-                                        <form method="POST" action="{{ route('estimates.destroy', $e) }}" onsubmit="return confirm('Line delete?')">
+                                    <td class="px-4 py-2.5 text-right whitespace-nowrap">
+                                        <button type="button" @click="editingId = {{ $e->id }}" class="text-sky-600 hover:text-sky-800" title="Edit">&#9999;&#65039;</button>
+                                        <form method="POST" action="{{ route('estimates.destroy', $e) }}" class="ml-1 inline" onsubmit="return confirm('Line delete?')">
                                             @csrf @method('DELETE')
                                             <button class="text-red-500 hover:text-red-700">✕</button>
+                                        </form>
+                                    </td>
+                                </tr>
+                                <tr x-show="editingId === {{ $e->id }}" x-cloak class="bg-sky-50">
+                                    <td colspan="6" class="px-4 py-3">
+                                        <form method="POST" action="{{ route('estimates.update', $e) }}" class="grid grid-cols-2 gap-2 sm:grid-cols-7 sm:items-end">
+                                            @csrf @method('PUT')
+                                            <div class="col-span-2">
+                                                <label class="block text-xs font-medium text-gray-500">Item</label>
+                                                <input type="text" name="item_name" value="{{ $e->item_name }}" required class="mt-1 block w-full rounded-md border-gray-300 text-sm shadow-sm focus:border-emerald-500 focus:ring-emerald-500">
+                                            </div>
+                                            <div>
+                                                <label class="block text-xs font-medium text-gray-500">Cat</label>
+                                                <select name="category" class="mt-1 block w-full rounded-md border-gray-300 text-sm shadow-sm focus:border-emerald-500 focus:ring-emerald-500">
+                                                    @foreach($categories as $c)
+                                                        <option value="{{ $c }}" @selected($e->category === $c)>{{ ucfirst($c) }}</option>
+                                                    @endforeach
+                                                </select>
+                                            </div>
+                                            <div>
+                                                <label class="block text-xs font-medium text-gray-500">Qty</label>
+                                                <input type="number" step="0.001" name="qty_estimated" value="{{ rtrim(rtrim($e->qty_estimated,'0'),'.') }}" required class="mt-1 block w-full rounded-md border-gray-300 text-sm shadow-sm focus:border-emerald-500 focus:ring-emerald-500">
+                                            </div>
+                                            <div>
+                                                <label class="block text-xs font-medium text-gray-500">Unit</label>
+                                                <input type="text" name="unit" value="{{ $e->unit }}" class="mt-1 block w-full rounded-md border-gray-300 text-sm shadow-sm focus:border-emerald-500 focus:ring-emerald-500">
+                                            </div>
+                                            <div>
+                                                <label class="block text-xs font-medium text-gray-500">Rate (₨)</label>
+                                                <input type="number" step="0.01" min="0" name="rate_per_unit" value="{{ \App\Support\Money::toRupees($e->rate_per_unit_paisa) }}" required class="mt-1 block w-full rounded-md border-gray-300 text-sm shadow-sm focus:border-emerald-500 focus:ring-emerald-500">
+                                            </div>
+                                            <div>
+                                                <label class="block text-xs font-medium text-gray-500">Wastage %</label>
+                                                <input type="number" step="0.01" min="0" max="100" name="wastage_percent" value="{{ rtrim(rtrim($e->wastage_percent,'0'),'.') }}" class="mt-1 block w-full rounded-md border-gray-300 text-sm shadow-sm focus:border-emerald-500 focus:ring-emerald-500">
+                                            </div>
+                                            <div class="col-span-2 flex gap-2 sm:col-span-7">
+                                                <button class="rounded-md bg-emerald-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-emerald-700">Update karo</button>
+                                                <button type="button" @click="editingId = null" class="rounded-md bg-gray-200 px-3 py-1.5 text-xs font-semibold text-gray-700 hover:bg-gray-300">Cancel</button>
+                                            </div>
                                         </form>
                                     </td>
                                 </tr>

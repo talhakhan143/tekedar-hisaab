@@ -120,22 +120,34 @@ class DemoSeeder extends Seeder
         $sparkSub  = Vendor::create(['name' => 'Spark Electrical & Plumbing', 'type' => 'subcontractor', 'phone' => '0321-4444444']);
 
         // ---------- Material purchases (10; 2 on udhaar) ----------
-        // [date offset months, vendor, item, qty, unit, rate, paidR(null=full)]
+        // [date offset months, vendor, item, qty, unit, rate, paidR(null=full), kiraya, mazdoori, deegar]
+        //
+        // Kuch rows par kiraya/mazdoori/deegar jaan boojh kar rakhe hain taake
+        // demo me ye feature dikhe: bill (amount_paisa) in sab ka jor hota hai,
+        // magar lagat me maal material me, kiraya transport me, mazdoori labour
+        // me aur deegar misc me ginti hai.
         $purchases = [
-            [1, $alFalah,   'Cement (bags)', 200, 'bag', 1320, null],
-            [1, $steelKing, 'Steel / Sarya', 1200, 'kg', 292, 200000],   // udhaar (partial)
-            [1, $alFalah,   'Bricks', 8000, 'nos', 22, null],
-            [2, $alFalah,   'Sand', 600, 'cft', 70, null],
-            [2, $alFalah,   'Crush', 400, 'cft', 120, null],
-            [2, $alFalah,   'Cement (bags)', 100, 'bag', 1330, null],
-            [3, $tileWorld, 'Floor Tiles', 300, 'sqft', 360, null],
-            [3, $tileWorld, 'Marble', 100, 'sqft', 850, 40000],          // udhaar (partial)
-            [3, $alFalah,   'Paint + putty', 1, 'job', 120000, null],
-            [3, $sparkSub,  'Electrical + Plumbing (sub)', 1, 'job', 410000, null],
+            [1, $alFalah,   'Cement (bags)', 200, 'bag', 1320, null, 4500, 2500, 0],
+            [1, $steelKing, 'Steel / Sarya', 1200, 'kg', 292, 200000, 9000, 4000, 0],   // udhaar (partial)
+            [1, $alFalah,   'Bricks', 8000, 'nos', 22, null, 12000, 6000, 0],
+            [2, $alFalah,   'Sand', 600, 'cft', 70, null, 3500, 0, 0],
+            [2, $alFalah,   'Crush', 400, 'cft', 120, null, 3000, 0, 0],
+            [2, $alFalah,   'Cement (bags)', 100, 'bag', 1330, null, 0, 0, 0],
+            [3, $tileWorld, 'Floor Tiles', 300, 'sqft', 360, null, 2500, 0, 1500],
+            [3, $tileWorld, 'Marble', 100, 'sqft', 850, 40000, 0, 0, 0],                // udhaar (partial)
+            [3, $alFalah,   'Paint + putty', 1, 'job', 120000, null, 0, 0, 0],
+            [3, $sparkSub,  'Electrical + Plumbing (sub)', 1, 'job', 410000, null, 0, 0, 0],
         ];
-        foreach ($purchases as [$m, $vendor, $item, $qty, $unit, $rateR, $paidR]) {
-            $amount = $this->p($qty * $rateR);
-            $paid = $paidR === null ? $amount : $this->p($paidR);
+        foreach ($purchases as [$m, $vendor, $item, $qty, $unit, $rateR, $paidR, $freightR, $labourR, $otherR]) {
+            // goods hamesha khud likhte hain. Model ka saving() hook khaali
+            // chhorne par bhi bhar deta hai, magar lagat ka poora hisaab isi
+            // column par khara hai, is liye yahan andaza nahi chalta.
+            $goods   = $this->p($qty * $rateR);
+            $freight = $this->p($freightR);
+            $labour  = $this->p($labourR);
+            $other   = $this->p($otherR);
+            $amount  = $goods + $freight + $labour + $other;
+            $paid    = $paidR === null ? $amount : $this->p($paidR);
             MaterialPurchase::create([
                 'project_id'          => $project->id,
                 'vendor_id'           => $vendor->id,
@@ -144,6 +156,10 @@ class DemoSeeder extends Seeder
                 'qty'                 => $qty,
                 'unit'                => $unit,
                 'rate_per_unit_paisa' => $this->p($rateR),
+                'goods_amount_paisa'  => $goods,
+                'freight_paisa'       => $freight,
+                'labour_paisa'        => $labour,
+                'other_charges_paisa' => $other,
                 'amount_paisa'        => $amount,
                 'amount_paid_paisa'   => $paid,
                 'balance_due_paisa'   => $amount - $paid,

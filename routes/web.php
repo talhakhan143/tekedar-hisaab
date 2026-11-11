@@ -42,6 +42,8 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('/money-in', [ClientPaymentController::class, 'index'])->name('money-in');
     Route::get('/client-payments/create', [ClientPaymentController::class, 'create'])->name('client-payments.create');
     Route::post('/client-payments', [ClientPaymentController::class, 'store'])->name('client-payments.store');
+    Route::get('/client-payments/{clientPayment}/edit', [ClientPaymentController::class, 'edit'])->name('client-payments.edit');
+    Route::put('/client-payments/{clientPayment}', [ClientPaymentController::class, 'update'])->name('client-payments.update');
     Route::delete('/client-payments/{clientPayment}', [ClientPaymentController::class, 'destroy'])->name('client-payments.destroy');
 
     // Vendors + material purchases (payables)
@@ -74,17 +76,27 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::resource('workers', WorkerController::class);
     Route::patch('/workers/{worker}/wage', [WorkerController::class, 'updateWage'])->name('workers.wage.update');
     Route::post('/workers/{worker}/work-entries', [WorkLedgerController::class, 'storeWork'])->name('work-entries.store');
+    Route::get('/work-entries/{workEntry}/edit', [WorkLedgerController::class, 'editWork'])->name('work-entries.edit');
+    Route::put('/work-entries/{workEntry}', [WorkLedgerController::class, 'updateWork'])->name('work-entries.update');
     Route::delete('/work-entries/{workEntry}', [WorkLedgerController::class, 'destroyWork'])->name('work-entries.destroy');
     Route::post('/workers/{worker}/advances', [WorkLedgerController::class, 'storeAdvance'])->name('worker-advances.store');
+    Route::get('/worker-advances/{workerAdvance}/edit', [WorkLedgerController::class, 'editAdvance'])->name('worker-advances.edit');
+    Route::put('/worker-advances/{workerAdvance}', [WorkLedgerController::class, 'updateAdvance'])->name('worker-advances.update');
     Route::delete('/worker-advances/{workerAdvance}', [WorkLedgerController::class, 'destroyAdvance'])->name('worker-advances.destroy');
     Route::post('/workers/{worker}/wage-payments', [WorkLedgerController::class, 'storePayment'])->name('wage-payments.store');
+    Route::get('/wage-payments/{wagePayment}/edit', [WorkLedgerController::class, 'editPayment'])->name('wage-payments.edit');
+    Route::put('/wage-payments/{wagePayment}', [WorkLedgerController::class, 'updatePayment'])->name('wage-payments.update');
     Route::delete('/wage-payments/{wagePayment}', [WorkLedgerController::class, 'destroyPayment'])->name('wage-payments.destroy');
 
     // Money Out hub — other expenses + general overheads
     Route::get('/money-out', [MoneyOutController::class, 'index'])->name('money-out');
     Route::post('/expenses', [MoneyOutController::class, 'storeExpense'])->name('expenses.store');
+    Route::get('/expenses/{otherExpense}/edit', [MoneyOutController::class, 'editExpense'])->name('expenses.edit');
+    Route::put('/expenses/{otherExpense}', [MoneyOutController::class, 'updateExpense'])->name('expenses.update');
     Route::delete('/expenses/{otherExpense}', [MoneyOutController::class, 'destroyExpense'])->name('expenses.destroy');
     Route::post('/overheads', [MoneyOutController::class, 'storeOverhead'])->name('overheads.store');
+    Route::get('/overheads/{generalOverhead}/edit', [MoneyOutController::class, 'editOverhead'])->name('overheads.edit');
+    Route::put('/overheads/{generalOverhead}', [MoneyOutController::class, 'updateOverhead'])->name('overheads.update');
     Route::delete('/overheads/{generalOverhead}', [MoneyOutController::class, 'destroyOverhead'])->name('overheads.destroy');
 
     // Reports + exports

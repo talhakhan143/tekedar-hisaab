@@ -34,6 +34,7 @@
                             <td class="px-4 py-2.5 text-right font-medium text-emerald-600">@money($pay->net_received_paisa)</td>
                             <td class="px-4 py-2.5 text-right whitespace-nowrap">
                                 <a href="{{ route('vouchers.client-payment', $pay) }}" target="_blank" class="text-emerald-600 hover:text-emerald-800">🖨 Receipt</a>
+                                <a href="{{ route('client-payments.edit', $pay) }}" class="ml-2 text-emerald-600 hover:text-emerald-800">✏️ Edit</a>
                                 <form method="POST" action="{{ route('client-payments.destroy', $pay) }}" class="ml-2 inline" onsubmit="return confirm('Delete payment?')">
                                     @csrf @method('DELETE')
                                     <button class="text-red-500 hover:text-red-700">✕</button>

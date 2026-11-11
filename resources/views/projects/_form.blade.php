@@ -9,7 +9,7 @@
         area: {{ (float) old('covered_area_sqft', $project->covered_area_sqft ?? 0) }},
         rate: {{ (float) ($rateRupees ?: 0) }},
         get computed() { return (this.area * this.rate) || 0; },
-        fmt(n){ return '₨ ' + Number(n).toLocaleString('en-PK',{maximumFractionDigits:0}); }
+        fmt(n){ return '₨ ' + Number(n).toLocaleString('en-IN',{maximumFractionDigits:0}); }
      }" class="space-y-6">
 
     <x-card title="Client & Contract">
