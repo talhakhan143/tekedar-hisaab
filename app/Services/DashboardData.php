@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Models\ClientPayment;
+use App\Models\DriverPayment;
 use App\Models\GeneralOverhead;
 use App\Models\MaterialPurchase;
 use App\Models\OtherExpense;
@@ -92,7 +93,12 @@ class DashboardData
         $advNet  = (int) WorkerAdvance::where('type', 'advance_given')->sum('amount_paisa')
                  - (int) WorkerAdvance::where('type', 'recovery')->sum('amount_paisa');
         $other   = (int) OtherExpense::sum('amount_paisa');
-        return $matPaid + $wages + $advNet + $other;
+        // Driver ko diya gaya kiraya alag khaate se nikalta hai (supplier ke
+        // bill ke amount_paid_paisa me nahi aata), is liye yahan alag ginna
+        // parta hai warna jeb se gaya paisa kam dikhta aur cash profit jhoota
+        // barh jata.
+        $driver  = (int) DriverPayment::sum('amount_paisa');
+        return $matPaid + $wages + $advNet + $other + $driver;
     }
 
     // ---------- Profit (overheads reduce OVERALL profit) ----------
@@ -110,6 +116,22 @@ class DashboardData
     public function vendorPayablePaisa(): int
     {
         return (int) Vendor::sum('opening_balance_paisa') + (int) MaterialPurchase::sum('balance_due_paisa');
+    }
+
+    /**
+     * Saare drivers ka baqi kiraya = jin purchases par driver laga us ka kiraya
+     * − drivers ko di gayi payments.
+     *
+     * Ye vendorPayablePaisa() ke saath dohra nahi hota: jis purchase par driver
+     * ho, us ka kiraya balance_due_paisa me se nikal chuka hota hai (dekho
+     * MaterialPurchase::supplierBillPaisa()).
+     */
+    public function driverPayablePaisa(): int
+    {
+        $kiraya = (int) MaterialPurchase::whereNotNull('driver_id')->sum('freight_paisa');
+        $diya   = (int) DriverPayment::sum('amount_paisa');
+
+        return $kiraya - $diya;
     }
 
     public function workerAdvancesOutstandingPaisa(): int
@@ -148,7 +170,9 @@ class DashboardData
         foreach (Worker::all() as $w) {
             $workers += max(0, $w->payablePaisa());
         }
-        return $this->vendorPayablePaisa() + $workers;
+        // Driver ka baqi kiraya bhi dena hai. max(0,..) is liye ke zyada diya
+        // hua kiraya (advance) doosre logon ka dena kam kar ke na dikhaye.
+        return $this->vendorPayablePaisa() + $workers + max(0, $this->driverPayablePaisa());
     }
 
     // ---------- This month ----------

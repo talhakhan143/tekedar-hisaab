@@ -3,6 +3,7 @@
 use App\Http\Controllers\ClientPaymentController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\DeveloperUserController;
+use App\Http\Controllers\DriverPaymentController;
 use App\Http\Controllers\EstimateController;
 use App\Http\Controllers\MaterialPurchaseController;
 use App\Http\Controllers\MoneyOutController;
@@ -55,6 +56,12 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::put('/materials/{materialPurchase}', [MaterialPurchaseController::class, 'update'])->name('materials.update');
     Route::delete('/materials/{materialPurchase}', [MaterialPurchaseController::class, 'destroy'])->name('materials.destroy');
     Route::post('/materials/{materialPurchase}/pay', [MaterialPurchaseController::class, 'pay'])->name('materials.pay');
+
+    // Driver ko kiraya dena (mazdoor ki wage payments jaisa alag khaata)
+    Route::post('/drivers/{vendor}/payments', [DriverPaymentController::class, 'store'])->name('driver-payments.store');
+    Route::get('/driver-payments/{driverPayment}/edit', [DriverPaymentController::class, 'edit'])->name('driver-payments.edit');
+    Route::put('/driver-payments/{driverPayment}', [DriverPaymentController::class, 'update'])->name('driver-payments.update');
+    Route::delete('/driver-payments/{driverPayment}', [DriverPaymentController::class, 'destroy'])->name('driver-payments.destroy');
     // alias used by project show page
     Route::get('/material-purchases/create', [MaterialPurchaseController::class, 'create'])->name('material-purchases.create');
 
@@ -103,6 +110,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('/reports', [ReportController::class, 'index'])->name('reports');
     Route::get('/reports/monthly', [ReportController::class, 'monthly'])->name('reports.monthly');
     Route::get('/reports/outstanding', [ReportController::class, 'outstanding'])->name('reports.outstanding');
+    Route::get('/reports/labour', [ReportController::class, 'labour'])->name('reports.labour');
     Route::get('/reports/closeout/{project}', [ReportController::class, 'closeout'])->name('reports.closeout');
 
     // Settings
@@ -115,6 +123,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
     // Printable vouchers / invoices (browser print → save PDF)
     Route::get('/vouchers/material/{materialPurchase}', [VoucherController::class, 'material'])->name('vouchers.material');
     Route::get('/vouchers/wage/{wagePayment}', [VoucherController::class, 'wage'])->name('vouchers.wage');
+    Route::get('/vouchers/driver-payment/{driverPayment}', [VoucherController::class, 'driverPayment'])->name('vouchers.driver-payment');
     Route::get('/vouchers/advance/{workerAdvance}', [VoucherController::class, 'advance'])->name('vouchers.advance');
     Route::get('/vouchers/client-payment/{clientPayment}', [VoucherController::class, 'clientPayment'])->name('vouchers.client-payment');
     Route::get('/vouchers/expense/{otherExpense}', [VoucherController::class, 'expense'])->name('vouchers.expense');

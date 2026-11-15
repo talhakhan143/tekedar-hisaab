@@ -7,6 +7,10 @@
         <x-badge color="gray">{{ ucfirst($worker->role) }}</x-badge>
         <span class="text-sm text-gray-500">@money($worker->default_wage_paisa) / {{ str_replace('contract_piece','piece',$worker->wage_type) }} · {{ $worker->phone }}</span>
         <span class="flex-1"></span>
+        {{-- Oopar ke card saare projects ka jor hain. Project ke hisaab se
+             tootne wala hisaab is report me milta hai. --}}
+        <a href="{{ route('reports.labour', ['worker' => $worker->id, 'all_projects' => 1]) }}"
+           class="rounded-md bg-indigo-600 px-3 py-2 text-sm font-semibold text-white hover:bg-indigo-700">📋 Projects ka hisaab</a>
         <a href="{{ route('workers.edit', $worker) }}" class="rounded-md bg-white px-3 py-2 text-sm font-medium text-gray-700 ring-1 ring-gray-300 hover:bg-gray-50">Edit</a>
     </div>
 

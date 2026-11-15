@@ -76,10 +76,48 @@ class MaterialPurchase extends Model
 
             $purchase->goods_amount_paisa = $goods;
             $purchase->amount_paisa       = $amount;
-            $purchase->balance_due_paisa  = $amount - (int) ($purchase->amount_paid_paisa ?? 0);
+
+            // Udhaar sirf us hisse ka jo SUPPLIER ko dena hai. Agar is purchase
+            // par driver chuna hua hai to kiraya driver ka khaata hai, supplier
+            // ka nahi, is liye wo yahan se nikal jata hai. Warna wohi raqam do
+            // dafa "dena" me ginti: ek dafa supplier ka udhaar, ek dafa driver
+            // ka baqi, aur kul dena jhoota barh jata.
+            //
+            // Driver na ho to kiraya pehle ki tarah supplier ke bill me hi
+            // rehta hai, is liye purane saare records par koi farq nahi parta.
+            $purchase->balance_due_paisa = $purchase->supplierBillPaisa()
+                - (int) ($purchase->amount_paid_paisa ?? 0);
         });
+    }
+
+    /**
+     * Is bill ka wo hissa jo supplier ko dena hai.
+     *
+     * Poora bill (amount_paisa) lagat ke liye hai aur us me kiraya bhi shaamil
+     * rehta hai. Magar jab kiraya kisi driver ke naam lag jaye to supplier us
+     * ka zimmedaar nahi rehta.
+     */
+    public function supplierBillPaisa(): int
+    {
+        $amount  = (int) ($this->amount_paisa ?? 0);
+        $freight = (int) ($this->freight_paisa ?? 0);
+
+        return $this->driver_id ? $amount - $freight : $amount;
+    }
+
+    /** Kiraya jo driver ke naam laga (driver na ho to 0). */
+    public function driverFreightPaisa(): int
+    {
+        return $this->driver_id ? (int) ($this->freight_paisa ?? 0) : 0;
     }
 
     public function project(): BelongsTo { return $this->belongsTo(Project::class); }
     public function vendor(): BelongsTo { return $this->belongsTo(Vendor::class); }
+
+    /**
+     * Jis dale/truck wale ko is bill ka kiraya (کرایہ) gaya. vendor_id se
+     * bilkul alag column hai, is liye material vs sub-contractor ki taqseem
+     * (jo sirf vendor_id dekhti hai) is se nahi badalti.
+     */
+    public function driver(): BelongsTo { return $this->belongsTo(Vendor::class, 'driver_id'); }
 }

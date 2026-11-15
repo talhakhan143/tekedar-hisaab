@@ -49,7 +49,9 @@
                         @php
                             // Amount column grand total hi dikhata hai; charges ki tafseel
                             // neeche chhoti line me jati hai, taake phone par table chaura
-                            // na ho. Charge na ho to line bhi nahi.
+                            // na ho. Charge na ho to line bhi nahi. Driver bhi isi
+                            // tareeqe se neeche choti line me aata hai, aur sirf un
+                            // rows par jin par driver select hua tha.
                             $rowFreight = (int) $pur->freight_paisa;
                             $rowLabour  = (int) $pur->labour_paisa;
                             $rowOther   = (int) $pur->other_charges_paisa;
@@ -68,7 +70,13 @@
                         @endphp
                         <tr class="hover:bg-gray-50">
                             <td class="px-4 py-2.5">{{ $pur->date->format('d-m-Y') }}</td>
-                            <td class="px-4 py-2.5 font-medium text-gray-700">{{ $pur->item_name }}<div class="text-xs text-gray-400">{{ rtrim(rtrim($pur->qty,'0'),'.') }} {{ $pur->unit }}</div>@if ($rowBits)<div class="text-xs text-sky-600">{{ implode(' + ', $rowBits) }}</div>@endif</td>
+                            <td class="px-4 py-2.5 font-medium text-gray-700">
+                                {{ $pur->item_name }}
+                                <div class="text-xs text-gray-400">{{ rtrim(rtrim($pur->qty,'0'),'.') }} {{ $pur->unit }}</div>
+                                @if ($rowBits)<div class="text-xs text-sky-600">{{ implode(' + ', $rowBits) }}</div>@endif
+                                {{-- Driver sirf un rows par, jin par wo select hua tha; purani rows saaf rehti hain. --}}
+                                @if ($pur->driver_id)<div class="text-xs text-amber-600">🚚 {{ $pur->driver->name ?? '—' }}</div>@endif
+                            </td>
                             <td class="px-4 py-2.5">{{ $pur->project->name ?? '—' }}</td>
                             <td class="px-4 py-2.5">{{ $pur->vendor->name ?? '—' }}</td>
                             <td class="px-4 py-2.5 text-right font-semibold text-gray-900">@money($pur->amount_paisa)</td>
