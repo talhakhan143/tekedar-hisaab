@@ -6,7 +6,6 @@
             mode: 'single',
             rows: { @foreach($workers as $w) {{ $w->id }}: '1', @endforeach },
             setAll(v){ Object.keys(this.rows).forEach(k => this.rows[k] = v); },
-            showNew: false,
          }">
 
         <form method="POST" action="{{ route('attendance.store') }}">
@@ -66,7 +65,9 @@
                     <button type="button" @click="setAll('0')" class="rounded-md bg-gray-100 px-3 py-1.5 text-sm font-medium text-gray-600 hover:bg-gray-200">All Absent (سب غیرحاضر)</button>
                     <span class="flex-1"></span>
                     <a href="{{ route('attendance.register') }}" class="rounded-md bg-indigo-50 px-3 py-1.5 text-sm font-medium text-indigo-700 hover:bg-indigo-100">📅 Month Register (مہینہ رجسٹر)</a>
-                    <button type="button" @click="showNew=!showNew" class="rounded-md bg-white px-3 py-1.5 text-sm font-medium text-gray-700 ring-1 ring-gray-300 hover:bg-gray-50">+ New Worker (نیا مزدور)</button>
+                    {{-- Mazdoor sirf Workers page se banta hai, bilkul driver ki tarah.
+                         Yahan naam likhne ka box tha jis se ek hi banda do dafa ban sakta tha. --}}
+                    <a href="{{ route('workers.create') }}" class="rounded-md bg-white px-3 py-1.5 text-sm font-medium text-gray-700 ring-1 ring-gray-300 hover:bg-gray-50">+ Naya Mazdoor (نیا مزدور)</a>
                 </div>
             </x-card>
 
@@ -96,7 +97,7 @@
                                     </td>
                                 </tr>
                             @empty
-                                <tr><td colspan="3" class="px-4 py-8 text-center text-gray-400">Koi worker nahi. Upar "+ New Worker" se add karo.</td></tr>
+                                <tr><td colspan="3" class="px-4 py-8 text-center text-gray-400">Koi worker nahi. Upar "+ Naya Mazdoor" se add karo.</td></tr>
                             @endforelse
                         </tbody>
                     </table>
@@ -109,31 +110,6 @@
             </x-card>
         </form>
 
-        {{-- Inline new worker --}}
-        <div x-show="showNew" x-transition x-cloak class="mt-5">
-            <x-card title="Quick New Worker (نیا مزدور)">
-                <form method="POST" action="{{ route('attendance.quick-worker') }}" class="grid grid-cols-1 gap-3 sm:grid-cols-4 sm:items-end">
-                    @csrf
-                    <div class="sm:col-span-2">
-                        <label class="block text-sm font-medium text-gray-700">Name (نام) *</label>
-                        <input type="text" name="name" required class="mt-1 block w-full rounded-md border-gray-300 text-sm shadow-sm focus:border-emerald-500 focus:ring-emerald-500">
-                    </div>
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700">Role (کام)</label>
-                        <select name="role" class="mt-1 block w-full rounded-md border-gray-300 text-sm shadow-sm focus:border-emerald-500 focus:ring-emerald-500">
-                            @foreach(\App\Models\Setting::workerRoles() as $r)<option value="{{ $r }}">{{ ucfirst(str_replace('_', ' ', $r)) }}</option>@endforeach
-                        </select>
-                    </div>
-                    <x-money-input name="default_wage" label="Daily Wage (دیہاڑی) *" required />
-                    <div class="sm:col-span-4">
-                        <x-input-error :messages="$errors->get('name')" class="mb-2" />
-                        <x-input-error :messages="$errors->get('role')" class="mb-2" />
-                        <x-input-error :messages="$errors->get('default_wage')" class="mb-2" />
-                        <button class="rounded-md bg-gray-800 px-5 py-2 text-sm font-semibold text-white hover:bg-gray-700">Add Worker (شامل کریں)</button>
-                    </div>
-                </form>
-            </x-card>
-        </div>
 
         @if($pieceWorkers->count())
             <p class="mt-4 text-xs text-gray-400">Note: piece-work ({{ $pieceWorkers->pluck('name')->join(', ') }}) yahan nahi — unki units worker page se lagao.</p>
