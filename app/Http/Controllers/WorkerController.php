@@ -7,6 +7,7 @@ use App\Models\Setting;
 use App\Models\Worker;
 use App\Support\Money;
 use Illuminate\Http\Request;
+use Illuminate\Validation\ValidationException;
 
 class WorkerController extends Controller
 {
@@ -31,9 +32,43 @@ class WorkerController extends Controller
     }
     public const WAGE_TYPES = ['daily', 'monthly', 'contract_piece'];
 
-    public function index()
+    /**
+     * Saare mazdooron ki list, naam aur kaam se chhanni ke saath.
+     *
+     * Mazdoor global hai (har project me wahi list dikhti hai), is liye jab
+     * ginti barhti hai to list me banda dhoondna mushkil ho jata hai. Chhanni
+     * bilkul usi tarah chalti hai jaise projects ki list me: ?q= naam ya phone
+     * ka tukra, ?role= un roles me se aik jo Settings me hain ya kisi worker
+     * par lagay hue hain.
+     */
+    public function index(Request $request)
     {
-        $rows = Worker::orderBy('name')->paginate(20);
+        // Chhanni me wo roles bhi aane chahiyen jo Settings me ab maujood nahi
+        // par purane workers par lagay hue hain. Warna Settings se koi role
+        // nikaalne par us role wale bande kabhi chhante hi na jayein, aur
+        // dropdown me un ka naam hi na aaye. Yehi galti allowedRoles() me
+        // pehle ho chuki hai, wahan bhi bande ka mojooda role allow kia jata
+        // hai. Settings ki tarteeb pehle, bache hue roles peeche.
+        $roles = collect(Setting::workerRoles())
+            ->merge(Worker::query()->select('role')->distinct()->orderBy('role')->pluck('role'))
+            ->map(fn ($r) => (string) $r)
+            ->filter()
+            ->unique()
+            ->values()
+            ->all();
+
+        // Role sirf tab lagta hai jab wo waqai list me ho, warna URL me kuch
+        // bhi likh kar khaali list na mile aur dropdown ghalat chuna na dikhe.
+        $role = in_array($request->query('role'), $roles, true) ? $request->query('role') : null;
+        $term = trim((string) $request->query('q')) ?: null;
+
+        $rows = Worker::query()
+            ->when($role, fn ($q, $r) => $q->where('role', $r))
+            ->when($term, fn ($q, $t) => $q->where(fn ($w) =>
+                $w->where('name', 'like', "%{$t}%")->orWhere('phone', 'like', "%{$t}%")))
+            ->orderBy('name')
+            ->paginate(20)->withQueryString();
+
         $rows->through(fn (Worker $w) => [
             'worker'   => $w,
             'earned'   => $w->earnedPaisa(),
@@ -46,7 +81,12 @@ class WorkerController extends Controller
         $recov = (int) \App\Models\WorkerAdvance::where('type', 'recovery')->sum('amount_paisa');
         $totalAdvances = max(0, $given - $recov);
 
-        return view('workers.index', compact('rows', 'totalAdvances'));
+        return view('workers.index', [
+            'rows'          => $rows,
+            'totalAdvances' => $totalAdvances,
+            'filters'       => ['q' => $term, 'role' => $role],
+            'roles'         => $roles,
+        ]);
     }
 
     public function create()
@@ -126,6 +166,31 @@ class WorkerController extends Controller
             'phone'        => ['nullable', 'string', 'max:50'],
             'notes'        => ['nullable', 'string'],
         ]);
+
+        // Wahi naam dobara save hone par aik dafa rok do, warna aik banda do
+        // khaaton me bat jata hai aur hisaab kam dikhta hai. Naam badalte waqt
+        // bande ki apni row chhor dete hain ($worker?->id), warna bina naam
+        // badle save karna khud se takkar ban kar reject ho jata.
+        $dupes = Worker::sameNameAs($v['name'], $worker?->id);
+
+        if ($dupes->isNotEmpty() && ! $request->boolean('allow_duplicate')) {
+            throw ValidationException::withMessages([
+                'name' => Worker::duplicateNameMessage(
+                    $v['name'],
+                    $dupes,
+                    'Wahi banda hai to us ka purana khaata khol kar wahin likho, naya banane ki zaroorat nahi.'
+                ),
+            ]);
+        }
+
+        // Zinda hum-naam koi na ho, magar hataya hua ho, to bhi batana hai:
+        // naya banda banane par purani history chupke se peeche reh jati hai.
+        if ($dupes->isEmpty() && ! $request->boolean('allow_duplicate')) {
+            $hint = Worker::trashedNameHint($v['name']);
+            if ($hint !== '') {
+                throw ValidationException::withMessages(['name' => trim($hint)]);
+            }
+        }
 
         return [
             'name'               => $v['name'],

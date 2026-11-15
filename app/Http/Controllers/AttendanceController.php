@@ -9,6 +9,7 @@ use App\Models\Worker;
 use App\Support\Money;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
+use Illuminate\Validation\ValidationException;
 
 /**
  * Fast daily attendance: mark ALL workers in one screen, for a single day
@@ -198,6 +199,33 @@ class AttendanceController extends Controller
             'role'         => ['required', \Illuminate\Validation\Rule::in(Setting::workerRoles())],
             'default_wage' => ['required', 'numeric', 'min:0'],
         ]);
+
+        // Mazdoor global hai, har project me wahi list dikhti hai. Is liye
+        // wahi naam dobara likhne par chup chaap naya khaata nahi banana
+        // chahiye: us se banda do ids me bat jata hai aur report kam dikhati
+        // hai. Aik dafa rok kar bata dete hain ke pehle se mojood hai; haan
+        // waqai doosra banda ho (Pakistan me aam baat hai) to tick laga kar
+        // maalik khud aage barh sakta hai.
+        $dupes = Worker::sameNameAs($v['name']);
+
+        if ($dupes->isNotEmpty() && ! $request->boolean('allow_duplicate')) {
+            throw ValidationException::withMessages([
+                'name' => Worker::duplicateNameMessage(
+                    $v['name'],
+                    $dupes,
+                    'Wahi banda hai to neeche list se chuno, naya banane ki zaroorat nahi.'
+                ),
+            ]);
+        }
+
+        // Zinda hum-naam koi na ho, magar hataya hua ho, to bhi batana hai:
+        // naya banda banane par purani history chupke se peeche reh jati hai.
+        if ($dupes->isEmpty() && ! $request->boolean('allow_duplicate')) {
+            $hint = Worker::trashedNameHint($v['name']);
+            if ($hint !== '') {
+                throw ValidationException::withMessages(['name' => trim($hint)]);
+            }
+        }
 
         Worker::create([
             'name'               => $v['name'],
