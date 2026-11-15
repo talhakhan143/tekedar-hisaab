@@ -22,6 +22,8 @@ class SettingController extends Controller
             'default_wastage'    => ['required', 'numeric', 'min:0', 'max:100'],
             'allocate_overheads' => ['nullable', 'boolean'],
             'worker_roles'       => ['nullable', 'string', 'max:1000'],
+            'common_items'       => ['nullable', 'string', 'max:1000'],
+            'common_units'       => ['nullable', 'string', 'max:1000'],
             'logo'               => ['nullable', 'image', 'max:2048'],
         ]);
 
@@ -35,6 +37,15 @@ class SettingController extends Controller
         $roles = collect(explode(',', (string) ($v['worker_roles'] ?? '')))
             ->map(fn ($r) => strtolower(trim($r)))->filter()->unique()->values();
         Setting::put('worker_roles', $roles->isNotEmpty() ? $roles->implode(',') : Setting::DEFAULTS['worker_roles']);
+
+        // Aam cheezein aur units: trim + khaali nikal do + unique, magar case
+        // waisa hi rehne do. "SFT" ko "sft" banana maalik ki likhi hui cheez
+        // bigaarna hai, aur ye categories nahi sirf labels hain.
+        foreach (['common_items', 'common_units'] as $key) {
+            $list = collect(explode(',', (string) ($v[$key] ?? '')))
+                ->map(fn ($x) => trim($x))->filter()->unique()->values();
+            Setting::put($key, $list->isNotEmpty() ? $list->implode(',') : Setting::DEFAULTS[$key]);
+        }
 
         if ($request->hasFile('logo')) {
             $path = $request->file('logo')->store('public/branding');

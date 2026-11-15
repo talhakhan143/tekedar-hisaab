@@ -168,12 +168,17 @@ class ProjectController extends Controller
         $adjustments = \App\Models\WorkerAdvance::with('worker')->where('project_id', $project->id)
             ->orderByDesc('date')->orderByDesc('id')->get();
         $workerRoles = Setting::workerRoles();
+        // Common item/unit ki list Settings se aati hai, taake har bar "cement"
+        // aur "bag" dobara type na karna pare. Ye sirf dropdown bharti hai,
+        // malik is ke bahar bhi kuch bhi likh sakta hai.
+        $commonItems = Setting::commonItems();
+        $commonUnits = Setting::commonUnits();
 
         return view('projects.show', compact(
             'project', 'f', 'variance', 'projectWorkers', 'allWorkers',
             'vendors', 'defaultWastage', 'estimateCategories', 'expenseCategories', 'wageDues',
             'attWorkers', 'attMarked', 'attYears', 'attMonthNames', 'attToday', 'attCurYear', 'attCurMon',
-            'adjustments', 'workerRoles'
+            'adjustments', 'workerRoles', 'commonItems', 'commonUnits'
         ));
     }
 
@@ -290,6 +295,7 @@ class ProjectController extends Controller
             'freight'       => ['nullable', 'numeric', 'min:0'],
             'labour_charge' => ['nullable', 'numeric', 'min:0'],
             'other_charges' => ['nullable', 'numeric', 'min:0'],
+            'driver_id'     => ['nullable', 'exists:vendors,id'],
             'notes'         => ['nullable', 'string'],
         ]);
 
@@ -304,14 +310,19 @@ class ProjectController extends Controller
         $amount  = $goods + $freight + $labour + $other;
         $paid    = \App\Support\Money::toPaisa($v['amount_paid'] ?? 0);
 
-        // Yahan pehle min($paid, $amount) tha, jo diye hue paise ko chup chaap
-        // ghata deta tha. MaterialPurchaseController me bhi ab saaf mana hai,
+        // Driver chuna ho to kiraya driver ke khaate me jata hai, supplier ke
+        // nahi, is liye supplier ko diye hue paise ki hadd me se nikal jata
+        // hai. MaterialPurchaseController me bhi bilkul yehi hadd lagti hai;
         // dono raaston ka behaviour ek jaisa rakhna zaroori hai warna ek hi
         // ghalti ek form me pakdi jati aur doosre me nahi.
-        if ($paid > $amount) {
+        $driverId     = $v['driver_id'] ?? null;
+        $supplierBill = $amount - ($driverId ? $freight : 0);
+
+        if ($paid > $supplierBill) {
             throw \Illuminate\Validation\ValidationException::withMessages([
-                'amount_paid' => 'Diya hua paisa ' . \App\Support\Money::format($paid)
-                    . ' bill ' . \App\Support\Money::format($amount) . ' se zyada hai. Pehle rate/qty ya kiraya-mazdoori theek karo.',
+                'amount_paid' => 'Supplier ko diya hua paisa ' . \App\Support\Money::format($paid)
+                    . ' us ke hisse ' . \App\Support\Money::format($supplierBill) . ' se zyada hai.'
+                    . ($driverId ? ' Kiraya driver ke khaate me jata hai, wo alag se diya jata hai.' : ' Pehle rate/qty ya kiraya-mazdoori theek karo.'),
             ]);
         }
 
@@ -321,6 +332,10 @@ class ProjectController extends Controller
             'rate_per_unit_paisa' => \App\Support\Money::toPaisa($v['rate_per_unit']),
             'goods_amount_paisa' => $goods, 'freight_paisa' => $freight,
             'labour_paisa' => $labour, 'other_charges_paisa' => $other,
+            // Kiraya kis driver ko gaya. Driver alag column me hai, vendor_id me
+            // nahi, warna lagat ki taqseem (material vs theka) toot jati jo
+            // vendor_id par chalti hai.
+            'driver_id' => $v['driver_id'] ?? null,
             'amount_paisa' => $amount, 'amount_paid_paisa' => $paid, 'balance_due_paisa' => $amount - $paid,
             'notes' => $v['notes'] ?? null,
         ]);

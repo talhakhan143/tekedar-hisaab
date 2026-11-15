@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\AuditLog;
 use App\Models\MaterialPurchase;
 use App\Models\Project;
+use App\Models\Setting;
 use App\Models\Vendor;
 use App\Support\Money;
 use Illuminate\Http\Request;
@@ -14,7 +15,7 @@ class MaterialPurchaseController extends Controller
 {
     public function index()
     {
-        $purchases = MaterialPurchase::with(['project', 'vendor'])->orderByDesc('date')->orderByDesc('id')
+        $purchases = MaterialPurchase::with(['project', 'vendor', 'driver'])->orderByDesc('date')->orderByDesc('id')
             ->paginate(25)->withQueryString();
 
         // totalSpent poora bill hai (maal + kiraya + mazdoori + deegar), is liye
@@ -35,6 +36,9 @@ class MaterialPurchaseController extends Controller
         return view('materials.create', [
             'projects'        => Project::orderBy('name')->get(['id', 'name']),
             'vendors'         => Vendor::orderBy('name')->get(['id', 'name', 'type']),
+            'drivers'         => Vendor::where('type', 'driver')->orderBy('name')->get(['id', 'name']),
+            'commonItems'     => Setting::commonItems(),
+            'commonUnits'     => Setting::commonUnits(),
             'selectedProject' => $request->integer('project'),
         ]);
     }
@@ -52,9 +56,12 @@ class MaterialPurchaseController extends Controller
     public function edit(MaterialPurchase $materialPurchase)
     {
         return view('materials.edit', [
-            'purchase' => $materialPurchase,
-            'projects' => Project::orderBy('name')->get(['id', 'name']),
-            'vendors'  => Vendor::orderBy('name')->get(['id', 'name', 'type']),
+            'purchase'    => $materialPurchase,
+            'projects'    => Project::orderBy('name')->get(['id', 'name']),
+            'vendors'     => Vendor::orderBy('name')->get(['id', 'name', 'type']),
+            'drivers'     => Vendor::where('type', 'driver')->orderBy('name')->get(['id', 'name']),
+            'commonItems' => Setting::commonItems(),
+            'commonUnits' => Setting::commonUnits(),
         ]);
     }
 
@@ -113,6 +120,7 @@ class MaterialPurchaseController extends Controller
         $v = $request->validate([
             'project_id'    => ['nullable', 'exists:projects,id'],
             'vendor_id'     => ['nullable', 'exists:vendors,id'],
+            'driver_id'     => ['nullable', 'exists:vendors,id'],
             'date'          => ['required', 'date'],
             'item_name'     => ['required', 'string', 'max:255'],
             'qty'           => ['required', 'numeric', 'min:0'],
@@ -137,21 +145,38 @@ class MaterialPurchaseController extends Controller
         $amount  = $goods + $freight + $labour + $other;
         $paid    = Money::toPaisa($v['amount_paid'] ?? 0);
 
+        // Yahan jo paisa likha ja raha hai wo SUPPLIER ko diya gaya hai, is
+        // liye us ki hadd poora bill nahi balki supplier ka hissa hai. Jab
+        // driver chuna ho to kiraya driver ke khaate me jata hai (dekho
+        // MaterialPurchase::supplierBillPaisa()), is liye wo is hadd me se
+        // nikal jata hai. Driver ko kiraya alag se "Kiraya do" se diya jata hai.
+        $driverId     = $v['driver_id'] ?? null;
+        $supplierBill = $amount - ($driverId ? $freight : 0);
+
         // Pehle yahan min($paid, $amount) tha. Us ka natija ye nikalta tha ke
         // agar edit me kiraya ya mazdoori kam kar di jaye to pehle se likhi
         // hui payment chup chaap ghata di jati thi, yani diya hua paisa kahin
         // ghayab ho jata. Ab saaf mana karte hain, maalik khud faisla kare.
-        if ($paid > $amount) {
+        if ($paid > $supplierBill) {
             throw ValidationException::withMessages([
-                'amount_paid' => 'Diya hua paisa bill se zyada nahi ho sakta. Bill (maal + kiraya + mazdoori + deegar) = '
-                    . Money::format($amount) . ' aur aap ' . Money::format($paid)
-                    . ' daal rahe hain. Pehle qeemat ya charges theek karo, warna di hui raqam kam karo.',
+                'amount_paid' => $driverId
+                    ? 'Supplier ko diya hua paisa us ke hisse se zyada nahi ho sakta. Supplier ka hissa (bill '
+                        . Money::format($amount) . ' minus kiraya ' . Money::format($freight) . ') = '
+                        . Money::format($supplierBill) . ' aur aap ' . Money::format($paid)
+                        . ' daal rahe hain. Kiraya driver ke khaate me jata hai, wo "Kiraya do" se dena hai.'
+                    : 'Diya hua paisa bill se zyada nahi ho sakta. Bill (maal + kiraya + mazdoori + deegar) = '
+                        . Money::format($amount) . ' aur aap ' . Money::format($paid)
+                        . ' daal rahe hain. Pehle qeemat ya charges theek karo, warna di hui raqam kam karo.',
             ]);
         }
 
         return [
             'project_id'          => $v['project_id'] ?? null,
             'vendor_id'           => $v['vendor_id'] ?? null,
+            // Kiraya kis dale wale ko gaya. Alag column hai, is liye material
+            // vs sub-contractor ki taqseem (jo vendor_id par lagti hai) is se
+            // nahi hilti. NULL = koi driver nahi.
+            'driver_id'           => $v['driver_id'] ?? null,
             'date'                => $v['date'],
             'item_name'           => $v['item_name'],
             'qty'                 => $v['qty'],

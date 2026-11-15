@@ -1,3 +1,12 @@
+@php
+    /*
+     * Qism ki list Vendor::TYPES se aati hai, yahan hardcode nahi.
+     * Pehle is file me sirf do <option> likhi hui thin (supplier, subcontractor),
+     * is liye 'driver' (ڈرائیور) add karne ke liye model ke saath ye form bhi
+     * badalna parta tha. Ab model me ek qism barhao, form khud utha lega.
+     */
+    $currentType = old('type', $vendor->type ?? 'supplier');
+@endphp
 <x-card title="Vendor Details">
     <div class="grid grid-cols-1 gap-5 sm:grid-cols-2">
         <div>
@@ -8,9 +17,12 @@
         <div>
             <x-input-label for="type" value="Type *" />
             <select id="type" name="type" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-emerald-500 focus:ring-emerald-500">
-                <option value="supplier" @selected(old('type',$vendor->type)==='supplier')>Supplier</option>
-                <option value="subcontractor" @selected(old('type',$vendor->type)==='subcontractor')>Subcontractor</option>
+                @foreach(\App\Models\Vendor::TYPES as $tValue => $tLabel)
+                    <option value="{{ $tValue }}" @selected((string) $currentType === (string) $tValue)>{{ $tLabel }}</option>
+                @endforeach
             </select>
+            <x-input-error :messages="$errors->get('type')" class="mt-1" />
+            <p class="mt-1 text-xs text-gray-400">Driver (ڈرائیور) ek hi bar yahan add karo, phir har project me kiraya ke saath select ho jayega.</p>
         </div>
         <div>
             <x-input-label for="phone" value="Phone" />

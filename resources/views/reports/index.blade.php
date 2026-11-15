@@ -38,5 +38,21 @@
                 <p class="text-xs text-gray-400">Final P&L for a project.</p>
             </form>
         </x-card>
+
+        <x-card title="Mazdoor ka hisaab, saare projects (مزدور کا حساب)">
+            <form method="GET" action="{{ route('reports.labour') }}" class="space-y-3">
+                <input type="hidden" name="all_projects" value="1">
+                <select name="worker" class="block w-full rounded-md border-gray-300 text-sm shadow-sm focus:border-emerald-500 focus:ring-emerald-500">
+                    <option value="all">Saare mazdoor (سب)</option>
+                    @foreach($workers as $w)<option value="{{ $w->id }}">{{ $w->name }} · {{ ucfirst($w->role) }}</option>@endforeach
+                </select>
+                <div class="flex gap-2">
+                    <button class="flex-1 rounded-md bg-emerald-600 px-3 py-2 text-sm font-semibold text-white hover:bg-emerald-700">View</button>
+                    <button name="export" value="csv" class="rounded-md bg-white px-3 py-2 text-sm font-medium text-gray-700 ring-1 ring-gray-300 hover:bg-gray-50">CSV</button>
+                    <button name="export" value="pdf" class="rounded-md bg-white px-3 py-2 text-sm font-medium text-gray-700 ring-1 ring-gray-300 hover:bg-gray-50">PDF</button>
+                </div>
+                <p class="text-xs text-gray-400">Kis project me kitna banta tha, kitna diya, kitna baqi.</p>
+            </form>
+        </x-card>
     </div>
 </x-app-layout>

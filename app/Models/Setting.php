@@ -19,6 +19,8 @@ class Setting extends Model
         'default_wastage'     => '5',     // percent
         'allocate_overheads'  => '0',     // 1 = pro-rata across active projects
         'worker_roles'        => 'mistri,mazdoor,electrician,plumber,painter,foreman,other',
+        'common_items'        => 'cement,sarya,block,crush,sand,bajri,rait,tile,paint',
+        'common_units'        => 'bag,ton,sft,cft,truck,trip,nos,kg,ft',
     ];
 
     /** Worker role categories as a clean array (editable from Settings). */
@@ -33,6 +35,38 @@ class Setting extends Model
             ->values()
             ->all();
         return $roles ?: ['mazdoor', 'other'];
+    }
+
+    /**
+     * Wo cheezein jo maalik baar baar likhta hai (cement, sarya, block...).
+     * Sirf dropdown bharne ke liye hain, form me koi bhi naam likha ja sakta
+     * hai. worker_roles ki tarah lowercase NAHI karte: ye categories nahi,
+     * naam hain, aur maalik ne jaise likha hai waise hi dikhne chahiyen.
+     */
+    public static function commonItems(): array
+    {
+        $items = static::splitList(static::get('common_items'));
+
+        return $items ?: static::splitList(self::DEFAULTS['common_items']);
+    }
+
+    /** Aam units (bag, ton, sft...). Case waise hi rehta hai jaisa likha gaya. */
+    public static function commonUnits(): array
+    {
+        $units = static::splitList(static::get('common_units'));
+
+        return $units ?: static::splitList(self::DEFAULTS['common_units']);
+    }
+
+    /** Comma wali list ko saaf array banata hai: trim, khaali nikal do, unique. */
+    protected static function splitList($raw): array
+    {
+        return collect(explode(',', (string) $raw))
+            ->map(fn ($x) => trim($x))
+            ->filter()
+            ->unique()
+            ->values()
+            ->all();
     }
 
     public static function get(string $key, $default = null)

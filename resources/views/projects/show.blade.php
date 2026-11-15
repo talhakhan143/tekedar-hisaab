@@ -154,16 +154,29 @@
             <div>
                 <x-card title="Maal khareeda (مٹیریل شامل کریں)">
                     <form method="POST" action="{{ route('projects.materials.store', $project) }}" class="space-y-3"
-                          x-data="{ qty:1, rate:0, paid:0, kiraya:0, mazdoori:0, deegar:0,
+                          x-data="{ qty:1, rate:0, paid:0, kiraya:0, mazdoori:0, deegar:0, driverSel:'',
                                     get goods(){ return (this.qty*this.rate)||0 },
                                     get amt(){ return this.goods + (+this.kiraya||0) + (+this.mazdoori||0) + (+this.deegar||0) },
+                                    /* Driver chuna ho to kiraya driver ka khaata hai, supplier ka nahi,
+                                       is liye supplier ke udhaar me se nikal jata hai. */
+                                    get driverKiraya(){ return this.driverSel ? (+this.kiraya||0) : 0 },
+                                    get supplierBill(){ return this.amt - this.driverKiraya },
+                                    get udhaar(){ return Math.max(0, this.supplierBill - (+this.paid||0)) },
                                     fmt(n){return '₨ '+Math.round(n||0).toLocaleString('en-IN')} }">
                         @csrf
                         <input type="date" name="date" value="{{ now()->format('Y-m-d') }}" required class="block w-full rounded-md border-gray-300 text-sm shadow-sm focus:border-emerald-500 focus:ring-emerald-500">
-                        <input type="text" name="item_name" placeholder="Item (cement, sarya…)" required class="block w-full rounded-md border-gray-300 text-sm shadow-sm focus:border-emerald-500 focus:ring-emerald-500">
+                        {{-- list/datalist se dropdown milta hai magar type karne ki
+                             azadi khatam nahi hoti, is liye <select> nahi lagaya. --}}
+                        <input type="text" name="item_name" list="tkCommonItems" placeholder="Item (cement, sarya…)" required autocomplete="off" class="block w-full rounded-md border-gray-300 text-sm shadow-sm focus:border-emerald-500 focus:ring-emerald-500">
+                        <datalist id="tkCommonItems">
+                            @foreach(($commonItems ?? []) as $ci)<option value="{{ $ci }}"></option>@endforeach
+                        </datalist>
                         <div class="grid grid-cols-2 gap-2">
                             <input type="number" step="0.001" name="qty" x-model.number="qty" placeholder="Qty" class="rounded-md border-gray-300 text-sm shadow-sm focus:border-emerald-500 focus:ring-emerald-500">
-                            <input type="text" name="unit" placeholder="Unit" class="rounded-md border-gray-300 text-sm shadow-sm focus:border-emerald-500 focus:ring-emerald-500">
+                            <input type="text" name="unit" list="tkCommonUnits" placeholder="Unit" autocomplete="off" class="rounded-md border-gray-300 text-sm shadow-sm focus:border-emerald-500 focus:ring-emerald-500">
+                            <datalist id="tkCommonUnits">
+                                @foreach(($commonUnits ?? []) as $cu)<option value="{{ $cu }}"></option>@endforeach
+                            </datalist>
                         </div>
                         <x-money-input name="rate_per_unit" label="Rate / unit (ریٹ)" required x-model.number="rate" />
                         <select name="vendor_id" class="block w-full rounded-md border-gray-300 text-sm shadow-sm focus:border-emerald-500 focus:ring-emerald-500">
@@ -175,6 +188,22 @@
                             <p class="mb-2 text-xs font-semibold text-gray-500">Sath ka kharcha (optional)</p>
                             <div class="space-y-2">
                                 <x-money-input name="freight" label="Kiraya (کرایہ)" x-model.number="kiraya" />
+                                {{-- Driver kiraya ke sath hi chunte hain, warna baad me
+                                     pata nahi chalta kis dale ko kitna kiraya gaya. --}}
+                                <div>
+                                    <label for="driver_id" class="block text-sm font-medium text-gray-700">Driver (ڈرائیور)</label>
+                                    <select name="driver_id" id="driver_id" x-model="driverSel" class="mt-1 block w-full rounded-md border-gray-300 text-sm shadow-sm focus:border-emerald-500 focus:ring-emerald-500">
+                                        <option value="">— koi driver nahi —</option>
+                                        @foreach($vendors->where('type', 'driver') as $dv)
+                                            <option value="{{ $dv->id }}">{{ $dv->name }}</option>
+                                        @endforeach
+                                    </select>
+                                    @if($vendors->where('type', 'driver')->isEmpty())
+                                        <p class="mt-1 text-xs text-gray-400">
+                                            Koi driver add nahi hua. <a href="{{ route('vendors.create') }}" class="text-emerald-600 underline">Driver add karo</a> — ek bar, phir har project me milega.
+                                        </p>
+                                    @endif
+                                </div>
                                 <x-money-input name="labour_charge" label="Mazdoori (مزدوری)" x-model.number="mazdoori" />
                                 <x-money-input name="other_charges" label="Deegar (دیگر)" x-model.number="deegar" />
                             </div>
@@ -186,7 +215,13 @@
                             <template x-if="(+mazdoori||0) > 0"><div class="flex justify-between"><span>+ Mazdoori</span><span class="font-medium text-gray-700" x-text="fmt(mazdoori)"></span></div></template>
                             <template x-if="(+deegar||0) > 0"><div class="flex justify-between"><span>+ Deegar</span><span class="font-medium text-gray-700" x-text="fmt(deegar)"></span></div></template>
                             <div class="flex justify-between border-t border-gray-200 pt-1"><span class="font-semibold text-gray-700">Kul bill</span><span class="font-bold text-gray-900" x-text="fmt(amt)"></span></div>
-                            <div class="flex justify-between"><span>Udhaar</span><span class="font-bold text-red-600" x-text="fmt(Math.max(0,amt-paid))"></span></div>
+                            <template x-if="driverKiraya > 0">
+                                <div class="flex justify-between text-amber-700"><span>Driver ko kiraya</span><span class="font-semibold" x-text="fmt(driverKiraya)"></span></div>
+                            </template>
+                            <div class="flex justify-between"><span x-text="driverKiraya > 0 ? 'Supplier ka udhaar' : 'Udhaar'"></span><span class="font-bold text-red-600" x-text="fmt(udhaar)"></span></div>
+                            <template x-if="driverKiraya > 0">
+                                <p class="pt-1 text-[11px] leading-snug text-gray-400">Kiraya driver ke khaate me jata hai, supplier ke udhaar me nahi. Driver ko "Kiraya do" se diya jata hai.</p>
+                            </template>
                         </div>
                         <button class="w-full rounded-md bg-emerald-600 px-3 py-2 text-sm font-semibold text-white hover:bg-emerald-700">Add (شامل کریں)</button>
                     </form>
@@ -216,6 +251,9 @@
                                                 maal @money($pur->goods_amount_paisa)
                                                 @foreach($extras as $label => $amt) · {{ $label }} @money($amt) @endforeach
                                             </div>
+                                        @endif
+                                        @if($pur->driver_id)
+                                            <div class="text-xs font-normal text-amber-600">🚚 {{ $pur->driver->name ?? '—' }}</div>
                                         @endif
                                     </td>
                                     <td class="px-4 py-2.5 text-right {{ $pur->balance_due_paisa>0?'text-red-600':'text-gray-400' }}">@money($pur->balance_due_paisa)</td>
@@ -316,6 +354,16 @@
                 curMon: '{{ $attCurMon }}',
                 years: {{ \Illuminate\Support\Js::from(array_values($attYears)) }}
              })">
+
+            {{-- Saare projects ka ek sath hisaab yahan se ek click par. --}}
+            <div class="mb-4 flex flex-wrap items-center justify-between gap-3 rounded-lg bg-indigo-50 px-4 py-3 ring-1 ring-indigo-100">
+                <p class="text-sm text-indigo-900">
+                    Kisi mazdoor ya mistri ka <span class="font-semibold">saare projects</span> ka hisaab ek sath dekhna hai?
+                    <span class="text-indigo-700/70">Kis project me kitna diya, kitna baqi.</span>
+                </p>
+                <a href="{{ route('reports.labour', ['all_projects' => 1]) }}"
+                   class="rounded-md bg-indigo-600 px-3 py-2 text-sm font-semibold text-white hover:bg-indigo-700">📋 Mazdoor ka hisaab</a>
+            </div>
 
             <div class="grid grid-cols-1 gap-6 lg:grid-cols-3">
                 {{-- Worker list -> Haazri button per worker --}}

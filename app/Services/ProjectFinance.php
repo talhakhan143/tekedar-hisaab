@@ -235,6 +235,27 @@ class ProjectFinance
         return (int) $this->project->materialPurchases()->sum('amount_paid_paisa');
     }
 
+    /**
+     * Is project par drivers ko diya gaya kiraya.
+     *
+     * Ye alag ginna parta hai kyunke driver ka kiraya supplier ke bill ke
+     * amount_paid_paisa me nahi jata, apne khaate (driver_payments) me jata
+     * hai. Na ginay to project ka jeb se gaya paisa kam dikhta aur cash
+     * profit jhoota barh jata.
+     */
+    public function driverCashPaidPaisa(): int
+    {
+        return (int) \App\Models\DriverPayment::where('project_id', $this->project->id)->sum('amount_paisa');
+    }
+
+    /** Is project par drivers ka baqi kiraya = kiraya − jo diya. */
+    public function driverPayablePaisa(): int
+    {
+        $kiraya = (int) $this->project->materialPurchases()->whereNotNull('driver_id')->sum('freight_paisa');
+
+        return $kiraya - $this->driverCashPaidPaisa();
+    }
+
     public function labourCashPaidPaisa(): int
     {
         $wages = (int) $this->project->wagePayments()->sum('amount_paisa');
@@ -250,7 +271,8 @@ class ProjectFinance
 
     public function totalCashPaidPaisa(): int
     {
-        return $this->materialCashPaidPaisa() + $this->labourCashPaidPaisa() + $this->otherCashPaidPaisa();
+        return $this->materialCashPaidPaisa() + $this->labourCashPaidPaisa()
+            + $this->otherCashPaidPaisa() + $this->driverCashPaidPaisa();
     }
 
     public function vendorPayablePaisa(): int

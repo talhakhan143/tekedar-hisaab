@@ -65,6 +65,28 @@
             </div>
         </x-card>
 
+        <x-card title="Common items (عام اشیاء)">
+            <div>
+                <x-input-label for="common_items" value="Cheezein — comma se alag karo" />
+                <textarea id="common_items" name="common_items" rows="2"
+                          class="mt-1 block w-full rounded-md border-gray-300 text-sm shadow-sm focus:border-emerald-500 focus:ring-emerald-500"
+                          placeholder="cement, sarya, block, crush, sand, bajri, rait, tile, paint">{{ old('common_items', $settings['common_items'] ?? '') }}</textarea>
+                <x-input-error :messages="$errors->get('common_items')" class="mt-1" />
+                <p class="mt-2 text-xs text-gray-500">Ye sirf Purchase form ka dropdown bharti hain, pabandi nahi — aap wahan koi bhi naam apne haath se likh sakte ho.</p>
+            </div>
+        </x-card>
+
+        <x-card title="Common units (یونٹ)">
+            <div>
+                <x-input-label for="common_units" value="Units — comma se alag karo" />
+                <textarea id="common_units" name="common_units" rows="2"
+                          class="mt-1 block w-full rounded-md border-gray-300 text-sm shadow-sm focus:border-emerald-500 focus:ring-emerald-500"
+                          placeholder="bag, ton, sft, cft, truck, trip, nos, kg, ft">{{ old('common_units', $settings['common_units'] ?? '') }}</textarea>
+                <x-input-error :messages="$errors->get('common_units')" class="mt-1" />
+                <p class="mt-2 text-xs text-gray-500">Ye sirf Purchase form ka unit dropdown bharti hain, pabandi nahi — wahan koi bhi unit khud likhi ja sakti hai. Jaise likho ge waise hi dikhegi (<span class="font-medium">SFT</span> likha to <span class="font-medium">SFT</span> hi rahega).</p>
+            </div>
+        </x-card>
+
         <x-card title="Expense Categories">
             <p class="text-sm text-gray-500">Money-out categories (material, labour, transport, equipment, subcontractor, utility, overhead, misc) aur other-expense categories code-level enums hain — naye categories add karne ke liye migration update karni hogi. General overhead categories free-text hain (Money Out page se koi bhi naam de sakte ho).</p>
         </x-card>

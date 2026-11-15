@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\ClientPayment;
+use App\Models\DriverPayment;
 use App\Models\MaterialPurchase;
 use App\Models\OtherExpense;
 use App\Models\Project;
@@ -35,6 +36,14 @@ class VoucherController extends Controller
         $wagePayment->load(['worker', 'project']);
 
         return view('vouchers.wage', ['payment' => $wagePayment]);
+    }
+
+    /** Driver ko diya gaya kiraya ka voucher (parchi driver ke haath me jati hai). */
+    public function driverPayment(DriverPayment $driverPayment): View
+    {
+        $driverPayment->load(['driver', 'project']);
+
+        return view('vouchers.driver-payment', ['payment' => $driverPayment]);
     }
 
     /** Worker advance (peshgi) / recovery voucher. */
