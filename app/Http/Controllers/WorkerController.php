@@ -89,16 +89,42 @@ class WorkerController extends Controller
         ]);
     }
 
-    public function create()
+    public function create(Request $request)
     {
-        return view('workers.create', ['worker' => new Worker(['role' => 'mazdoor', 'wage_type' => 'daily'])]);
+        return view('workers.create', [
+            'worker' => new Worker(['role' => 'mazdoor', 'wage_type' => 'daily']),
+            // Project page se aaya ho to banne ke baad wahin wapis bhejna hai,
+            // warna maalik ko khud dhoond kar wapis jana parta.
+            'backProject' => $this->backProject($request),
+        ]);
     }
 
     public function store(Request $request)
     {
-        Worker::create($this->validated($request));
+        $worker  = Worker::create($this->validated($request));
+        $project = $this->backProject($request);
+
+        if ($project) {
+            return redirect()
+                ->route('projects.show', ['project' => $project, 'tab' => 'attendance'])
+                ->with('status', $worker->name . ' add ho gaya. Ab "Mazdoor chuno" me mil jayega.');
+        }
 
         return redirect()->route('workers.index')->with('status', 'Worker add ho gaya.');
+    }
+
+    /**
+     * Wo project jahan se "naya mazdoor" wala link dabaya gaya tha.
+     *
+     * Sirf id leti hai aur usay DB se khud resolve karti hai. Poora URL kabhi
+     * nahi lete, warna koi bhi bahar ka pata bhej kar maalik ko kisi aur jagah
+     * pheink sakta hai (open redirect).
+     */
+    private function backProject(Request $request): ?Project
+    {
+        $id = $request->integer('project');
+
+        return $id ? Project::find($id) : null;
     }
 
     public function show(Worker $worker)

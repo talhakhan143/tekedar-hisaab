@@ -498,6 +498,17 @@
                             @endforeach
                         </select>
 
+                        {{--
+                            Naya mazdoor sirf Workers page se banta hai, bilkul driver
+                            ki tarah jo Vendors se banta hai. Project page par naam likhne
+                            ka box jaan boojh kar hataya gaya: wahan se "talha" aur "Talha"
+                            do alag ID ban jati thin aur ek hi bande ka hisaab bat jata tha.
+                        --}}
+                        <a href="{{ route('workers.create', ['project' => $project->id]) }}"
+                           class="mt-3 flex items-center justify-center gap-1.5 rounded-md border border-dashed border-gray-300 px-3 py-2 text-xs font-medium text-gray-600 hover:border-emerald-400 hover:text-emerald-700">
+                            + List me nahi hai? Naya mazdoor banao
+                        </a>
+
                         <template x-if="picked">
                             <div class="mt-3 space-y-2">
                                 <div class="space-y-1 rounded-lg bg-gray-50 px-3 py-2 text-xs">
@@ -528,49 +539,6 @@
                         </template>
                     </x-card>
 
-                    <x-card title="Naya Mazdoor (نیا مزدور)">
-                        {{--
-                            Maalik ko ye saaf dikhna chahiye ke mazdoor project ka
-                            nahi, poore khaate ka hissa hai. Warna har project me
-                            dobara naam likh dene ka dil karta hai, aur phir ek hi
-                            banda do ID le kar baith jata hai.
-                        --}}
-                        <div class="mb-3 rounded-md bg-emerald-50 px-3 py-2 text-xs leading-snug text-emerald-900 ring-1 ring-emerald-100">
-                            Sirf <span class="font-semibold">naya</span> banda yahan likho.
-                            Ek bar add hone ke baad wo <span class="font-semibold">har project</span> me khud list me aa jata hai,
-                            uski ID aur hisaab hamesha ek hi rehta hai.
-                            <span class="block pt-1 text-emerald-700/80">
-                                Abhi {{ $allWorkers->count() }} mazdoor list me hain.
-                                Jo pehle se hai usay <a href="{{ route('workers.index') }}" class="font-semibold underline">Workers</a> me dhoondo, dobara mat banao.
-                            </span>
-                        </div>
-                        <form method="POST" action="{{ route('attendance.quick-worker') }}" class="space-y-3">
-                            @csrf
-                            <input type="text" name="name" value="{{ old('name') }}" placeholder="Naam" required class="block w-full rounded-md border-gray-300 text-sm shadow-sm focus:border-emerald-500 focus:ring-emerald-500">
-                            <select name="role" class="block w-full rounded-md border-gray-300 text-sm shadow-sm focus:border-emerald-500 focus:ring-emerald-500">
-                                @foreach($workerRoles as $r)<option value="{{ $r }}">{{ ucfirst($r) }}</option>@endforeach
-                            </select>
-                            <p class="text-[11px] text-gray-400">Role list <a href="{{ route('settings') }}" class="text-emerald-600 hover:underline">Settings</a> se edit hoti.</p>
-                            <x-money-input name="default_wage" label="Dihaadi (روزانہ)" required />
-                            {{-- Pehle ye form chupchap fail ho jata tha, koi wajah nahi dikhti thi. --}}
-                            <x-input-error :messages="$errors->get('name')" />
-                            <x-input-error :messages="$errors->get('role')" />
-                            <x-input-error :messages="$errors->get('default_wage')" />
-                            {{--
-                                Isi naam ka banda pehle se ho to app rok deti hai. Magar
-                                Pakistan me ek hi naam ke do bande hona aam baat hai, is
-                                liye hamesha ke liye mana bhi nahi kar sakte. Ye tick
-                                sirf us soorat me lagta hai jab app naam par rok de.
-                            --}}
-                            <label class="flex items-start gap-2 text-[11px] leading-snug text-gray-500">
-                                <input type="hidden" name="allow_duplicate" value="0">
-                                <input type="checkbox" name="allow_duplicate" value="1" @checked(old('allow_duplicate'))
-                                       class="mt-0.5 rounded border-gray-300 text-emerald-600 focus:ring-emerald-500">
-                                <span>Alag banda hai (isi naam ka doosra mazdoor). Sirf tab lagao jab app kahe ke naam pehle se hai.</span>
-                            </label>
-                            <button class="w-full rounded-md bg-gray-800 px-3 py-2 text-sm font-semibold text-white hover:bg-gray-700">Add Worker (شامل)</button>
-                        </form>
-                    </x-card>
                     <x-card title="Mazdoori do (ادائیگی)">
                         @php
                             // Wahi hisaab jo WorkLedgerController save karte waqt lagata hai.
