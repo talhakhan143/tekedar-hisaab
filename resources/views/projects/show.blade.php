@@ -369,11 +369,36 @@
                 {{-- Worker list -> Haazri button per worker --}}
                 <div class="lg:col-span-2 space-y-6">
                     <x-card title="Mazdoor — Haazri lagao (حاضری)" class="!p-0">
+                        {{-- Saare projects ke mazdoor yahan aate hain, is liye list barhti
+                             jati hai. Ye filter page reload kiye bagair naam/kaam par
+                             chhant deta hai. --}}
+                        <div class="border-b border-gray-100 px-4 py-2.5" x-data="{ q: '' }"
+                             x-init="$watch('q', v => {
+                                const body = document.getElementById('attBody{{ $project->id }}');
+                                if (! body) return;
+                                const t = v.trim().toLowerCase();
+                                let shown = 0;
+                                body.querySelectorAll('tr[data-worker]').forEach(row => {
+                                    const hit = t === '' || row.dataset.worker.includes(t);
+                                    row.style.display = hit ? '' : 'none';
+                                    if (hit) shown++;
+                                });
+                                const none = document.getElementById('attNoMatch{{ $project->id }}');
+                                if (none) none.style.display = shown === 0 ? '' : 'none';
+                             })">
+                            <div class="flex items-center gap-2">
+                                <input type="search" x-model="q" placeholder="Naam ya kaam se dhoondo…"
+                                       class="block w-full rounded-md border-gray-300 text-sm shadow-sm focus:border-emerald-500 focus:ring-emerald-500">
+                                <button type="button" x-show="q" @click="q = ''" x-cloak
+                                        class="whitespace-nowrap rounded-md bg-gray-100 px-3 py-2 text-xs font-medium text-gray-600 hover:bg-gray-200">Saaf</button>
+                            </div>
+                            <p class="mt-1 text-[11px] text-gray-400">{{ $attWorkers->count() }} mazdoor, saare projects ke. Ye list har project me ek hi hoti hai.</p>
+                        </div>
                         <table class="min-w-full divide-y divide-gray-200 text-sm">
                             <thead class="bg-gray-50 text-left text-xs uppercase text-gray-500"><tr><th class="px-4 py-3">Worker</th><th class="px-4 py-3">Kaam</th><th class="px-4 py-3 text-right">Dihaadi</th><th class="px-4 py-3 text-right">Haazri</th></tr></thead>
-                            <tbody class="divide-y divide-gray-100">
+                            <tbody class="divide-y divide-gray-100" id="attBody{{ $project->id }}">
                                 @forelse($attWorkers as $w)
-                                    <tr>
+                                    <tr data-worker="{{ mb_strtolower($w->name.' '.$w->role.' #'.$w->id) }}">
                                         <td class="px-4 py-2.5 font-medium text-gray-700">{{ $w->name }} <span class="text-xs font-normal text-gray-400">#{{ $w->id }}</span></td>
                                         <td class="px-4 py-2.5 capitalize text-gray-500">{{ $w->role }}</td>
                                         <td class="px-4 py-2.5 text-right" x-data="{ editing: false }">
@@ -401,6 +426,9 @@
                                 @empty
                                     <tr><td colspan="4" class="px-4 py-6 text-center text-gray-400">Koi mazdoor nahi. Side se "Naya Mazdoor" add karo.</td></tr>
                                 @endforelse
+                                <tr id="attNoMatch{{ $project->id }}" style="display:none">
+                                    <td colspan="4" class="px-4 py-6 text-center text-gray-400">Is naam ka koi mazdoor nahi mila. Upar se filter saaf karo.</td>
+                                </tr>
                             </tbody>
                         </table>
                         <p class="border-t border-gray-100 px-4 py-2 text-[11px] text-gray-400">Dihaadi par ✏️ dabao to wahin badal sakte ho. Nayi dihaadi sirf aage ki haazri par lagegi, purana hisaab waise ka waisa rehta hai.</p>
@@ -444,9 +472,24 @@
 
                 <div class="space-y-6">
                     <x-card title="Naya Mazdoor (نیا مزدور)">
+                        {{--
+                            Maalik ko ye saaf dikhna chahiye ke mazdoor project ka
+                            nahi, poore khaate ka hissa hai. Warna har project me
+                            dobara naam likh dene ka dil karta hai, aur phir ek hi
+                            banda do ID le kar baith jata hai.
+                        --}}
+                        <div class="mb-3 rounded-md bg-emerald-50 px-3 py-2 text-xs leading-snug text-emerald-900 ring-1 ring-emerald-100">
+                            Sirf <span class="font-semibold">naya</span> banda yahan likho.
+                            Ek bar add hone ke baad wo <span class="font-semibold">har project</span> me khud list me aa jata hai,
+                            uski ID aur hisaab hamesha ek hi rehta hai.
+                            <span class="block pt-1 text-emerald-700/80">
+                                Abhi {{ $allWorkers->count() }} mazdoor list me hain.
+                                Jo pehle se hai usay <a href="{{ route('workers.index') }}" class="font-semibold underline">Workers</a> me dhoondo, dobara mat banao.
+                            </span>
+                        </div>
                         <form method="POST" action="{{ route('attendance.quick-worker') }}" class="space-y-3">
                             @csrf
-                            <input type="text" name="name" placeholder="Naam" required class="block w-full rounded-md border-gray-300 text-sm shadow-sm focus:border-emerald-500 focus:ring-emerald-500">
+                            <input type="text" name="name" value="{{ old('name') }}" placeholder="Naam" required class="block w-full rounded-md border-gray-300 text-sm shadow-sm focus:border-emerald-500 focus:ring-emerald-500">
                             <select name="role" class="block w-full rounded-md border-gray-300 text-sm shadow-sm focus:border-emerald-500 focus:ring-emerald-500">
                                 @foreach($workerRoles as $r)<option value="{{ $r }}">{{ ucfirst($r) }}</option>@endforeach
                             </select>
@@ -456,6 +499,18 @@
                             <x-input-error :messages="$errors->get('name')" />
                             <x-input-error :messages="$errors->get('role')" />
                             <x-input-error :messages="$errors->get('default_wage')" />
+                            {{--
+                                Isi naam ka banda pehle se ho to app rok deti hai. Magar
+                                Pakistan me ek hi naam ke do bande hona aam baat hai, is
+                                liye hamesha ke liye mana bhi nahi kar sakte. Ye tick
+                                sirf us soorat me lagta hai jab app naam par rok de.
+                            --}}
+                            <label class="flex items-start gap-2 text-[11px] leading-snug text-gray-500">
+                                <input type="hidden" name="allow_duplicate" value="0">
+                                <input type="checkbox" name="allow_duplicate" value="1" @checked(old('allow_duplicate'))
+                                       class="mt-0.5 rounded border-gray-300 text-emerald-600 focus:ring-emerald-500">
+                                <span>Alag banda hai (isi naam ka doosra mazdoor). Sirf tab lagao jab app kahe ke naam pehle se hai.</span>
+                            </label>
                             <button class="w-full rounded-md bg-gray-800 px-3 py-2 text-sm font-semibold text-white hover:bg-gray-700">Add Worker (شامل)</button>
                         </form>
                     </x-card>

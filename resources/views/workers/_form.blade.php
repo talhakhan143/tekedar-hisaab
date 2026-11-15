@@ -3,7 +3,24 @@
         <div>
             <x-input-label for="name" value="Name *" />
             <x-text-input id="name" name="name" class="mt-1 block w-full" :value="old('name', $worker->name)" required />
+            {{-- Naam par rok ka message yahi dikhta hai, is liye ye line hatani nahi. --}}
             <x-input-error :messages="$errors->get('name')" class="mt-1" />
+            {{--
+                Isi naam ka banda pehle se ho to app rok deti hai, warna aik hi
+                aadmi ke do khaate ban jate hain aur hisaab bant jata hai. Magar
+                Pakistan me ek hi naam ke do bande hona aam baat hai, is liye
+                hamesha ke liye mana bhi nahi kar sakte. Ye tick sirf us soorat
+                me lagta hai jab app naam par rok de.
+            --}}
+            <label class="mt-2 flex items-start gap-2 text-[11px] leading-snug text-gray-500">
+                <input type="hidden" name="allow_duplicate" value="0">
+                <input type="checkbox" name="allow_duplicate" value="1" @checked(old('allow_duplicate'))
+                       class="mt-0.5 rounded border-gray-300 text-emerald-600 focus:ring-emerald-500">
+                <span>
+                    <span class="font-medium text-gray-600">Alag banda hai (isi naam ka doosra mazdoor)</span>
+                    <span class="block text-gray-400">Sirf tab lagao jab app kahe ke ye naam pehle se mojood hai.</span>
+                </span>
+            </label>
         </div>
         <div>
             <x-input-label for="phone" value="Phone" />
