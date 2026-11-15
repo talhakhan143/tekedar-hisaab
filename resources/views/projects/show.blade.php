@@ -352,7 +352,16 @@
                 today: '{{ $attToday }}',
                 curYear: {{ $attCurYear }},
                 curMon: '{{ $attCurMon }}',
-                years: {{ \Illuminate\Support\Js::from(array_values($attYears)) }}
+                years: {{ \Illuminate\Support\Js::from(array_values($attYears)) }},
+                workers: {{ \Illuminate\Support\Js::from(
+                    $attWorkers->mapWithKeys(fn ($w) => [$w->id => [
+                        'name'  => $w->name,
+                        'role'  => $w->role,
+                        'wage'  => \App\Support\Money::format($w->default_wage_paisa, true, false),
+                        'here'  => $wageDues[$w->id]['here'] ?? 0,
+                        'total' => $wageDues[$w->id]['total'] ?? 0,
+                    ]])
+                ) }}
              })">
 
             {{-- Saare projects ka ek sath hisaab yahan se ek click par. --}}
@@ -471,6 +480,54 @@
                 </div>
 
                 <div class="space-y-6">
+                    {{--
+                        Mazdoor chunne ki dropdown. Maalik ne saaf kaha ke usay
+                        vendor jaisi dropdown chahiye: table me naam dikh to rahe
+                        the, magar "chuno" wali jagah sirf khaali Naam box tha,
+                        is liye lagta tha ke har project me naya banana parta hai.
+                    --}}
+                    <x-card title="Mazdoor chuno (مزدور چنیں)">
+                        <p class="mb-3 text-xs leading-snug text-gray-500">
+                            Ye list <span class="font-semibold text-gray-700">saare projects</span> ki hai. Jo banda pehle add ho chuka hai wo yahin milega,
+                            dobara banane ki zaroorat nahi.
+                        </p>
+                        <select x-model="pickId" class="block w-full rounded-md border-gray-300 text-sm shadow-sm focus:border-emerald-500 focus:ring-emerald-500">
+                            <option value="">— mazdoor chuno ({{ $attWorkers->count() }}) —</option>
+                            @foreach($attWorkers as $w)
+                                <option value="{{ $w->id }}">{{ $w->name }} #{{ $w->id }} · {{ ucfirst($w->role) }} · {{ \App\Support\Money::format($w->default_wage_paisa, true, false) }}</option>
+                            @endforeach
+                        </select>
+
+                        <template x-if="picked">
+                            <div class="mt-3 space-y-2">
+                                <div class="space-y-1 rounded-lg bg-gray-50 px-3 py-2 text-xs">
+                                    <div class="flex justify-between"><span class="text-gray-500">Kaam</span><span class="font-semibold capitalize text-gray-800" x-text="picked.role"></span></div>
+                                    <div class="flex justify-between"><span class="text-gray-500">Dihaadi</span><span class="font-semibold text-gray-800" x-text="picked.wage"></span></div>
+                                    <div class="flex justify-between border-t border-gray-200 pt-1">
+                                        <span class="text-gray-500">Is project ka baqi</span>
+                                        <span class="font-bold" :class="picked.here > 0 ? 'text-red-600' : 'text-gray-400'"
+                                              x-text="picked.here > 0 ? money(picked.here) : 'saaf'"></span>
+                                    </div>
+                                    <template x-if="picked.total !== picked.here">
+                                        <div class="flex justify-between">
+                                            <span class="text-gray-500">Saare projects mila kar</span>
+                                            <span class="font-semibold" :class="picked.total > 0 ? 'text-amber-700' : 'text-gray-400'"
+                                                  x-text="picked.total > 0 ? money(picked.total) : (picked.total < 0 ? money(picked.total) + ' advance' : 'saaf')"></span>
+                                        </div>
+                                    </template>
+                                </div>
+                                <button type="button" @click="openPicked()"
+                                        class="w-full rounded-md bg-emerald-600 px-3 py-2 text-sm font-semibold text-white hover:bg-emerald-700">📅 Haazri lagao</button>
+                                <div class="flex gap-2">
+                                    <a :href="'{{ url('workers') }}/' + pickId"
+                                       class="flex-1 rounded-md bg-white px-3 py-2 text-center text-xs font-medium text-gray-700 ring-1 ring-gray-300 hover:bg-gray-50">Poora khaata</a>
+                                    <a :href="'{{ route('reports.labour') }}?all_projects=1&worker=' + pickId"
+                                       class="flex-1 rounded-md bg-white px-3 py-2 text-center text-xs font-medium text-gray-700 ring-1 ring-gray-300 hover:bg-gray-50">Saare projects</a>
+                                </div>
+                            </div>
+                        </template>
+                    </x-card>
+
                     <x-card title="Naya Mazdoor (نیا مزدور)">
                         {{--
                             Maalik ko ye saaf dikhna chahiye ke mazdoor project ka
@@ -891,6 +948,8 @@
                 open: false,
                 wId: null,
                 wName: '',
+                workers: cfg.workers || {},
+                pickId: '',
                 year: cfg.curYear,
                 month: cfg.curMon,
                 status: 'present',
@@ -902,6 +961,14 @@
                     this.open = true;
                 },
                 close() { this.open = false; },
+
+                /* Dropdown se chuna hua banda. Isi se upar ka panel bharta hai
+                   aur Haazri wala button usi par chalta hai. */
+                get picked() { return this.pickId ? (this.workers[this.pickId] || null) : null; },
+                money(p) { return '₨ ' + Math.round(Math.abs(p || 0) / 100).toLocaleString('en-IN'); },
+                openPicked() {
+                    if (this.pickId && this.picked) { this.openModal(this.pickId, this.picked.name); }
+                },
 
                 pad(n) { return n < 10 ? '0' + n : '' + n; },
                 mInt() { return parseInt(this.month, 10); },
