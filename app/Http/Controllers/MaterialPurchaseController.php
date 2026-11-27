@@ -33,11 +33,14 @@ class MaterialPurchaseController extends Controller
 
     public function create(Request $request)
     {
+        $projects = Project::orderBy('name')->get();
+
         return view('materials.create', [
-            'projects'        => Project::orderBy('name')->get(['id', 'name']),
+            'projects'        => $projects,
             'vendors'         => Vendor::orderBy('name')->get(['id', 'name', 'type']),
             'drivers'         => Vendor::where('type', 'driver')->orderBy('name')->get(['id', 'name']),
-            'commonItems'     => Setting::commonItems(),
+            'itemsByProject'  => $this->itemsByProject($projects),
+            'commonItems'     => Setting::itemsForContractType(null), // fallback jab koi project na chuna ho
             'commonUnits'     => Setting::commonUnits(),
             'selectedProject' => $request->integer('project'),
         ]);
@@ -55,13 +58,16 @@ class MaterialPurchaseController extends Controller
 
     public function edit(MaterialPurchase $materialPurchase)
     {
+        $projects = Project::orderBy('name')->get();
+
         return view('materials.edit', [
-            'purchase'    => $materialPurchase,
-            'projects'    => Project::orderBy('name')->get(['id', 'name']),
-            'vendors'     => Vendor::orderBy('name')->get(['id', 'name', 'type']),
-            'drivers'     => Vendor::where('type', 'driver')->orderBy('name')->get(['id', 'name']),
-            'commonItems' => Setting::commonItems(),
-            'commonUnits' => Setting::commonUnits(),
+            'purchase'       => $materialPurchase,
+            'projects'       => $projects,
+            'vendors'        => Vendor::orderBy('name')->get(['id', 'name', 'type']),
+            'drivers'        => Vendor::where('type', 'driver')->orderBy('name')->get(['id', 'name']),
+            'itemsByProject' => $this->itemsByProject($projects),
+            'commonItems'    => Setting::itemsForContractType(null), // fallback jab koi project na chuna ho
+            'commonUnits'    => Setting::commonUnits(),
         ]);
     }
 
@@ -113,6 +119,33 @@ class MaterialPurchaseController extends Controller
         return redirect($back)->with('status', 'Vendor ko payment ho gayi (udhaar kam).')
             ->with('voucher_url', route('vouchers.material', $materialPurchase))
             ->with('voucher_label', '🖨 Invoice');
+    }
+
+    /**
+     * Har project ke liye cheezon ke suggest hone wale naam: project id => naam.
+     *
+     * Is safe par project dropdown se chunna parta hai, is liye list render ke
+     * waqt fix nahi ki ja sakti. Interior wale project aur Gray Structure wale
+     * project ki cheezein ek jaisi nahi hotin, to poora naqsha bhej dete hain
+     * aur form chunav badalne par usi project ki list dikha deta hai.
+     *
+     * Kharcha: Project::itemSuggestions() har project par 3 queries leta hai
+     * (us qism ki list, common list, aur us project me pehle likhe gaye naam),
+     * yani kul 1 + 3N. Asli local data (1 project) par naapa gaya: 4 queries.
+     * Ek hi grouped query wala tareeqa 12 projects par 37 se 14 queries kar
+     * deta hai, magar us me naam ka tarteeb badal jata hai (ek hi tareekh wali
+     * rows ka aapas ka order badal jata hai), aur model ka dedupe wala hisaab
+     * do jagah likhna parta hai. Project itne nahi hote ke ye sauda theek ho,
+     * is liye hisaab ek hi jagah (model me) rehne diya hai. Projects bohat
+     * barh jayen to behtar ilaaj Setting::get() ko ek dafa parhna hai, kyunke
+     * 3 me se 2 queries wohi dohrai hui settings reads hain.
+     *
+     * @param  \Illuminate\Support\Collection<int, Project>  $projects
+     * @return array<int, array<int, string>>
+     */
+    private function itemsByProject($projects): array
+    {
+        return $projects->mapWithKeys(fn (Project $p) => [$p->id => $p->itemSuggestions()])->all();
     }
 
     private function validatedData(Request $request): array

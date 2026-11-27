@@ -175,6 +175,10 @@
                         <datalist id="tkCommonItems">
                             @foreach(($commonItems ?? []) as $ci)<option value="{{ $ci }}"></option>@endforeach
                         </datalist>
+                        <p class="-mt-1 text-[11px] text-gray-400">
+                            {{ count($commonItems ?? []) }} naam suggest ho rahe hain ({{ $project->contractTypeLabel() }} ke hisaab se).
+                            Box par dabao to list khulegi. List me na ho to seedha likh do.
+                        </p>
                         <div class="grid grid-cols-2 gap-2">
                             <input type="number" step="0.001" name="qty" x-model.number="qty" placeholder="Qty" class="rounded-md border-gray-300 text-sm shadow-sm focus:border-emerald-500 focus:ring-emerald-500">
                             <input type="text" name="unit" list="tkCommonUnits" placeholder="Unit" autocomplete="off" class="rounded-md border-gray-300 text-sm shadow-sm focus:border-emerald-500 focus:ring-emerald-500">

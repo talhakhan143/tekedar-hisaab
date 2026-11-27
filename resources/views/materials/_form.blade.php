@@ -25,6 +25,34 @@
     $itemList    = $commonItems ?? [];
     $unitList    = $commonUnits ?? [];
     $driverIdOld = (string) old('driver_id', $purchase->driver_id ?? '');
+
+    /*
+     * Cheezon ke naam project par lagte hain: Interior wale kaam me tile aur
+     * paint aate hain, Gray Structure me sarya aur block. Is safe par project
+     * dropdown se chunta hai, is liye list render ke waqt fix nahi ho sakti:
+     * poora naqsha (project id => naam) Alpine ko de dete hain aur chunav
+     * badalne par wahi list datalist me chali jati hai. Koi project na chuna
+     * ho to aam list ($itemList) chalti hai.
+     *
+     * Naam ke saath qism ka label bhi bhejte hain (raw key nahi, warna
+     * "grey_structure" likha nazar aata), taake neeche likha ja sake ke list
+     * kyun badli.
+     */
+    $projectItemMap = collect($itemsByProject ?? [])
+        ->mapWithKeys(fn ($names, $id) => [(string) $id => array_values($names)])
+        ->all();
+    $projectKindMap = collect($projects ?? [])
+        ->mapWithKeys(fn ($p) => [(string) $p->id => $p->contractTypeLabel()])
+        ->all();
+    /*
+     * Khali chunav HAMESHA '' hona chahiye, '0' nahi. create() me
+     * $selectedProject = $request->integer('project') aata hai, aur query me
+     * ?project= na ho to wo 0 deta hai. Pehle ye bas @selected ke muqable me
+     * kabhi match nahi karta tha, is liye nazar nahi aata tha, magar ab yehi
+     * value x-model se <select> par lagti hai: '0' kisi option ki value nahi,
+     * to dropdown khali (bina line) dikhne lag jata. Is liye 0 ko '' karte hain.
+     */
+    $projectIdOld   = (string) ((int) old('project_id', $purchase->project_id ?? ($selectedProject ?? '')) ?: '');
 @endphp
 <div x-data="{
         qty: {{ (float) old('qty', $purchase->qty ?? 1) }},
@@ -34,6 +62,20 @@
         labour: @js($labourR === '' ? '' : (float) $labourR),
         other: @js($otherR === '' ? '' : (float) $otherR),
         driverSel: @js($driverIdOld),
+        /* Project badla to cheezon ki list bhi badalni chahiye, isi liye chunav
+           Alpine ke paas hai. Khali ('') ka matlab koi project nahi chuna. */
+        projectSel: @js($projectIdOld),
+        itemsByProject: @js($projectItemMap),
+        fallbackItems: @js(array_values($itemList)),
+        projectKinds: @js($projectKindMap),
+        get itemOptions(){ return this.itemsByProject[this.projectSel] ?? this.fallbackItems; },
+        get projectKind(){ return this.projectKinds[this.projectSel] ?? ''; },
+        itemHint(){
+            const n = this.itemOptions.length;
+            return this.projectKind
+                ? n + ' naam suggest ho rahe hain (' + this.projectKind + ' ke hisaab se). Jo naam list me na ho, wo khud likh lo.'
+                : n + ' naam suggest ho rahe hain (aam list). Project chun lo to usi kaam ke naam aa jayenge.';
+        },
         num(v){ const n = Number(v); return isFinite(n) ? n : 0; },
         get goods(){ return (this.qty * this.rate) || 0; },
         get extras(){ return this.num(this.freight) + this.num(this.labour) + this.num(this.other); },
@@ -51,10 +93,10 @@
         <div class="grid grid-cols-1 gap-5 sm:grid-cols-2">
             <div>
                 <x-input-label for="project_id" value="Project (optional)" />
-                <select id="project_id" name="project_id" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-emerald-500 focus:ring-emerald-500">
+                <select id="project_id" name="project_id" x-model="projectSel" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-emerald-500 focus:ring-emerald-500">
                     <option value="">— general / unassigned —</option>
                     @foreach($projects as $p)
-                        <option value="{{ $p->id }}" @selected((string)old('project_id', $purchase->project_id ?? ($selectedProject ?? ''))===(string)$p->id)>{{ $p->name }}</option>
+                        <option value="{{ $p->id }}" @selected($projectIdOld === (string) $p->id)>{{ $p->name }}</option>
                     @endforeach
                 </select>
             </div>
@@ -73,15 +115,20 @@
             </div>
             <div>
                 <x-input-label for="item_name" value="Item *" />
-                {{-- list + datalist se Settings wali common cheezon ki dropdown mil
+                {{-- list + datalist se chuni hui qism ki cheezon ki dropdown mil
                      jati hai, magar type karne ki azadi khatam nahi hoti. <select>
                      jaan boojh kar nahi lagaya: us me list se bahar ki cheez (jaise
-                     ek dafa ka koi khaas saman) likhi hi na ja sakti. --}}
+                     ek dafa ka koi khaas saman) likhi hi na ja sakti.
+                     Options Alpine se bante hain, kyunke project badalne par list
+                     bhi badal jati hai. --}}
                 <x-text-input id="item_name" name="item_name" class="mt-1 block w-full" list="mpCommonItems" autocomplete="off"
                               :value="old('item_name', $purchase->item_name)" required />
                 <datalist id="mpCommonItems">
-                    @foreach($itemList as $ci)<option value="{{ $ci }}"></option>@endforeach
+                    <template x-for="ci in itemOptions" :key="ci">
+                        <option :value="ci"></option>
+                    </template>
                 </datalist>
+                <p class="mt-1 text-xs text-gray-500" x-text="itemHint()"></p>
                 <x-input-error :messages="$errors->get('item_name')" class="mt-1" />
             </div>
             <div class="grid grid-cols-2 gap-3">

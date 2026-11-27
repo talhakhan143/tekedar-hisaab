@@ -168,10 +168,11 @@ class ProjectController extends Controller
         $adjustments = \App\Models\WorkerAdvance::with('worker')->where('project_id', $project->id)
             ->orderByDesc('date')->orderByDesc('id')->get();
         $workerRoles = Setting::workerRoles();
-        // Common item/unit ki list Settings se aati hai, taake har bar "cement"
-        // aur "bag" dobara type na karna pare. Ye sirf dropdown bharti hai,
-        // malik is ke bahar bhi kuch bhi likh sakta hai.
-        $commonItems = Setting::commonItems();
+        // Maal ke naam is project ki qism ke hisaab se suggest hote hain
+        // (Interior par tile/paint, Gray Structure par sarya/block), aur sab se
+        // pehle wo naam jo isi project me pehle likhe ja chuke hain. Dobara
+        // wahi imla milne se cheez ke hisaab se jor sahi rehta hai.
+        $commonItems = $project->itemSuggestions();
         $commonUnits = Setting::commonUnits();
 
         return view('projects.show', compact(

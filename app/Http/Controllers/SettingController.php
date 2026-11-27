@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Project;
 use App\Models\Setting;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
@@ -10,7 +11,15 @@ class SettingController extends Controller
 {
     public function edit()
     {
-        return view('settings.edit', ['settings' => Setting::all_settings()]);
+        return view('settings.edit', [
+            'settings'      => Setting::all_settings(),
+            'contractTypes' => Project::CONTRACT_TYPES,
+            // Har qism ki apni list, waise hi jaise save hui hai (comma wali
+            // raw string), taake maalik usi textarea me edit kar sake.
+            'itemLists'     => collect(Project::CONTRACT_TYPES)->mapWithKeys(fn ($label, $type) => [
+                $type => Setting::get(Setting::itemsKeyFor($type)),
+            ])->all(),
+        ]);
     }
 
     public function update(Request $request)
@@ -24,6 +33,8 @@ class SettingController extends Controller
             'worker_roles'       => ['nullable', 'string', 'max:1000'],
             'common_items'       => ['nullable', 'string', 'max:1000'],
             'common_units'       => ['nullable', 'string', 'max:1000'],
+            'items'              => ['nullable', 'array'],
+            'items.*'            => ['nullable', 'string', 'max:4000'],
             'logo'               => ['nullable', 'image', 'max:2048'],
         ]);
 
@@ -43,6 +54,21 @@ class SettingController extends Controller
         // bigaarna hai, aur ye categories nahi sirf labels hain.
         foreach (['common_items', 'common_units'] as $key) {
             $list = collect(explode(',', (string) ($v[$key] ?? '')))
+                ->map(fn ($x) => trim($x))->filter()->unique()->values();
+            Setting::put($key, $list->isNotEmpty() ? $list->implode(',') : Setting::DEFAULTS[$key]);
+        }
+
+        // Har kaam ki qism ki apni cheezon ki list. Form se `items[<type>]`
+        // aata hai, magar key par bharosa nahi karte: sirf asli contract types
+        // save hoti hain, baqi chup chaap chhod dete hain. Normalisation bilkul
+        // common_items jaisi hai (trim + khaali nikal do + unique, case waisa hi),
+        // taake saari listein ek hi tarah chalein.
+        foreach ((array) ($v['items'] ?? []) as $type => $raw) {
+            if (! array_key_exists($type, Project::CONTRACT_TYPES)) {
+                continue;
+            }
+            $key  = Setting::itemsKeyFor($type);
+            $list = collect(explode(',', (string) $raw))
                 ->map(fn ($x) => trim($x))->filter()->unique()->values();
             Setting::put($key, $list->isNotEmpty() ? $list->implode(',') : Setting::DEFAULTS[$key]);
         }
