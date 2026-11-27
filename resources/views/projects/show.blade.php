@@ -96,14 +96,16 @@
                     </dl>
                 </x-card>
                 <x-card title="Estimate vs Actual (تخمینہ بمقابلہ اصل)" class="!p-0">
-                    <table class="min-w-full divide-y divide-gray-200 text-sm">
-                        <thead class="bg-gray-50 text-left text-xs uppercase text-gray-500"><tr><th class="px-3 py-2">Cat</th><th class="px-3 py-2 text-right">Est.</th><th class="px-3 py-2 text-right">Actual</th></tr></thead>
-                        <tbody class="divide-y divide-gray-100">
-                            @foreach($variance as $vv)@if($vv['estimate']>0 || $vv['actual']>0)
-                                <tr class="{{ $vv['over'] ? 'bg-red-50' : '' }}"><td class="px-3 py-2 capitalize">{{ $vv['category'] }}</td><td class="px-3 py-2 text-right text-gray-500">@money($vv['estimate'])</td><td class="px-3 py-2 text-right font-medium {{ $vv['over'] ? 'text-red-600' : '' }}">@money($vv['actual'])</td></tr>
-                            @endif @endforeach
-                        </tbody>
-                    </table>
+                    <div class="overflow-x-auto">
+                        <table class="min-w-full divide-y divide-gray-200 text-sm">
+                            <thead class="bg-gray-50 text-left text-xs uppercase text-gray-500"><tr><th class="px-3 py-2">Cat</th><th class="px-3 py-2 text-right">Est.</th><th class="px-3 py-2 text-right">Actual</th></tr></thead>
+                            <tbody class="divide-y divide-gray-100">
+                                @foreach($variance as $vv)@if($vv['estimate']>0 || $vv['actual']>0)
+                                    <tr class="{{ $vv['over'] ? 'bg-red-50' : '' }}"><td class="px-3 py-2 capitalize">{{ $vv['category'] }}</td><td class="px-3 py-2 text-right text-gray-500">@money($vv['estimate'])</td><td class="px-3 py-2 text-right font-medium {{ $vv['over'] ? 'text-red-600' : '' }}">@money($vv['actual'])</td></tr>
+                                @endif @endforeach
+                            </tbody>
+                        </table>
+                    </div>
                 </x-card>
             </div>
         </div>
@@ -131,20 +133,22 @@
             </div>
             <div class="lg:col-span-2">
                 <x-card title="Payments (وصولیاں)" class="!p-0">
-                    <table class="min-w-full divide-y divide-gray-200 text-sm">
-                        <thead class="bg-gray-50 text-left text-xs uppercase text-gray-500"><tr><th class="px-4 py-3">Date</th><th class="px-4 py-3">Method</th><th class="px-4 py-3">Note</th><th class="px-4 py-3 text-right">Amount</th><th></th></tr></thead>
-                        <tbody class="divide-y divide-gray-100">
-                            @forelse($project->clientPayments->sortByDesc('date') as $pay)
-                                <tr>
-                                    <td class="px-4 py-2.5">{{ $pay->date->format('d-m-Y') }}</td>
-                                    <td class="px-4 py-2.5 capitalize">{{ $pay->payment_method }} @if($pay->is_mobilization)<x-badge color="sky">Advance</x-badge>@endif</td>
-                                    <td class="px-4 py-2.5 text-gray-500">{{ $pay->notes }}</td>
-                                    <td class="px-4 py-2.5 text-right font-medium text-emerald-600">@money($pay->gross_amount_paisa)</td>
-                                    <td class="px-4 py-2.5 text-right whitespace-nowrap"><a href="{{ route('vouchers.client-payment', $pay) }}" target="_blank" class="text-emerald-600 hover:text-emerald-800" title="Print receipt">🖨</a><a href="{{ route('client-payments.edit', $pay) }}" class="ml-1 text-sky-600 hover:text-sky-800" title="Edit">&#9999;&#65039;</a><form method="POST" action="{{ route('client-payments.destroy', $pay) }}" class="ml-1 inline" onsubmit="return confirm('Delete?')">@csrf @method('DELETE')<button class="text-red-400 hover:text-red-600">✕</button></form></td>
-                                </tr>
-                            @empty<tr><td colspan="5" class="px-4 py-6 text-center text-gray-400">Koi payment nahi.</td></tr>@endforelse
-                        </tbody>
-                    </table>
+                    <div class="overflow-x-auto">
+                        <table class="min-w-full divide-y divide-gray-200 text-sm">
+                            <thead class="bg-gray-50 text-left text-xs uppercase text-gray-500"><tr><th class="px-4 py-3">Date</th><th class="px-4 py-3">Method</th><th class="px-4 py-3">Note</th><th class="px-4 py-3 text-right">Amount</th><th></th></tr></thead>
+                            <tbody class="divide-y divide-gray-100">
+                                @forelse($project->clientPayments->sortByDesc('date') as $pay)
+                                    <tr>
+                                        <td class="px-4 py-2.5">{{ $pay->date->format('d-m-Y') }}</td>
+                                        <td class="px-4 py-2.5 capitalize">{{ $pay->payment_method }} @if($pay->is_mobilization)<x-badge color="sky">Advance</x-badge>@endif</td>
+                                        <td class="px-4 py-2.5 text-gray-500">{{ $pay->notes }}</td>
+                                        <td class="px-4 py-2.5 text-right font-medium text-emerald-600">@money($pay->gross_amount_paisa)</td>
+                                        <td class="px-4 py-2.5 text-right whitespace-nowrap"><a href="{{ route('vouchers.client-payment', $pay) }}" target="_blank" class="text-emerald-600 hover:text-emerald-800" title="Print receipt">🖨</a><a href="{{ route('client-payments.edit', $pay) }}" class="ml-1 text-sky-600 hover:text-sky-800" title="Edit">&#9999;&#65039;</a><form method="POST" action="{{ route('client-payments.destroy', $pay) }}" class="ml-1 inline" onsubmit="return confirm('Delete?')">@csrf @method('DELETE')<button class="text-red-400 hover:text-red-600">✕</button></form></td>
+                                    </tr>
+                                @empty<tr><td colspan="5" class="px-4 py-6 text-center text-gray-400">Koi payment nahi.</td></tr>@endforelse
+                            </tbody>
+                        </table>
+                    </div>
                 </x-card>
             </div>
         </div>
@@ -228,51 +232,169 @@
                 </x-card>
             </div>
             <div class="lg:col-span-2">
-                <x-card title="Material (مٹیریل)" class="!p-0">
-                    <table class="min-w-full divide-y divide-gray-200 text-sm">
-                        <thead class="bg-gray-50 text-left text-xs uppercase text-gray-500"><tr><th class="px-4 py-3">Date</th><th class="px-4 py-3">Item</th><th class="px-4 py-3">Vendor</th><th class="px-4 py-3 text-right">Amount</th><th class="px-4 py-3 text-right">Udhaar</th><th></th></tr></thead>
-                        <tbody class="divide-y divide-gray-100">
-                            @forelse($project->materialPurchases->filter(fn($p)=>!$p->vendor || $p->vendor->type==='supplier')->sortByDesc('date') as $pur)
-                                <tr>
-                                    <td class="px-4 py-2.5">{{ $pur->date->format('d-m-Y') }}</td>
-                                    <td class="px-4 py-2.5 font-medium text-gray-700">{{ $pur->item_name }}<div class="text-xs text-gray-400">{{ rtrim(rtrim($pur->qty,'0'),'.') }} {{ $pur->unit }}</div></td>
-                                    <td class="px-4 py-2.5 text-gray-500">{{ $pur->vendor->name ?? '—' }}</td>
-                                    <td class="px-4 py-2.5 text-right">
-                                        @money($pur->amount_paisa)
-                                        @php
-                                            $extras = collect([
-                                                'Kiraya'   => (int) $pur->freight_paisa,
-                                                'Mazdoori' => (int) $pur->labour_paisa,
-                                                'Deegar'   => (int) $pur->other_charges_paisa,
-                                            ])->filter();
-                                        @endphp
-                                        @if($extras->isNotEmpty())
-                                            <div class="text-xs font-normal text-gray-400">
-                                                maal @money($pur->goods_amount_paisa)
-                                                @foreach($extras as $label => $amt) · {{ $label }} @money($amt) @endforeach
-                                            </div>
-                                        @endif
-                                        @if($pur->driver_id)
-                                            <div class="text-xs font-normal text-amber-600">🚚 {{ $pur->driver->name ?? '—' }}</div>
-                                        @endif
-                                    </td>
-                                    <td class="px-4 py-2.5 text-right {{ $pur->balance_due_paisa>0?'text-red-600':'text-gray-400' }}">@money($pur->balance_due_paisa)</td>
-                                    <td class="px-4 py-2.5 text-right whitespace-nowrap">
-                                        @if($pur->balance_due_paisa > 0)
-                                            <form method="POST" action="{{ route('materials.pay', $pur) }}" class="inline-flex items-center gap-1">
-                                                @csrf
-                                                <input type="number" step="0.01" name="amount" value="{{ \App\Support\Money::toRupees($pur->balance_due_paisa) }}" class="w-24 rounded border-gray-300 px-2 py-1 text-xs" title="udhaar pay">
-                                                <button class="rounded bg-emerald-600 px-2 py-1 text-xs font-semibold text-white hover:bg-emerald-700">Pay</button>
-                                            </form>
-                                        @endif
-                                        <a href="{{ route('vouchers.material', $pur) }}" target="_blank" class="ml-1 text-emerald-600 hover:text-emerald-800" title="Print invoice">🖨</a>
-                                        <a href="{{ route('materials.edit', $pur) }}" class="ml-1 text-sky-600 hover:text-sky-800" title="Edit">✏️</a>
-                                        <form method="POST" action="{{ route('materials.destroy', $pur) }}" class="ml-1 inline" onsubmit="return confirm('Delete?')">@csrf @method('DELETE')<button class="text-red-400 hover:text-red-600">✕</button></form>
-                                    </td>
-                                </tr>
-                            @empty<tr><td colspan="6" class="px-4 py-6 text-center text-gray-400">Koi material nahi.</td></tr>@endforelse
-                        </tbody>
-                    </table>
+                @php
+                    /*
+                     * Material ko cheez ke hisaab se jama karte hain, taake ek nazar me
+                     * pata chale ke is project me kitna cement aaya, kitne block aaye.
+                     * Pehle sirf lambi tareekh wali list thi, jis me se ye jor khud
+                     * karna parta tha.
+                     *
+                     * Jama karne ki chaabi naam ko saaf kar ke banti hai (chhota bara
+                     * harf aur beech ka extra space hata kar), warna "Cemnt" aur "cemnt"
+                     * do alag dher ban jate.
+                     */
+                    $matRows = $project->materialPurchases
+                        ->filter(fn($p) => !$p->vendor || $p->vendor->type === 'supplier')
+                        ->sortByDesc('date');
+
+                    $matKey = fn($p) => mb_strtolower(trim(preg_replace('/\s+/u', ' ', (string) $p->item_name)));
+                    $qtyFmt = fn($n) => rtrim(rtrim(number_format((float) $n, 3, '.', ','), '0'), '.');
+
+                    $matGroups = $matRows->groupBy($matKey)->map(function ($rows) use ($qtyFmt) {
+                        // Ek hi cheez alag alag unit me aa sakti hai (bag aur ton),
+                        // is liye qty unit ke hisaab se alag jorte hain.
+                        $qtyText = $rows->groupBy(fn($r) => trim((string) $r->unit))
+                            ->map(fn($g, $u) => $qtyFmt($g->sum('qty')) . ($u !== '' ? ' ' . $u : ''))
+                            ->implode(' + ');
+                        return [
+                            'label'   => $rows->first()->item_name,
+                            'count'   => $rows->count(),
+                            'qtyText' => $qtyText,
+                            'amount'  => (int) $rows->sum('amount_paisa'),
+                            'paid'    => (int) $rows->sum('amount_paid_paisa'),
+                            'baqi'    => (int) $rows->sum('balance_due_paisa'),
+                            'last'    => $rows->max('date'),
+                        ];
+                    })->sortByDesc('amount');
+
+                    $matTotal = (int) $matRows->sum('amount_paisa');
+                    $matBaqi  = (int) $matRows->sum('balance_due_paisa');
+                    $matJs    = $matGroups->map(fn($g) => [
+                        'label'   => $g['label'],
+                        'count'   => $g['count'],
+                        'qtyText' => $g['qtyText'],
+                        'amount'  => \App\Support\Money::format($g['amount']),
+                        'paid'    => \App\Support\Money::format($g['paid']),
+                        'baqi'    => \App\Support\Money::format($g['baqi']),
+                    ]);
+                @endphp
+                <x-card title="Material (مٹیریل)" class="!p-0" x-data="{ pick: '', groups: {{ \Illuminate\Support\Js::from($matJs) }} }">
+                    {{-- Do shakal: cheez ke hisaab se (default) ya sab ek sath. --}}
+                    <div class="flex flex-wrap items-center gap-2 border-b border-gray-100 px-4 py-2.5">
+                        <button type="button" @click="pick = ''"
+                                :class="pick === '' ? 'bg-emerald-600 text-white' : 'bg-white text-gray-600 ring-1 ring-gray-300 hover:bg-gray-50'"
+                                class="rounded-md px-3 py-1.5 text-xs font-semibold">Cheez ke hisaab se</button>
+                        <button type="button" @click="pick = 'ALL'"
+                                :class="pick === 'ALL' ? 'bg-emerald-600 text-white' : 'bg-white text-gray-600 ring-1 ring-gray-300 hover:bg-gray-50'"
+                                class="rounded-md px-3 py-1.5 text-xs font-semibold">Sab ek sath ({{ $matRows->count() }})</button>
+                        <span class="flex-1"></span>
+                        <span class="text-xs text-gray-500">Kul @money($matTotal)@if($matBaqi > 0) · udhaar <span class="font-semibold text-red-600">@money($matBaqi)</span>@endif</span>
+                    </div>
+
+                    {{-- A) Cheez ke hisaab se: har cheez ka jor --}}
+                    <div x-show="pick === ''" x-cloak class="overflow-x-auto">
+                        <table class="min-w-full divide-y divide-gray-200 text-sm">
+                            <thead class="bg-gray-50 text-left text-xs uppercase text-gray-500"><tr><th class="px-4 py-3">Cheez</th><th class="px-4 py-3 text-right">Kitna aaya</th><th class="px-4 py-3 text-right">Kul raqam</th><th class="px-4 py-3 text-right">Udhaar</th><th class="px-4 py-3 text-right">Kharidari</th></tr></thead>
+                            <tbody class="divide-y divide-gray-100">
+                                @forelse($matGroups as $gKey => $g)
+                                    <tr class="cursor-pointer hover:bg-emerald-50" @click="pick = @js((string) $gKey)" title="Is cheez ki poori list dekho">
+                                        <td class="px-4 py-2.5 font-medium text-emerald-700">{{ $g['label'] }}</td>
+                                        <td class="px-4 py-2.5 text-right text-gray-700">{{ $g['qtyText'] }}</td>
+                                        <td class="px-4 py-2.5 text-right font-semibold">@money($g['amount'])</td>
+                                        <td class="px-4 py-2.5 text-right {{ $g['baqi'] > 0 ? 'text-red-600' : 'text-gray-300' }}">@money($g['baqi'])</td>
+                                        <td class="px-4 py-2.5 text-right text-xs text-gray-400">{{ $g['count'] }} dafa<div>aakhri {{ optional($g['last'])->format('d-m-Y') }}</div></td>
+                                    </tr>
+                                @empty
+                                    <tr><td colspan="5" class="px-4 py-6 text-center text-gray-400">Koi material nahi.</td></tr>
+                                @endforelse
+                            </tbody>
+                            @if($matGroups->isNotEmpty())
+                                <tfoot class="border-t-2 border-gray-200 bg-gray-50">
+                                    <tr>
+                                        <td class="px-4 py-3 font-semibold text-gray-700" colspan="2">Kul ({{ $matGroups->count() }} cheezein)</td>
+                                        <td class="px-4 py-3 text-right text-base font-bold text-gray-900">@money($matTotal)</td>
+                                        <td class="px-4 py-3 text-right font-bold {{ $matBaqi > 0 ? 'text-red-600' : 'text-gray-300' }}">@money($matBaqi)</td>
+                                        <td></td>
+                                    </tr>
+                                </tfoot>
+                            @endif
+                        </table>
+                        <p class="border-t border-gray-100 px-4 py-2 text-[11px] text-gray-400">Kisi cheez par dabao to us ki poori list khul jayegi, ke kab kab aayi.</p>
+                    </div>
+
+                    {{-- B) Poori list: ya sab, ya sirf chuni hui cheez --}}
+                    <div x-show="pick !== ''" x-cloak>
+                        <template x-if="pick !== 'ALL' && groups[pick]">
+                            <div class="flex flex-wrap items-center gap-3 border-b border-gray-100 bg-emerald-50 px-4 py-2.5 text-xs">
+                                <button type="button" @click="pick = ''" class="font-semibold text-emerald-700 hover:underline">← Saari cheezein</button>
+                                <span class="font-bold text-gray-900" x-text="groups[pick].label"></span>
+                                <span class="text-gray-600">Ab tak <span class="font-semibold" x-text="groups[pick].qtyText"></span></span>
+                                <span class="text-gray-600">Kul <span class="font-semibold" x-text="groups[pick].amount"></span></span>
+                                <span class="text-gray-600">Diya <span class="font-semibold text-emerald-700" x-text="groups[pick].paid"></span></span>
+                                <span class="text-gray-600">Udhaar <span class="font-semibold text-red-600" x-text="groups[pick].baqi"></span></span>
+                            </div>
+                        </template>
+                        <div class="overflow-x-auto">
+                        <table class="min-w-full divide-y divide-gray-200 text-sm">
+                            <thead class="bg-gray-50 text-left text-xs uppercase text-gray-500"><tr><th class="px-4 py-3">Date</th><th class="px-4 py-3">Item</th><th class="px-4 py-3">Vendor</th><th class="px-4 py-3 text-right">Amount</th><th class="px-4 py-3 text-right">Udhaar</th><th></th></tr></thead>
+                            <tbody class="divide-y divide-gray-100">
+                                @forelse($matRows as $pur)
+                                    <tr x-show="pick === 'ALL' || pick === @js($matKey($pur))">
+                                        <td class="px-4 py-2.5">{{ $pur->date->format('d-m-Y') }}</td>
+                                        <td class="px-4 py-2.5 font-medium text-gray-700">{{ $pur->item_name }}<div class="text-xs text-gray-400">{{ rtrim(rtrim($pur->qty,'0'),'.') }} {{ $pur->unit }}</div></td>
+                                        <td class="px-4 py-2.5 text-gray-500">{{ $pur->vendor->name ?? '—' }}</td>
+                                        <td class="px-4 py-2.5 text-right">
+                                            @money($pur->amount_paisa)
+                                            @php
+                                                $extras = collect([
+                                                    'Kiraya'   => (int) $pur->freight_paisa,
+                                                    'Mazdoori' => (int) $pur->labour_paisa,
+                                                    'Deegar'   => (int) $pur->other_charges_paisa,
+                                                ])->filter();
+                                            @endphp
+                                            @if($extras->isNotEmpty())
+                                                <div class="text-xs font-normal text-gray-400">
+                                                    maal @money($pur->goods_amount_paisa)
+                                                    @foreach($extras as $label => $amt) · {{ $label }} @money($amt) @endforeach
+                                                </div>
+                                            @endif
+                                            @if($pur->driver_id)
+                                                <div class="text-xs font-normal text-amber-600">🚚 {{ $pur->driver->name ?? '—' }}</div>
+                                            @endif
+                                        </td>
+                                        <td class="px-4 py-2.5 text-right {{ $pur->balance_due_paisa>0?'text-red-600':'text-gray-400' }}">
+                                            @money($pur->balance_due_paisa)
+                                            @if($pur->amount_paid_paisa > 0)<div class="text-[11px] font-normal text-emerald-600">diya @money($pur->amount_paid_paisa)</div>@endif
+                                        </td>
+                                        <td class="px-4 py-2.5 text-right whitespace-nowrap">
+                                            @if($pur->balance_due_paisa > 0)
+                                                {{-- Theka wali table jaisa hi: box khaali, "Poora" se poora
+                                                     baqi bhar jata hai. Dono jagah ek shakal rakhna zaroori
+                                                     hai warna maalik ek jagah seekhi hui cheez doosri jagah
+                                                     dhoondta reh jata hai. --}}
+                                                <form method="POST" action="{{ route('materials.pay', $pur) }}"
+                                                      class="inline-flex items-center gap-1"
+                                                      x-data="{ baqi: {{ \App\Support\Money::toRupees($pur->balance_due_paisa) }} }">
+                                                    @csrf
+                                                    <span class="text-xs text-gray-400">₨</span>
+                                                    <input type="number" step="0.01" min="0.01" name="amount" x-ref="amt" required
+                                                           placeholder="kitna"
+                                                           class="w-24 rounded border-gray-300 px-2 py-1 text-xs" title="jitna de rahe ho">
+                                                    <button type="button" @click="$refs.amt.value = baqi"
+                                                            class="rounded bg-gray-100 px-2 py-1 text-[11px] font-medium text-gray-600 hover:bg-gray-200" title="poora udhaar bhar do">Poora</button>
+                                                    <button class="rounded bg-emerald-600 px-2.5 py-1 text-xs font-semibold text-white hover:bg-emerald-700">Do</button>
+                                                </form>
+                                            @endif
+                                            <a href="{{ route('vouchers.material', $pur) }}" target="_blank" class="ml-1 text-emerald-600 hover:text-emerald-800" title="Print invoice">🖨</a>
+                                            <a href="{{ route('materials.edit', $pur) }}" class="ml-1 text-sky-600 hover:text-sky-800" title="Edit">✏️</a>
+                                            <form method="POST" action="{{ route('materials.destroy', $pur) }}" class="ml-1 inline" onsubmit="return confirm('Delete?')">@csrf @method('DELETE')<button class="text-red-400 hover:text-red-600">✕</button></form>
+                                        </td>
+                                    </tr>
+                                @empty<tr><td colspan="6" class="px-4 py-6 text-center text-gray-400">Koi material nahi.</td></tr>@endforelse
+                            </tbody>
+                        </table>
+                        </div>
+                    </div>
                 </x-card>
             </div>
         </div>
@@ -315,32 +437,54 @@
             </div>
             <div class="lg:col-span-2">
                 <x-card title="Sub-contractor theke (ٹھیکے)" class="!p-0">
-                    <table class="min-w-full divide-y divide-gray-200 text-sm">
-                        <thead class="bg-gray-50 text-left text-xs uppercase text-gray-500"><tr><th class="px-4 py-3">Date</th><th class="px-4 py-3">Sub-contractor</th><th class="px-4 py-3">Kaam</th><th class="px-4 py-3 text-right">Theka</th><th class="px-4 py-3 text-right">Baqi</th><th></th></tr></thead>
-                        <tbody class="divide-y divide-gray-100">
-                            @forelse($subDeals as $sd)
-                                <tr>
-                                    <td class="px-4 py-2.5">{{ $sd->date->format('d-m-Y') }}</td>
-                                    <td class="px-4 py-2.5 font-medium text-gray-700">{{ $sd->vendor->name ?? '—' }}</td>
-                                    <td class="px-4 py-2.5 text-gray-500">{{ $sd->item_name }}</td>
-                                    <td class="px-4 py-2.5 text-right">@money($sd->amount_paisa)</td>
-                                    <td class="px-4 py-2.5 text-right {{ $sd->balance_due_paisa>0?'text-red-600':'text-gray-400' }}">@money($sd->balance_due_paisa)</td>
-                                    <td class="px-4 py-2.5 text-right whitespace-nowrap">
-                                        @if($sd->balance_due_paisa > 0)
-                                            <form method="POST" action="{{ route('materials.pay', $sd) }}" class="inline-flex items-center gap-1">
-                                                @csrf
-                                                <input type="number" step="0.01" name="amount" value="{{ \App\Support\Money::toRupees($sd->balance_due_paisa) }}" class="w-24 rounded border-gray-300 px-2 py-1 text-xs" title="baqi pay">
-                                                <button class="rounded bg-emerald-600 px-2 py-1 text-xs font-semibold text-white hover:bg-emerald-700">Pay</button>
-                                            </form>
-                                        @endif
-                                        <a href="{{ route('vouchers.material', $sd) }}" target="_blank" class="ml-1 text-emerald-600 hover:text-emerald-800" title="Print invoice">🖨</a>
-                                        <a href="{{ route('materials.edit', $sd) }}" class="ml-1 text-sky-600 hover:text-sky-800" title="Edit">✏️</a>
-                                        <form method="POST" action="{{ route('materials.destroy', $sd) }}" class="ml-1 inline" onsubmit="return confirm('Delete?')">@csrf @method('DELETE')<button class="text-red-400 hover:text-red-600">✕</button></form>
-                                    </td>
-                                </tr>
-                            @empty<tr><td colspan="6" class="px-4 py-6 text-center text-gray-400">Koi theka nahi. Side se add karo.</td></tr>@endforelse
-                        </tbody>
-                    </table>
+                    <div class="overflow-x-auto">
+                        <table class="min-w-full divide-y divide-gray-200 text-sm">
+                            <thead class="bg-gray-50 text-left text-xs uppercase text-gray-500"><tr><th class="px-4 py-3">Date</th><th class="px-4 py-3">Sub-contractor</th><th class="px-4 py-3">Kaam</th><th class="px-4 py-3 text-right">Theka</th><th class="px-4 py-3 text-right">Diya</th><th class="px-4 py-3 text-right">Baqi</th><th class="px-4 py-3 text-right">Paisa do</th></tr></thead>
+                            <tbody class="divide-y divide-gray-100">
+                                @forelse($subDeals as $sd)
+                                    <tr>
+                                        <td class="px-4 py-2.5">{{ $sd->date->format('d-m-Y') }}</td>
+                                        <td class="px-4 py-2.5 font-medium text-gray-700">{{ $sd->vendor->name ?? '—' }}</td>
+                                        <td class="px-4 py-2.5 text-gray-500">{{ $sd->item_name }}</td>
+                                        <td class="px-4 py-2.5 text-right">@money($sd->amount_paisa)</td>
+                                        {{-- "Diya" column is liye lagaya ke qiston me diya hua paisa
+                                             jama hota nazar aaye. Pehle sirf Theka aur Baqi dikhte the,
+                                             to maalik ko pata hi nahi chalta tha ke ab tak kitna de chuka hai. --}}
+                                        <td class="px-4 py-2.5 text-right {{ $sd->amount_paid_paisa>0?'text-emerald-600 font-medium':'text-gray-300' }}">@money($sd->amount_paid_paisa)</td>
+                                        <td class="px-4 py-2.5 text-right font-semibold {{ $sd->balance_due_paisa>0?'text-red-600':'text-gray-400' }}">
+                                            @money($sd->balance_due_paisa)
+                                            @if($sd->balance_due_paisa <= 0)<div class="text-[11px] font-normal text-emerald-600">poora ho gaya</div>@endif
+                                        </td>
+                                        <td class="px-4 py-2.5 text-right whitespace-nowrap">
+                                            @if($sd->balance_due_paisa > 0)
+                                                {{-- Box khaali rehta hai taake maalik jitna de raha ho utna likhe.
+                                                     Pehle poora baqi pehle se bhara hota tha, jis se thori si
+                                                     raqam dene ke liye har bar pehle usay mitana parta tha.
+                                                     "Poora" wala button ek click me poori raqam bhar deta hai. --}}
+                                                <form method="POST" action="{{ route('materials.pay', $sd) }}"
+                                                      class="inline-flex items-center gap-1"
+                                                      x-data="{ baqi: {{ \App\Support\Money::toRupees($sd->balance_due_paisa) }} }">
+                                                    @csrf
+                                                    <span class="text-xs text-gray-400">₨</span>
+                                                    <input type="number" step="0.01" min="0.01" name="amount" x-ref="amt" required
+                                                           placeholder="kitna"
+                                                           class="w-24 rounded border-gray-300 px-2 py-1 text-xs" title="jitna de rahe ho">
+                                                    <button type="button" @click="$refs.amt.value = baqi"
+                                                            class="rounded bg-gray-100 px-2 py-1 text-[11px] font-medium text-gray-600 hover:bg-gray-200" title="poora baqi bhar do">Poora</button>
+                                                    <button class="rounded bg-emerald-600 px-2.5 py-1 text-xs font-semibold text-white hover:bg-emerald-700">Do</button>
+                                                </form>
+                                            @else
+                                                <span class="text-xs text-gray-300">—</span>
+                                            @endif
+                                            <a href="{{ route('vouchers.material', $sd) }}" target="_blank" class="ml-1 text-emerald-600 hover:text-emerald-800" title="Print invoice">🖨</a>
+                                            <a href="{{ route('materials.edit', $sd) }}" class="ml-1 text-sky-600 hover:text-sky-800" title="Edit">✏️</a>
+                                            <form method="POST" action="{{ route('materials.destroy', $sd) }}" class="ml-1 inline" onsubmit="return confirm('Delete?')">@csrf @method('DELETE')<button class="text-red-400 hover:text-red-600">✕</button></form>
+                                        </td>
+                                    </tr>
+                                @empty<tr><td colspan="7" class="px-4 py-6 text-center text-gray-400">Koi theka nahi. Side se add karo.</td></tr>@endforelse
+                            </tbody>
+                        </table>
+                    </div>
                 </x-card>
             </div>
         </div>
@@ -403,79 +547,83 @@
                             </div>
                             <p class="mt-1 text-[11px] text-gray-400">{{ $attWorkers->count() }} mazdoor, saare projects ke. Ye list har project me ek hi hoti hai.</p>
                         </div>
-                        <table class="min-w-full divide-y divide-gray-200 text-sm">
-                            <thead class="bg-gray-50 text-left text-xs uppercase text-gray-500"><tr><th class="px-4 py-3">Worker</th><th class="px-4 py-3">Kaam</th><th class="px-4 py-3 text-right">Dihaadi</th><th class="px-4 py-3 text-right">Haazri</th></tr></thead>
-                            <tbody class="divide-y divide-gray-100" id="attBody{{ $project->id }}">
-                                @forelse($attWorkers as $w)
-                                    <tr data-worker="{{ mb_strtolower($w->name.' '.$w->role.' #'.$w->id) }}">
-                                        <td class="px-4 py-2.5 font-medium text-gray-700">{{ $w->name }} <span class="text-xs font-normal text-gray-400">#{{ $w->id }}</span></td>
-                                        <td class="px-4 py-2.5 capitalize text-gray-500">{{ $w->role }}</td>
-                                        <td class="px-4 py-2.5 text-right" x-data="{ editing: false }">
-                                            <div x-show="!editing" class="flex items-center justify-end gap-2">
-                                                <span>@money($w->default_wage_paisa)</span>
-                                                <button type="button" @click="editing = true; $nextTick(() => $refs.wage{{ $w->id }}.select())"
-                                                        class="text-xs text-gray-400 hover:text-emerald-600" title="Dihaadi badlo">✏️</button>
-                                            </div>
-                                            <form x-show="editing" x-cloak method="POST" action="{{ route('workers.wage.update', $w) }}"
-                                                  class="flex items-center justify-end gap-1">
-                                                @csrf @method('PATCH')
-                                                <input type="number" step="0.01" min="0" name="default_wage" x-ref="wage{{ $w->id }}"
-                                                       value="{{ \App\Support\Money::toRupees($w->default_wage_paisa) }}"
-                                                       @keydown.escape="editing = false"
-                                                       class="w-24 rounded-md border-gray-300 px-2 py-1 text-right text-xs focus:border-emerald-500 focus:ring-emerald-500">
-                                                <button class="rounded-md bg-emerald-600 px-2 py-1 text-xs font-semibold text-white hover:bg-emerald-700" title="Save">✓</button>
-                                                <button type="button" @click="editing = false" class="px-1 text-xs text-gray-400 hover:text-gray-600" title="Cancel">✕</button>
-                                            </form>
-                                        </td>
-                                        <td class="px-4 py-2.5 text-right">
-                                            <button type="button" @click="openModal({{ $w->id }}, @js($w->name))"
-                                                class="rounded-md bg-emerald-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-emerald-700">📅 Haazri lagao</button>
-                                        </td>
+                        <div class="overflow-x-auto">
+                            <table class="min-w-full divide-y divide-gray-200 text-sm">
+                                <thead class="bg-gray-50 text-left text-xs uppercase text-gray-500"><tr><th class="px-4 py-3">Worker</th><th class="px-4 py-3">Kaam</th><th class="px-4 py-3 text-right">Dihaadi</th><th class="px-4 py-3 text-right">Haazri</th></tr></thead>
+                                <tbody class="divide-y divide-gray-100" id="attBody{{ $project->id }}">
+                                    @forelse($attWorkers as $w)
+                                        <tr data-worker="{{ mb_strtolower($w->name.' '.$w->role.' #'.$w->id) }}">
+                                            <td class="px-4 py-2.5 font-medium text-gray-700">{{ $w->name }} <span class="text-xs font-normal text-gray-400">#{{ $w->id }}</span></td>
+                                            <td class="px-4 py-2.5 capitalize text-gray-500">{{ $w->role }}</td>
+                                            <td class="px-4 py-2.5 text-right" x-data="{ editing: false }">
+                                                <div x-show="!editing" class="flex items-center justify-end gap-2">
+                                                    <span>@money($w->default_wage_paisa)</span>
+                                                    <button type="button" @click="editing = true; $nextTick(() => $refs.wage{{ $w->id }}.select())"
+                                                            class="text-xs text-gray-400 hover:text-emerald-600" title="Dihaadi badlo">✏️</button>
+                                                </div>
+                                                <form x-show="editing" x-cloak method="POST" action="{{ route('workers.wage.update', $w) }}"
+                                                      class="flex items-center justify-end gap-1">
+                                                    @csrf @method('PATCH')
+                                                    <input type="number" step="0.01" min="0" name="default_wage" x-ref="wage{{ $w->id }}"
+                                                           value="{{ \App\Support\Money::toRupees($w->default_wage_paisa) }}"
+                                                           @keydown.escape="editing = false"
+                                                           class="w-24 rounded-md border-gray-300 px-2 py-1 text-right text-xs focus:border-emerald-500 focus:ring-emerald-500">
+                                                    <button class="rounded-md bg-emerald-600 px-2 py-1 text-xs font-semibold text-white hover:bg-emerald-700" title="Save">✓</button>
+                                                    <button type="button" @click="editing = false" class="px-1 text-xs text-gray-400 hover:text-gray-600" title="Cancel">✕</button>
+                                                </form>
+                                            </td>
+                                            <td class="px-4 py-2.5 text-right">
+                                                <button type="button" @click="openModal({{ $w->id }}, @js($w->name))"
+                                                    class="rounded-md bg-emerald-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-emerald-700">📅 Haazri lagao</button>
+                                            </td>
+                                        </tr>
+                                    @empty
+                                        <tr><td colspan="4" class="px-4 py-6 text-center text-gray-400">Koi mazdoor nahi. Side se "Naya Mazdoor" add karo.</td></tr>
+                                    @endforelse
+                                    <tr id="attNoMatch{{ $project->id }}" style="display:none">
+                                        <td colspan="4" class="px-4 py-6 text-center text-gray-400">Is naam ka koi mazdoor nahi mila. Upar se filter saaf karo.</td>
                                     </tr>
-                                @empty
-                                    <tr><td colspan="4" class="px-4 py-6 text-center text-gray-400">Koi mazdoor nahi. Side se "Naya Mazdoor" add karo.</td></tr>
-                                @endforelse
-                                <tr id="attNoMatch{{ $project->id }}" style="display:none">
-                                    <td colspan="4" class="px-4 py-6 text-center text-gray-400">Is naam ka koi mazdoor nahi mila. Upar se filter saaf karo.</td>
-                                </tr>
-                            </tbody>
-                        </table>
+                                </tbody>
+                            </table>
+                        </div>
                         <p class="border-t border-gray-100 px-4 py-2 text-[11px] text-gray-400">Dihaadi par ✏️ dabao to wahin badal sakte ho. Nayi dihaadi sirf aage ki haazri par lagegi, purana hisaab waise ka waisa rehta hai.</p>
                     </x-card>
 
                     <x-card title="Is project ke mazdoor — hisaab (لیبر)" class="!p-0">
-                        <table class="min-w-full divide-y divide-gray-200 text-sm">
-                            <thead class="bg-gray-50 text-left text-xs uppercase text-gray-500"><tr><th class="px-4 py-3">Worker</th><th class="px-4 py-3 text-right">Days</th><th class="px-4 py-3 text-right">Earned</th><th class="px-4 py-3 text-right">Paid</th><th class="px-4 py-3 text-right">Baqi / Advance</th></tr></thead>
-                            <tbody class="divide-y divide-gray-100">
-                                @forelse($projectWorkers as $row)
-                                    @php $net = $row['earned'] - $row['paid'] - ($row['advnet'] ?? 0); @endphp
-                                    <tr><td class="px-4 py-2.5"><a href="{{ route('workers.show', $row['worker']) }}" class="font-medium text-emerald-700 hover:underline">{{ $row['worker']->name }}</a><span class="ml-1 text-xs text-gray-400">#{{ $row['worker']->id }} · {{ $row['worker']->role }}</span><a href="{{ route('vouchers.worker-statement', ['worker' => $row['worker'], 'project' => $project->id]) }}" target="_blank" class="ml-2 text-emerald-600 hover:text-emerald-800" title="Print statement">🖨</a></td>
-                                    <td class="px-4 py-2.5 text-right">{{ rtrim(rtrim(number_format($row['days'],1),'0'),'.') }}</td>
-                                    <td class="px-4 py-2.5 text-right font-medium">@money($row['earned'])</td>
-                                    <td class="px-4 py-2.5 text-right text-emerald-600">@money($row['paid'])</td>
-                                    <td class="px-4 py-2.5 text-right font-semibold">
-                                        @if($net > 0)<span class="text-red-600">@money($net)</span><span class="ml-1 text-xs font-normal text-gray-400">dena</span>
-                                        @elseif($net < 0)<span class="text-amber-600">@money(-$net)</span><span class="ml-1 text-xs font-normal text-gray-400">advance</span>
-                                        @else<span class="text-gray-400">—</span>@endif
-                                    </td></tr>
-                                @empty<tr><td colspan="5" class="px-4 py-6 text-center text-gray-400">Abhi koi haazri nahi.</td></tr>@endforelse
-                            </tbody>
-                            @if($projectWorkers->count())
-                                @php
-                                    $totEarned = $projectWorkers->sum('earned');
-                                    $totPaid   = $projectWorkers->sum('paid');
-                                    // Dena and advance kept SEPARATE — alag bandon ka cancel nahi hota.
-                                    $totDena    = $projectWorkers->sum(fn($r) => max(0, $r['earned'] - $r['paid'] - ($r['advnet'] ?? 0)));
-                                    $totAdvance = $projectWorkers->sum(fn($r) => max(0, -($r['earned'] - $r['paid'] - ($r['advnet'] ?? 0))));
-                                @endphp
-                                <tfoot class="bg-gray-50 font-semibold"><tr><td class="px-4 py-3">Total</td><td class="px-4 py-3 text-right">{{ rtrim(rtrim(number_format($projectWorkers->sum('days'),1),'0'),'.') }}</td><td class="px-4 py-3 text-right">@money($totEarned)</td><td class="px-4 py-3 text-right text-emerald-600">@money($totPaid)</td>
-                                <td class="px-4 py-3 text-right">
-                                    @if($totDena > 0)<div><span class="text-red-600">@money($totDena)</span> <span class="text-xs font-normal text-gray-400">dena</span></div>@endif
-                                    @if($totAdvance > 0)<div><span class="text-amber-600">@money($totAdvance)</span> <span class="text-xs font-normal text-gray-400">advance</span></div>@endif
-                                    @if($totDena <= 0 && $totAdvance <= 0)<span class="text-gray-400">—</span>@endif
-                                </td></tr></tfoot>
-                            @endif
-                        </table>
+                        <div class="overflow-x-auto">
+                            <table class="min-w-full divide-y divide-gray-200 text-sm">
+                                <thead class="bg-gray-50 text-left text-xs uppercase text-gray-500"><tr><th class="px-4 py-3">Worker</th><th class="px-4 py-3 text-right">Days</th><th class="px-4 py-3 text-right">Earned</th><th class="px-4 py-3 text-right">Paid</th><th class="px-4 py-3 text-right">Baqi / Advance</th></tr></thead>
+                                <tbody class="divide-y divide-gray-100">
+                                    @forelse($projectWorkers as $row)
+                                        @php $net = $row['earned'] - $row['paid'] - ($row['advnet'] ?? 0); @endphp
+                                        <tr><td class="px-4 py-2.5"><a href="{{ route('workers.show', $row['worker']) }}" class="font-medium text-emerald-700 hover:underline">{{ $row['worker']->name }}</a><span class="ml-1 text-xs text-gray-400">#{{ $row['worker']->id }} · {{ $row['worker']->role }}</span><a href="{{ route('vouchers.worker-statement', ['worker' => $row['worker'], 'project' => $project->id]) }}" target="_blank" class="ml-2 text-emerald-600 hover:text-emerald-800" title="Print statement">🖨</a></td>
+                                        <td class="px-4 py-2.5 text-right">{{ rtrim(rtrim(number_format($row['days'],1),'0'),'.') }}</td>
+                                        <td class="px-4 py-2.5 text-right font-medium">@money($row['earned'])</td>
+                                        <td class="px-4 py-2.5 text-right text-emerald-600">@money($row['paid'])</td>
+                                        <td class="px-4 py-2.5 text-right font-semibold">
+                                            @if($net > 0)<span class="text-red-600">@money($net)</span><span class="ml-1 text-xs font-normal text-gray-400">dena</span>
+                                            @elseif($net < 0)<span class="text-amber-600">@money(-$net)</span><span class="ml-1 text-xs font-normal text-gray-400">advance</span>
+                                            @else<span class="text-gray-400">—</span>@endif
+                                        </td></tr>
+                                    @empty<tr><td colspan="5" class="px-4 py-6 text-center text-gray-400">Abhi koi haazri nahi.</td></tr>@endforelse
+                                </tbody>
+                                @if($projectWorkers->count())
+                                    @php
+                                        $totEarned = $projectWorkers->sum('earned');
+                                        $totPaid   = $projectWorkers->sum('paid');
+                                        // Dena and advance kept SEPARATE — alag bandon ka cancel nahi hota.
+                                        $totDena    = $projectWorkers->sum(fn($r) => max(0, $r['earned'] - $r['paid'] - ($r['advnet'] ?? 0)));
+                                        $totAdvance = $projectWorkers->sum(fn($r) => max(0, -($r['earned'] - $r['paid'] - ($r['advnet'] ?? 0))));
+                                    @endphp
+                                    <tfoot class="bg-gray-50 font-semibold"><tr><td class="px-4 py-3">Total</td><td class="px-4 py-3 text-right">{{ rtrim(rtrim(number_format($projectWorkers->sum('days'),1),'0'),'.') }}</td><td class="px-4 py-3 text-right">@money($totEarned)</td><td class="px-4 py-3 text-right text-emerald-600">@money($totPaid)</td>
+                                    <td class="px-4 py-3 text-right">
+                                        @if($totDena > 0)<div><span class="text-red-600">@money($totDena)</span> <span class="text-xs font-normal text-gray-400">dena</span></div>@endif
+                                        @if($totAdvance > 0)<div><span class="text-amber-600">@money($totAdvance)</span> <span class="text-xs font-normal text-gray-400">advance</span></div>@endif
+                                        @if($totDena <= 0 && $totAdvance <= 0)<span class="text-gray-400">—</span>@endif
+                                    </td></tr></tfoot>
+                                @endif
+                            </table>
+                        </div>
                     </x-card>
                 </div>
 
@@ -738,22 +886,24 @@
             </div>
             <div class="lg:col-span-2">
                 <x-card title="Adjustments (کٹوتی / بونس)" class="!p-0">
-                    <table class="min-w-full divide-y divide-gray-200 text-sm">
-                        <thead class="bg-gray-50 text-left text-xs uppercase text-gray-500"><tr><th class="px-4 py-3">Date</th><th class="px-4 py-3">Worker</th><th class="px-4 py-3">Type</th><th class="px-4 py-3">Wajah</th><th class="px-4 py-3 text-right">Amount</th><th></th></tr></thead>
-                        <tbody class="divide-y divide-gray-100">
-                            @forelse($adjustments as $a)
-                                @php $isDed = $a->type === 'advance_given'; @endphp
-                                <tr>
-                                    <td class="px-4 py-2.5">{{ $a->date->format('d-m-Y') }}</td>
-                                    <td class="px-4 py-2.5 font-medium text-gray-700">{{ $a->worker->name ?? '—' }}</td>
-                                    <td class="px-4 py-2.5"><x-badge :color="$isDed ? 'red' : 'emerald'">{{ $isDed ? 'Katauti' : 'Bonus' }}</x-badge></td>
-                                    <td class="px-4 py-2.5 text-gray-500">{{ $a->notes }}</td>
-                                    <td class="px-4 py-2.5 text-right font-medium {{ $isDed ? 'text-rose-600' : 'text-emerald-600' }}">{{ $isDed ? '−' : '+' }}@money($a->amount_paisa)</td>
-                                    <td class="px-4 py-2.5 text-right whitespace-nowrap"><a href="{{ route('vouchers.advance', $a) }}" target="_blank" class="text-emerald-600 hover:text-emerald-800" title="Print voucher">🖨</a><a href="{{ route('worker-advances.edit', $a) }}" class="ml-1 text-sky-600 hover:text-sky-800" title="Edit">&#9999;&#65039;</a><form method="POST" action="{{ route('worker-advances.destroy', $a) }}" class="ml-1 inline" onsubmit="return confirm('Delete?')">@csrf @method('DELETE')<button class="text-red-400 hover:text-red-600">✕</button></form></td>
-                                </tr>
-                            @empty<tr><td colspan="6" class="px-4 py-6 text-center text-gray-400">Koi adjustment nahi.</td></tr>@endforelse
-                        </tbody>
-                    </table>
+                    <div class="overflow-x-auto">
+                        <table class="min-w-full divide-y divide-gray-200 text-sm">
+                            <thead class="bg-gray-50 text-left text-xs uppercase text-gray-500"><tr><th class="px-4 py-3">Date</th><th class="px-4 py-3">Worker</th><th class="px-4 py-3">Type</th><th class="px-4 py-3">Wajah</th><th class="px-4 py-3 text-right">Amount</th><th></th></tr></thead>
+                            <tbody class="divide-y divide-gray-100">
+                                @forelse($adjustments as $a)
+                                    @php $isDed = $a->type === 'advance_given'; @endphp
+                                    <tr>
+                                        <td class="px-4 py-2.5">{{ $a->date->format('d-m-Y') }}</td>
+                                        <td class="px-4 py-2.5 font-medium text-gray-700">{{ $a->worker->name ?? '—' }}</td>
+                                        <td class="px-4 py-2.5"><x-badge :color="$isDed ? 'red' : 'emerald'">{{ $isDed ? 'Katauti' : 'Bonus' }}</x-badge></td>
+                                        <td class="px-4 py-2.5 text-gray-500">{{ $a->notes }}</td>
+                                        <td class="px-4 py-2.5 text-right font-medium {{ $isDed ? 'text-rose-600' : 'text-emerald-600' }}">{{ $isDed ? '−' : '+' }}@money($a->amount_paisa)</td>
+                                        <td class="px-4 py-2.5 text-right whitespace-nowrap"><a href="{{ route('vouchers.advance', $a) }}" target="_blank" class="text-emerald-600 hover:text-emerald-800" title="Print voucher">🖨</a><a href="{{ route('worker-advances.edit', $a) }}" class="ml-1 text-sky-600 hover:text-sky-800" title="Edit">&#9999;&#65039;</a><form method="POST" action="{{ route('worker-advances.destroy', $a) }}" class="ml-1 inline" onsubmit="return confirm('Delete?')">@csrf @method('DELETE')<button class="text-red-400 hover:text-red-600">✕</button></form></td>
+                                    </tr>
+                                @empty<tr><td colspan="6" class="px-4 py-6 text-center text-gray-400">Koi adjustment nahi.</td></tr>@endforelse
+                            </tbody>
+                        </table>
+                    </div>
                 </x-card>
             </div>
         </div>
@@ -777,15 +927,17 @@
             </div>
             <div class="lg:col-span-2">
                 <x-card title="Other Expenses (دیگر اخراجات)" class="!p-0">
-                    <table class="min-w-full divide-y divide-gray-200 text-sm">
-                        <thead class="bg-gray-50 text-left text-xs uppercase text-gray-500"><tr><th class="px-4 py-3">Date</th><th class="px-4 py-3">Category</th><th class="px-4 py-3">Tafseel</th><th class="px-4 py-3 text-right">Amount</th><th></th></tr></thead>
-                        <tbody class="divide-y divide-gray-100">
-                            @forelse($project->otherExpenses->sortByDesc('date') as $e)
-                                <tr><td class="px-4 py-2.5">{{ $e->date->format('d-m-Y') }}</td><td class="px-4 py-2.5 capitalize">{{ str_replace('_',' ',$e->category) }}</td><td class="px-4 py-2.5 text-gray-500">{{ $e->description }}</td><td class="px-4 py-2.5 text-right font-medium">@money($e->amount_paisa)</td>
-                                <td class="px-4 py-2.5 text-right whitespace-nowrap"><a href="{{ route('vouchers.expense', $e) }}" target="_blank" class="text-emerald-600 hover:text-emerald-800" title="Print voucher">🖨</a><a href="{{ route('expenses.edit', $e) }}" class="ml-1 text-sky-600 hover:text-sky-800" title="Edit">&#9999;&#65039;</a><form method="POST" action="{{ route('expenses.destroy', $e) }}" class="ml-1 inline" onsubmit="return confirm('Delete?')">@csrf @method('DELETE')<button class="text-red-400 hover:text-red-600">✕</button></form></td></tr>
-                            @empty<tr><td colspan="5" class="px-4 py-6 text-center text-gray-400">Koi kharch nahi.</td></tr>@endforelse
-                        </tbody>
-                    </table>
+                    <div class="overflow-x-auto">
+                        <table class="min-w-full divide-y divide-gray-200 text-sm">
+                            <thead class="bg-gray-50 text-left text-xs uppercase text-gray-500"><tr><th class="px-4 py-3">Date</th><th class="px-4 py-3">Category</th><th class="px-4 py-3">Tafseel</th><th class="px-4 py-3 text-right">Amount</th><th></th></tr></thead>
+                            <tbody class="divide-y divide-gray-100">
+                                @forelse($project->otherExpenses->sortByDesc('date') as $e)
+                                    <tr><td class="px-4 py-2.5">{{ $e->date->format('d-m-Y') }}</td><td class="px-4 py-2.5 capitalize">{{ str_replace('_',' ',$e->category) }}</td><td class="px-4 py-2.5 text-gray-500">{{ $e->description }}</td><td class="px-4 py-2.5 text-right font-medium">@money($e->amount_paisa)</td>
+                                    <td class="px-4 py-2.5 text-right whitespace-nowrap"><a href="{{ route('vouchers.expense', $e) }}" target="_blank" class="text-emerald-600 hover:text-emerald-800" title="Print voucher">🖨</a><a href="{{ route('expenses.edit', $e) }}" class="ml-1 text-sky-600 hover:text-sky-800" title="Edit">&#9999;&#65039;</a><form method="POST" action="{{ route('expenses.destroy', $e) }}" class="ml-1 inline" onsubmit="return confirm('Delete?')">@csrf @method('DELETE')<button class="text-red-400 hover:text-red-600">✕</button></form></td></tr>
+                                @empty<tr><td colspan="5" class="px-4 py-6 text-center text-gray-400">Koi kharch nahi.</td></tr>@endforelse
+                            </tbody>
+                        </table>
+                    </div>
                 </x-card>
             </div>
         </div>
@@ -892,14 +1044,16 @@
                 <a href="{{ route('estimates.index', $project) }}" class="rounded-md bg-emerald-600 px-4 py-2 text-sm font-semibold text-white hover:bg-emerald-700">Manage Estimate (تخمینہ بنائیں)</a>
             </div>
             <x-card class="!p-0">
-                <table class="min-w-full divide-y divide-gray-200 text-sm">
-                    <thead class="bg-gray-50 text-left text-xs uppercase text-gray-500"><tr><th class="px-4 py-3">Item</th><th class="px-4 py-3">Cat</th><th class="px-4 py-3 text-right">Amount</th></tr></thead>
-                    <tbody class="divide-y divide-gray-100">
-                        @forelse($project->estimates as $e)
-                            <tr><td class="px-4 py-2.5 font-medium text-gray-700">{{ $e->item_name }}</td><td class="px-4 py-2.5 capitalize text-gray-500">{{ $e->category }}</td><td class="px-4 py-2.5 text-right font-medium">@money($e->amount_paisa)</td></tr>
-                        @empty<tr><td colspan="3" class="px-4 py-6 text-center text-gray-400">Koi estimate nahi. "Manage Estimate" se banao.</td></tr>@endforelse
-                    </tbody>
-                </table>
+                <div class="overflow-x-auto">
+                    <table class="min-w-full divide-y divide-gray-200 text-sm">
+                        <thead class="bg-gray-50 text-left text-xs uppercase text-gray-500"><tr><th class="px-4 py-3">Item</th><th class="px-4 py-3">Cat</th><th class="px-4 py-3 text-right">Amount</th></tr></thead>
+                        <tbody class="divide-y divide-gray-100">
+                            @forelse($project->estimates as $e)
+                                <tr><td class="px-4 py-2.5 font-medium text-gray-700">{{ $e->item_name }}</td><td class="px-4 py-2.5 capitalize text-gray-500">{{ $e->category }}</td><td class="px-4 py-2.5 text-right font-medium">@money($e->amount_paisa)</td></tr>
+                            @empty<tr><td colspan="3" class="px-4 py-6 text-center text-gray-400">Koi estimate nahi. "Manage Estimate" se banao.</td></tr>@endforelse
+                        </tbody>
+                    </table>
+                </div>
             </x-card>
         </div>
     </div>
