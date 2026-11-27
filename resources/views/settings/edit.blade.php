@@ -73,7 +73,24 @@
                           placeholder="cement, sarya, block, crush, sand, bajri, rait, tile, paint">{{ old('common_items', $settings['common_items'] ?? '') }}</textarea>
                 <x-input-error :messages="$errors->get('common_items')" class="mt-1" />
                 <p class="mt-2 text-xs text-gray-500">Ye sirf Purchase form ka dropdown bharti hain, pabandi nahi — aap wahan koi bhi naam apne haath se likh sakte ho.</p>
+                <p class="mt-1 text-xs text-gray-500">Ye list <span class="font-medium">har qism</span> ke kaam me khud lag jati hai, to <span class="font-medium">cement</span> jaisi cheez neeche har list me dobara likhne ki zaroorat nahi.</p>
             </div>
+        </x-card>
+
+        <x-card title="Har kaam ki cheezein (اشیاء کی فہرست)">
+            <p class="text-xs text-gray-500">Project ki qism ke hisaab se maal ka naam khud suggest hota hai. Comma se alag karo, aur in se bahar bhi kuch bhi likha ja sakta hai.</p>
+            <div class="mt-4 grid grid-cols-1 gap-5 sm:grid-cols-2">
+                @foreach($contractTypes as $type => $label)
+                    <div>
+                        <x-input-label :for="'items_' . $type" :value="$label . ' (comma se alag karo)'" />
+                        <textarea id="items_{{ $type }}" name="items[{{ $type }}]" rows="3"
+                                  class="mt-1 block w-full rounded-md border-gray-300 text-sm shadow-sm focus:border-emerald-500 focus:ring-emerald-500"
+                                  placeholder="cement, tile, paint">{{ old('items.' . $type, $itemLists[$type] ?? '') }}</textarea>
+                        <x-input-error :messages="$errors->get('items.' . $type)" class="mt-1" />
+                    </div>
+                @endforeach
+            </div>
+            <p class="mt-3 text-xs text-gray-500">Jaise likho ge waise hi dikhega (<span class="font-medium">Marble</span> likha to <span class="font-medium">Marble</span> hi rahega). Project me pehle se use hui cheezein upar aati hain, phir ye list.</p>
         </x-card>
 
         <x-card title="Common units (یونٹ)">

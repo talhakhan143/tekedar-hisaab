@@ -49,6 +49,39 @@ class Project extends Model
     public function otherExpenses(): HasMany { return $this->hasMany(OtherExpense::class); }
 
     // ---- Labels ----
+    /**
+     * Is project me maal likhte waqt jo naam suggest hon.
+     *
+     * Do cheezein milti hain: kaam ki qism ki list (Settings se, jaise Interior
+     * par tile aur paint) aur wo naam jo isi project me pehle istemal ho chuke
+     * hain. Doosri baat isi liye hai ke ek hi cheez dobara likhte waqt wahi
+     * imla dobara mil jaye, warna "Cemnt" aur "cement" do alag dher ban jate
+     * hain aur cheez ke hisaab se jor ghalat lagta hai.
+     */
+    public function itemSuggestions(): array
+    {
+        $fromSettings = \App\Models\Setting::itemsForContractType($this->contract_type);
+
+        $used = $this->materialPurchases()
+            ->whereNotNull('item_name')
+            ->orderByDesc('date')
+            ->pluck('item_name')
+            ->all();
+
+        $seen = [];
+        $out  = [];
+        foreach (array_merge($used, $fromSettings) as $item) {
+            $k = mb_strtolower(trim(preg_replace('/\s+/u', ' ', (string) $item)));
+            if ($k === '' || isset($seen[$k])) {
+                continue;
+            }
+            $seen[$k] = true;
+            $out[] = trim((string) $item);
+        }
+
+        return $out;
+    }
+
     public function contractTypeLabel(): string
     {
         return self::CONTRACT_TYPES[$this->contract_type] ?? 'Full Furnish';
